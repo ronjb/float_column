@@ -1,3 +1,3 @@
 # flex_text
 
-A new Flutter package project.
+A vertical list of widgets and text that supports floating widgets to the left and/or right.
