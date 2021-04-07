@@ -4,7 +4,7 @@
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
-import 'flex_text_span.dart';
+import 'flex_text_paragraph.dart';
 import 'render_flex_text.dart';
 
 /// A vertical list of widgets and text.
@@ -24,17 +24,21 @@ class FlexText extends MultiChildRenderObjectWidget {
   })  : assert(crossAxisAlignment != null), // ignore: unnecessary_null_comparison
         assert(crossAxisAlignment != CrossAxisAlignment.baseline),
         assert(clipBehavior != null), // ignore: unnecessary_null_comparison
+        assert(children != null), // ignore: unnecessary_null_comparison
+        _textAndWidgets = children,
         super(key: key, children: _extractWidgets(children));
 
-  static List<Widget> _extractWidgets(List<Object> children) {
+  /// The list of FlexTextParagraph and Widget children.
+  final List<Object> _textAndWidgets;
+
+  static List<Widget> _extractWidgets(List<Object> list) {
     var index = 0;
     final result = <Widget>[];
-
-    for (final child in children) {
+    for (final child in list) {
       if (child is Widget) {
         result.add(child);
-      } else if (child is FlexTextSpan) {
-        // Traverses the FlexTextSpan tree and depth-first collects the list of
+      } else if (child is FlexTextParagraph) {
+        // Traverses the paragraph's InlineSpan tree and depth-first collects the list of
         // child widgets that are created in WidgetSpans.
         var placeholderIndex = 0;
         child.text.visitChildren((span) {
@@ -47,7 +51,7 @@ class FlexText extends MultiChildRenderObjectWidget {
           return true;
         });
       } else {
-        assert(false, 'FlexText only supports Widget and FlexTextSpan children');
+        assert(false, 'FlexText only supports Widget and FlexTextParagraph');
       }
       index++;
     }
@@ -110,6 +114,7 @@ class FlexText extends MultiChildRenderObjectWidget {
   @override
   RenderFlexText createRenderObject(BuildContext context) {
     return RenderFlexText(
+      _textAndWidgets,
       crossAxisAlignment: crossAxisAlignment,
       textDirection: getEffectiveTextDirection(context),
       clipBehavior: clipBehavior,
@@ -137,7 +142,7 @@ class FlexText extends MultiChildRenderObjectWidget {
 /// semantics nodes.
 ///
 /// The [FlexText] uses this to tag the relation between its [Widget] children and
-/// placeholder spans in its [FlexTextSpan] children and their semantics nodes.
+/// placeholder spans in its [FlexTextParagraph] children and their semantics nodes.
 @immutable
 class FlexTextSemanticsTag extends SemanticsTag {
   /// Creates a semantics tag with the input `index`.
@@ -150,7 +155,7 @@ class FlexTextSemanticsTag extends SemanticsTag {
   /// The index of the child.
   final int index;
 
-  /// Index of the placeholder span in the child [FlexTextSpan], or 0 for child
+  /// Index of the placeholder span in the child [FlexTextParagraph], or 0 for child
   /// [Widget]s.
   final int placeholderIndex;
 

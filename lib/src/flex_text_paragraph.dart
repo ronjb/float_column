@@ -10,7 +10,7 @@ import 'package:flutter/rendering.dart';
 /// An immutable span of inline content which forms a paragraph.
 ///
 @immutable
-class FlexTextSpan {
+class FlexTextParagraph {
   /// Creates a paragraph of rich text.
   ///
   /// The [text], [textAlign], [softWrap], [overflow], and [textScaleFactor]
@@ -21,7 +21,7 @@ class FlexTextSpan {
   ///
   /// The [textDirection], if null, defaults to the ambient `Directionality`,
   /// which in that case must not be null.
-  const FlexTextSpan({
+  const FlexTextParagraph({
     required this.text,
     this.textAlign = TextAlign.start,
     this.textDirection,
@@ -112,7 +112,7 @@ class FlexTextSpan {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other.runtimeType != runtimeType) return false;
-    return other is FlexTextSpan &&
+    return other is FlexTextParagraph &&
         other.text == text &&
         other.textAlign == textAlign &&
         other.textDirection == textDirection &&
