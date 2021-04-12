@@ -4,10 +4,15 @@
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
-/// Parent data for use with [RenderFlexText].
-class FlexTextParentData extends ContainerBoxParentData<RenderBox> {
+import 'float_tag.dart';
+import 'float_text.dart';
+import 'shared.dart';
+
+/// Parent data for use with [RenderFloatColumn].
+class FloatColumnParentData extends ContainerBoxParentData<RenderBox> {
   /// The scaling of the text.
   double? scale;
 
@@ -29,34 +34,34 @@ typedef _ChildSizingFunction = double Function(RenderBox child, double extent);
 ///
 /// ## Layout algorithm
 ///
-/// _This section describes how the framework causes [RenderFlexText] to position
+/// _This section describes how the framework causes [RenderFloatColumn] to position
 /// its children._
 /// _See [BoxConstraints] for an introduction to box layout models._
 ///
-/// Layout for a [RenderFlexText] proceeds in six steps:
+/// Layout for a [RenderFloatColumn] proceeds in six steps:
 ///
 /// 1. Layout each child with unbounded main axis constraints and the incoming
 ///    cross axis constraints. If the [crossAxisAlignment] is
 ///    [CrossAxisAlignment.stretch], instead use tight cross axis constraints
 ///    that match the incoming max extent in the cross axis.
 ///
-/// 2. The cross axis extent of the [RenderFlexText] is the maximum cross axis
+/// 2. The cross axis extent of the [RenderFloatColumn] is the maximum cross axis
 ///    extent of the children (which will always satisfy the incoming
 ///    constraints).
 ///
-/// 3. The main axis extent of the [RenderFlexText] is the sum of the main axis
+/// 3. The main axis extent of the [RenderFloatColumn] is the sum of the main axis
 ///    extents of the children (subject to the incoming constraints).
 ///
-class RenderFlexText extends RenderBox
+class RenderFloatColumn extends RenderBox
     with
-        ContainerRenderObjectMixin<RenderBox, FlexTextParentData>,
-        RenderBoxContainerDefaultsMixin<RenderBox, FlexTextParentData>,
+        ContainerRenderObjectMixin<RenderBox, FloatColumnParentData>,
+        RenderBoxContainerDefaultsMixin<RenderBox, FloatColumnParentData>,
         DebugOverflowIndicatorMixin {
-  /// Creates a FlexText render object.
+  /// Creates a FloatColumn render object.
   ///
   /// By default, the children are aligned to the start of the cross axis.
-  RenderFlexText(
-    this.textAndWidgets, {
+  RenderFloatColumn(
+    this._textAndWidgets, {
     CrossAxisAlignment crossAxisAlignment = CrossAxisAlignment.center,
     TextDirection? textDirection,
     Clip clipBehavior = Clip.none,
@@ -69,7 +74,16 @@ class RenderFlexText extends RenderBox
     addAll(widgets);
   }
 
-  final List<Object> textAndWidgets;
+  List<Object> get textAndWidgets => _textAndWidgets;
+  List<Object> _textAndWidgets;
+  set textAndWidgets(List<Object> value) {
+    assert(value != null); // ignore: unnecessary_null_comparison
+    if (_textAndWidgets != value) {
+      _textAndWidgets = value;
+      _textPainters.clear();
+      markNeedsLayout();
+    }
+  }
 
   /// How the children should be placed along the cross axis.
   ///
@@ -131,9 +145,10 @@ class RenderFlexText extends RenderBox
 
   @override
   void setupParentData(RenderBox child) {
-    if (child.parentData is! FlexTextParentData) child.parentData = FlexTextParentData();
+    if (child.parentData is! FloatColumnParentData) child.parentData = FloatColumnParentData();
   }
 
+  /*
   double _getIntrinsicSize({
     required Axis sizingDirection,
     required double extent, // the extent in the direction that isn't the sizing direction
@@ -148,7 +163,7 @@ class RenderFlexText extends RenderBox
       var child = firstChild;
       while (child != null) {
         totalSize += childSize(child, extent);
-        final childParentData = child.parentData! as FlexTextParentData;
+        final childParentData = child.parentData! as FloatColumnParentData;
         child = childParentData.nextSibling;
       }
       return totalSize;
@@ -166,7 +181,7 @@ class RenderFlexText extends RenderBox
         mainSize = child.getMaxIntrinsicHeight(double.infinity);
         crossSize = childSize(child, mainSize);
         maxCrossSize = math.max(maxCrossSize, crossSize);
-        final childParentData = child.parentData! as FlexTextParentData;
+        final childParentData = child.parentData! as FloatColumnParentData;
         child = childParentData.nextSibling;
       }
       return maxCrossSize;
@@ -208,6 +223,7 @@ class RenderFlexText extends RenderBox
       childSize: (child, extent) => child.getMaxIntrinsicHeight(extent),
     );
   }
+  */
 
   @override
   double? computeDistanceToActualBaseline(TextBaseline baseline) {
@@ -216,14 +232,20 @@ class RenderFlexText extends RenderBox
 
   @override
   Size computeDryLayout(BoxConstraints constraints) {
+    assert(debugCannotComputeDryLayout(reason: 'Dry layout cannot be efficiently computed.'));
+    return Size.zero;
+
+    /*
     final sizes = _computeSizes(
       layoutChild: ChildLayoutHelper.dryLayoutChild,
       constraints: constraints,
     );
 
     return constraints.constrain(Size(sizes.crossSize, sizes.mainSize));
+    */
   }
 
+  /*
   _LayoutSizes _computeSizes({
     required BoxConstraints constraints,
     required ChildLayouter layoutChild,
@@ -235,7 +257,7 @@ class RenderFlexText extends RenderBox
     var allocatedSize = 0.0; // Sum of the sizes of the children.
     var child = firstChild;
     while (child != null) {
-      final childParentData = child.parentData! as FlexTextParentData;
+      final childParentData = child.parentData! as FloatColumnParentData;
       final BoxConstraints innerConstraints;
       if (crossAxisAlignment == CrossAxisAlignment.stretch) {
         innerConstraints = BoxConstraints.tightFor(width: constraints.maxWidth);
@@ -256,11 +278,76 @@ class RenderFlexText extends RenderBox
       allocatedSize: allocatedSize,
     );
   }
+  */
+
+  final _textPainters = <TextPainter>[];
 
   @override
   void performLayout() {
     assert(_debugHasNecessaryDirections);
+
     final constraints = this.constraints;
+
+    var maxWidth = 0.0;
+    var totalHeight = 0.0;
+
+    var child = firstChild;
+
+    final leftRects = <Rect>[];
+    final rightRects = <Rect>[];
+
+    var i = 0;
+    for (final el in textAndWidgets) {
+      // If it is a Widget:
+      if (el is Widget) {
+        final tag = child!.tag;
+        assert(tag.index == i && tag.placeholderIndex == 0);
+
+        final childParentData = child.parentData! as FloatColumnParentData;
+        final BoxConstraints innerConstraints;
+        if (crossAxisAlignment == CrossAxisAlignment.stretch) {
+          innerConstraints = BoxConstraints.tightFor(width: constraints.maxWidth);
+        } else {
+          innerConstraints = BoxConstraints(maxWidth: constraints.maxWidth);
+        }
+        child.layout(innerConstraints, parentUsesSize: true);
+        final childSize = child.size;
+
+        // Does it float?
+        if (tag.float != FTFloat.none) {
+          // TODO(ron): ...
+        }
+
+
+        totalHeight += childSize.height;
+        maxWidth = math.max(maxWidth, childSize.width);
+
+
+
+
+        assert(child.parentData == childParentData);
+        child = childParentData.nextSibling;
+      }
+
+      // Else, if it is a FloatText
+      else if (el is FloatText) {
+        while (child != null && child.tag.index == i) {
+          // TODO(ron): ...
+          child = childAfter(child);
+        }
+
+        // TODO(ron): ...
+      } else {
+        assert(false);
+      }
+
+      i++;
+    }
+
+    // for (final paragraph in textAndWidgets.whereType<FloatText>()) {
+    // }
+
+    /*
     final sizes = _computeSizes(
       layoutChild: ChildLayoutHelper.layoutChild,
       constraints: constraints,
@@ -281,7 +368,7 @@ class RenderFlexText extends RenderBox
     var childMainPosition = 0.0;
     var child = firstChild;
     while (child != null) {
-      final childParentData = child.parentData! as FlexTextParentData;
+      final childParentData = child.parentData! as FloatColumnParentData;
       final double childCrossPosition;
       switch (_crossAxisAlignment) {
         case CrossAxisAlignment.start:
@@ -303,6 +390,7 @@ class RenderFlexText extends RenderBox
       childMainPosition += child.size.height;
       child = childParentData.nextSibling;
     }
+    */
   }
 
   @override
@@ -389,4 +477,8 @@ class _LayoutSizes {
   final double mainSize;
   final double crossSize;
   final double allocatedSize;
+}
+
+extension on RenderBox {
+  FloatTag get tag => ((this as RenderMetaData).metaData as FloatTag);
 }

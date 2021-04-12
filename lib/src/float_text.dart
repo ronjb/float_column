@@ -4,13 +4,16 @@
 import 'dart:ui' as ui show TextHeightBehavior;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+
+import 'shared.dart';
 
 ///
 /// An immutable span of inline content which forms a paragraph.
 ///
 @immutable
-class FlexTextParagraph {
+class FloatText {
   /// Creates a paragraph of rich text.
   ///
   /// The [text], [textAlign], [softWrap], [overflow], and [textScaleFactor]
@@ -21,8 +24,9 @@ class FlexTextParagraph {
   ///
   /// The [textDirection], if null, defaults to the ambient `Directionality`,
   /// which in that case must not be null.
-  const FlexTextParagraph({
+  const FloatText({
     required this.text,
+    this.clear = FTClear.none,
     this.textAlign = TextAlign.start,
     this.textDirection,
     this.softWrap = true,
@@ -44,6 +48,11 @@ class FlexTextParagraph {
 
   /// The text to display in this widget.
   final TextSpan text;
+
+  /// Should this paragraph "clear" (i.e. be placed below) floating siblings?
+  /// And if so, should it be placed below floating siblings on just one side
+  /// (`start` or `end`) or `both`? The default is `none`.
+  final FTClear clear;
 
   /// How the text should be aligned horizontally.
   final TextAlign textAlign;
@@ -112,8 +121,9 @@ class FlexTextParagraph {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other.runtimeType != runtimeType) return false;
-    return other is FlexTextParagraph &&
+    return other is FloatText &&
         other.text == text &&
+        other.clear == clear &&
         other.textAlign == textAlign &&
         other.textDirection == textDirection &&
         other.softWrap == softWrap &&
@@ -128,6 +138,6 @@ class FlexTextParagraph {
   }
 
   @override
-  int get hashCode => hashValues(text, textAlign, textDirection, softWrap, overflow,
+  int get hashCode => hashValues(text, clear, textAlign, textDirection, softWrap, overflow,
       textScaleFactor, maxLines, locale, strutStyle, textWidthBasis, textHeightBehavior, indent);
 }

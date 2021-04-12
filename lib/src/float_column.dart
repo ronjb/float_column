@@ -4,18 +4,21 @@
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
-import 'flex_text_paragraph.dart';
-import 'render_flex_text.dart';
+import 'float_tag.dart';
+import 'float_text.dart';
+import 'floatable.dart';
+import 'render_float_column.dart';
+import 'shared.dart';
 
 /// A vertical list of widgets and text.
-class FlexText extends MultiChildRenderObjectWidget {
+class FloatColumn extends MultiChildRenderObjectWidget {
   /// Creates a flex-text layout.
   ///
   /// The [textDirection] argument defaults to the ambient [Directionality], if
   /// any. If there is no ambient directionality, and a text direction is going
   /// to be necessary to disambiguate `start` or `end` values for the cross axis
   /// directions, the [textDirection] must not be null.
-  FlexText({
+  FloatColumn({
     Key? key,
     this.crossAxisAlignment = CrossAxisAlignment.start,
     this.textDirection,
@@ -28,7 +31,7 @@ class FlexText extends MultiChildRenderObjectWidget {
         _textAndWidgets = children,
         super(key: key, children: _extractWidgets(children));
 
-  /// The list of FlexTextParagraph and Widget children.
+  /// The list of FloatText and Widget children.
   final List<Object> _textAndWidgets;
 
   static List<Widget> _extractWidgets(List<Object> list) {
@@ -36,22 +39,28 @@ class FlexText extends MultiChildRenderObjectWidget {
     final result = <Widget>[];
     for (final child in list) {
       if (child is Widget) {
-        result.add(child);
-      } else if (child is FlexTextParagraph) {
+        final float = child is Floatable ? child.float : FTFloat.none;
+        final clear = child is Floatable ? child.clear : FTClear.none;
+        result.add(MetaData(metaData: FloatTag(index, 0, float, clear), child: child));
+      } else if (child is FloatText) {
         // Traverses the paragraph's InlineSpan tree and depth-first collects the list of
         // child widgets that are created in WidgetSpans.
         var placeholderIndex = 0;
         child.text.visitChildren((span) {
           if (span is WidgetSpan) {
+            final child = span.child;
+            final float = child is Floatable ? child.float : FTFloat.none;
+            final clear = child is Floatable ? child.clear : FTClear.none;
+            final tag = FloatTag(index, placeholderIndex++, float, clear);
             result.add(Semantics(
-              tagForChildren: FlexTextSemanticsTag(index, placeholderIndex++),
-              child: span.child,
+              tagForChildren: tag,
+              child: MetaData(metaData: tag, child: child),
             ));
           }
           return true;
         });
       } else {
-        assert(false, 'FlexText only supports Widget and FlexTextParagraph');
+        assert(false, 'FloatColumn only supports Widget and FloatText');
       }
       index++;
     }
@@ -61,8 +70,9 @@ class FlexText extends MultiChildRenderObjectWidget {
 
   /// How the children should be placed along the cross axis.
   ///
-  /// For example, [CrossAxisAlignment.center], the default, centers the
-  /// children in the cross axis (e.g., horizontally for a [Column]).
+  /// For example, [CrossAxisAlignment.start], the default, places the children
+  /// at the starting horizontal edge (the left edge if [textDirection] is
+  /// [TextDirection.ltr], or the right edge if it is [TextDirection.rtl]).
   final CrossAxisAlignment crossAxisAlignment;
 
   /// Determines the order to lay children out horizontally and how to interpret
@@ -95,7 +105,7 @@ class FlexText extends MultiChildRenderObjectWidget {
         crossAxisAlignment == CrossAxisAlignment.end;
   }
 
-  /// The value to pass to [RenderFlexText.textDirection].
+  /// The value to pass to [RenderFloatColumn.textDirection].
   ///
   /// This value is derived from the [textDirection] property and the ambient
   /// [Directionality]. The value is null if there is no need to specify the
@@ -103,8 +113,8 @@ class FlexText extends MultiChildRenderObjectWidget {
   /// except when the [crossAxisAlignment] is not dependent on the text direction
   /// (not `start` or `end`).
   ///
-  /// This method exists so that subclasses of [FlexText] that create their own
-  /// render objects that are derived from [RenderFlexText] can do so and still use
+  /// This method exists so that subclasses of [FloatColumn] that create their own
+  /// render objects that are derived from [RenderFloatColumn] can do so and still use
   /// the logic for providing a text direction only when it is necessary.
   @protected
   TextDirection? getEffectiveTextDirection(BuildContext context) {
@@ -112,8 +122,8 @@ class FlexText extends MultiChildRenderObjectWidget {
   }
 
   @override
-  RenderFlexText createRenderObject(BuildContext context) {
-    return RenderFlexText(
+  RenderFloatColumn createRenderObject(BuildContext context) {
+    return RenderFloatColumn(
       _textAndWidgets,
       crossAxisAlignment: crossAxisAlignment,
       textDirection: getEffectiveTextDirection(context),
@@ -122,7 +132,7 @@ class FlexText extends MultiChildRenderObjectWidget {
   }
 
   @override
-  void updateRenderObject(BuildContext context, covariant RenderFlexText renderObject) {
+  void updateRenderObject(BuildContext context, covariant RenderFloatColumn renderObject) {
     renderObject
       ..crossAxisAlignment = crossAxisAlignment
       ..textDirection = getEffectiveTextDirection(context)
@@ -136,36 +146,4 @@ class FlexText extends MultiChildRenderObjectWidget {
       ..add(EnumProperty<CrossAxisAlignment>('crossAxisAlignment', crossAxisAlignment))
       ..add(EnumProperty<TextDirection>('textDirection', textDirection, defaultValue: null));
   }
-}
-
-/// Used by the [RenderFlexText] to map its rendering children to their corresponding
-/// semantics nodes.
-///
-/// The [FlexText] uses this to tag the relation between its [Widget] children and
-/// placeholder spans in its [FlexTextParagraph] children and their semantics nodes.
-@immutable
-class FlexTextSemanticsTag extends SemanticsTag {
-  /// Creates a semantics tag with the input `index`.
-  ///
-  /// Different [FlexTextSemanticsTag]s with the same `index` are
-  /// consider the same.
-  const FlexTextSemanticsTag(this.index, [this.placeholderIndex = 0])
-      : super('FlexTextSemanticsTag($index, $placeholderIndex)');
-
-  /// The index of the child.
-  final int index;
-
-  /// Index of the placeholder span in the child [FlexTextParagraph], or 0 for child
-  /// [Widget]s.
-  final int placeholderIndex;
-
-  @override
-  bool operator ==(Object other) {
-    return other is FlexTextSemanticsTag &&
-        other.index == index &&
-        other.placeholderIndex == placeholderIndex;
-  }
-
-  @override
-  int get hashCode => hashValues(FlexTextSemanticsTag, index, placeholderIndex);
 }

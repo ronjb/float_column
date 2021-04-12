@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flex_text/flex_text.dart';
+import 'package:float_column/float_column.dart';
 
 void main() {
   test('test', () {

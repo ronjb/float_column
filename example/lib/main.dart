@@ -1,4 +1,4 @@
-import 'package:flex_text/flex_text.dart';
+import 'package:float_column/float_column.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -11,7 +11,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'FlexText Demo',
+      title: 'FloatColumn Demo',
       theme: ThemeData(primarySwatch: Colors.blue),
       home: const MyHomePage(),
     );
@@ -38,10 +38,10 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('FlexText Demo Home Page'),
+        title: const Text('FloatColumn Demo Home Page'),
       ),
       body: Center(
-        child: FlexText(
+        child: FloatColumn(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             const Text('You have pushed the button this many times:'),

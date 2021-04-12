@@ -1,5 +1,5 @@
-name: flex_text
-description: A vertical list of widgets and text that supports floating widgets to the left and/or right.
+name: float_column
+description: A vertical column of widgets and text that supports floating widgets to the left and/or right.
 version: 0.0.1
 repository: https://github.com/ronjb/flex_text
 
