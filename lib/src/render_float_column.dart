@@ -156,8 +156,8 @@ class RenderFloatColumn extends RenderBox
   }) {
     if (sizingDirection == Axis.vertical) {
       // INTRINSIC MAIN SIZE
-      // Intrinsic main size is the smallest size the flex container can take
-      // while maintaining the min/max-content contributions of its flex items.
+      // Intrinsic main size is the smallest size the container can take
+      // while maintaining the min/max-content contributions of its items.
 
       var totalSize = 0.0;
       var child = firstChild;
@@ -170,7 +170,7 @@ class RenderFloatColumn extends RenderBox
     } else {
       // INTRINSIC CROSS SIZE
       // Intrinsic cross size is the max of the intrinsic cross sizes of the
-      // children, after the flexible children are fit into the available space,
+      // children, after the children are fit into the available space,
       // with the children sized using their max intrinsic dimensions.
 
       var maxCrossSize = 0.0;
@@ -314,7 +314,7 @@ class RenderFloatColumn extends RenderBox
         final childSize = child.size;
 
         // Does it float?
-        if (tag.float != FTFloat.none) {
+        if (tag.float != FCFloat.none) {
           // TODO(ron): ...
         }
 
@@ -424,14 +424,10 @@ class RenderFloatColumn extends RenderBox
         ErrorDescription('The edge of the $runtimeType that is overflowing has been marked '
             'in the rendering with a yellow and black striped pattern. This is '
             'usually caused by the contents being too big for the $runtimeType.'),
-        ErrorHint('Consider applying a flex factor (e.g. using an Expanded widget) to '
-            'force the children of the $runtimeType to fit within the available '
-            'space instead of being sized to their natural size.'),
         ErrorHint('This is considered an error condition because it indicates that there '
             'is content that cannot be seen. If the content is legitimately bigger '
-            'than the available space, consider clipping it with a ClipRect widget '
-            'before putting it in the flex, or using a scrollable container rather '
-            'than a Flex, like a ListView.'),
+            'than the available space, consider placing it in a scrollable container, '
+            'like a ListView.'),
       ];
 
       // Simulate a child rect that overflows by the right amount. This child

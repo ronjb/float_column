@@ -10,9 +10,16 @@ import 'floatable.dart';
 import 'render_float_column.dart';
 import 'shared.dart';
 
-/// A vertical list of widgets and text.
+/// A vertical column of widgets and text with the ability to "float" child widgets
+/// to the left or right, allowing the text to wrap around them -- duplicating, as
+/// closely as possible, the functionality of the CSS `float` and `clear` properties.
 class FloatColumn extends MultiChildRenderObjectWidget {
-  /// Creates a flex-text layout.
+  /// Creates and returns a new FloatColumn.
+  ///
+  /// The [children] argument must only contain [Widget] and [FloatText] children.
+  ///
+  /// For child widgets that should "float", wrap them in a [Floatable] widget,
+  /// indicating, via the `float` parameter, which side they should float on.
   ///
   /// The [textDirection] argument defaults to the ambient [Directionality], if
   /// any. If there is no ambient directionality, and a text direction is going
@@ -39,8 +46,8 @@ class FloatColumn extends MultiChildRenderObjectWidget {
     final result = <Widget>[];
     for (final child in list) {
       if (child is Widget) {
-        final float = child is Floatable ? child.float : FTFloat.none;
-        final clear = child is Floatable ? child.clear : FTClear.none;
+        final float = child is Floatable ? child.float : FCFloat.none;
+        final clear = child is Floatable ? child.clear : FCClear.none;
         result.add(MetaData(metaData: FloatTag(index, 0, float, clear), child: child));
       } else if (child is FloatText) {
         // Traverses the paragraph's InlineSpan tree and depth-first collects the list of
@@ -49,8 +56,8 @@ class FloatColumn extends MultiChildRenderObjectWidget {
         child.text.visitChildren((span) {
           if (span is WidgetSpan) {
             final child = span.child;
-            final float = child is Floatable ? child.float : FTFloat.none;
-            final clear = child is Floatable ? child.clear : FTClear.none;
+            final float = child is Floatable ? child.float : FCFloat.none;
+            final clear = child is Floatable ? child.clear : FCClear.none;
             final tag = FloatTag(index, placeholderIndex++, float, clear);
             result.add(Semantics(
               tagForChildren: tag,
@@ -60,7 +67,7 @@ class FloatColumn extends MultiChildRenderObjectWidget {
           return true;
         });
       } else {
-        assert(false, 'FloatColumn only supports Widget and FloatText');
+        assert(false, 'FloatColumn only supports Widget and FloatText children.');
       }
       index++;
     }
@@ -134,6 +141,7 @@ class FloatColumn extends MultiChildRenderObjectWidget {
   @override
   void updateRenderObject(BuildContext context, covariant RenderFloatColumn renderObject) {
     renderObject
+      ..textAndWidgets = _textAndWidgets
       ..crossAxisAlignment = crossAxisAlignment
       ..textDirection = getEffectiveTextDirection(context)
       ..clipBehavior = clipBehavior;

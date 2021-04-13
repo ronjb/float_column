@@ -10,41 +10,32 @@ import 'package:flutter/rendering.dart';
 import 'shared.dart';
 
 ///
-/// An immutable span of inline content which forms a paragraph.
+/// An immutable span of inline content which forms a paragraph. Only useful as a child
+/// of a `FloatColumn`, which provides the capability of wrapping the paragraph around
+/// child widgets that "float" to the right and/or left.
 ///
 @immutable
 class FloatText {
   /// Creates a paragraph of rich text.
   ///
-  /// The [text], [textAlign], [softWrap], [overflow], and [textScaleFactor]
-  /// arguments must not be null.
-  ///
-  /// The [maxLines] property may be null (and indeed defaults to null), but if
-  /// it is not null, it must be greater than zero.
+  /// The [text], [clear], [textAlign], [indent], and [textScaleFactor] arguments
+  /// must not be null.
   ///
   /// The [textDirection], if null, defaults to the ambient `Directionality`,
   /// which in that case must not be null.
   const FloatText({
     required this.text,
-    this.clear = FTClear.none,
+    this.clear = FCClear.none,
     this.textAlign = TextAlign.start,
     this.textDirection,
-    this.softWrap = true,
-    this.overflow = TextOverflow.clip,
     this.textScaleFactor = 1.0,
-    this.maxLines,
     this.locale,
     this.strutStyle,
-    this.textWidthBasis = TextWidthBasis.parent,
     this.textHeightBehavior,
     this.indent = 0,
   })  : assert(text != null), // ignore: unnecessary_null_comparison
         assert(textAlign != null), // ignore: unnecessary_null_comparison
-        assert(softWrap != null), // ignore: unnecessary_null_comparison
-        assert(overflow != null), // ignore: unnecessary_null_comparison
-        assert(textScaleFactor != null), // ignore: unnecessary_null_comparison
-        assert(maxLines == null || maxLines > 0),
-        assert(textWidthBasis != null); // ignore: unnecessary_null_comparison
+        assert(textScaleFactor != null); // ignore: unnecessary_null_comparison
 
   /// The text to display in this widget.
   final TextSpan text;
@@ -52,7 +43,7 @@ class FloatText {
   /// Should this paragraph "clear" (i.e. be placed below) floating siblings?
   /// And if so, should it be placed below floating siblings on just one side
   /// (`start` or `end`) or `both`? The default is `none`.
-  final FTClear clear;
+  final FCClear clear;
 
   /// How the text should be aligned horizontally.
   final TextAlign textAlign;
@@ -73,30 +64,14 @@ class FloatText {
   /// `Directionality`, then this must not be null.
   final TextDirection? textDirection;
 
-  /// Whether the text should break at soft line breaks.
-  ///
-  /// If false, the glyphs in the text will be positioned as if there was unlimited horizontal space.
-  final bool softWrap;
-
-  /// How visual overflow should be handled.
-  final TextOverflow overflow;
-
   /// The number of font pixels for each logical pixel.
   ///
   /// For example, if the text scale factor is 1.5, text will be 50% larger than
   /// the specified font size.
   final double textScaleFactor;
 
-  /// An optional maximum number of lines for the text to span, wrapping if necessary.
-  /// If the text exceeds the given number of lines, it will be truncated according
-  /// to [overflow].
-  ///
-  /// If this is 1, text will not wrap. Otherwise, text will be wrapped at the
-  /// edge of the box.
-  final int? maxLines;
-
-  /// Used to select a font when the same Unicode character can
-  /// be rendered differently, depending on the locale.
+  /// Used to select a font when the same Unicode character can be rendered
+  /// differently, depending on the locale.
   ///
   /// It's rarely necessary to set this property. By default its value
   /// is inherited from the enclosing app with `Localizations.localeOf(context)`.
@@ -106,9 +81,6 @@ class FloatText {
 
   /// {@macro flutter.painting.textPainter.strutStyle}
   final StrutStyle? strutStyle;
-
-  /// {@macro flutter.painting.textPainter.textWidthBasis}
-  final TextWidthBasis textWidthBasis;
 
   /// {@macro flutter.dart:ui.textHeightBehavior}
   final ui.TextHeightBehavior? textHeightBehavior;
@@ -126,18 +98,14 @@ class FloatText {
         other.clear == clear &&
         other.textAlign == textAlign &&
         other.textDirection == textDirection &&
-        other.softWrap == softWrap &&
-        other.overflow == overflow &&
         other.textScaleFactor == textScaleFactor &&
-        other.maxLines == maxLines &&
         other.locale == locale &&
         other.strutStyle == strutStyle &&
-        other.textWidthBasis == textWidthBasis &&
         other.textHeightBehavior == textHeightBehavior &&
         other.indent == indent;
   }
 
   @override
-  int get hashCode => hashValues(text, clear, textAlign, textDirection, softWrap, overflow,
-      textScaleFactor, maxLines, locale, strutStyle, textWidthBasis, textHeightBehavior, indent);
+  int get hashCode => hashValues(text, clear, textAlign, textDirection, textScaleFactor, locale,
+      strutStyle, textHeightBehavior, indent);
 }

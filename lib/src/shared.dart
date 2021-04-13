@@ -1,2 +1,2 @@
-enum FTFloat { none, left, right, start, end }
-enum FTClear { none, left, right, start, end, both }
+enum FCFloat { none, left, right, start, end }
+enum FCClear { none, left, right, start, end, both }

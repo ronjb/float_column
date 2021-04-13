@@ -17,17 +17,17 @@ class FloatTag extends SemanticsTag {
   /// The index of the child.
   final int index;
 
-  /// Index of the placeholder span in the child [FloatText], or 0 for child
-  /// [Widget]s.
+  /// Index of the placeholder span in the child `FloatText`, or 0 for child
+  /// `Widget`s.
   final int placeholderIndex;
 
   /// Should the child float to the `left`, `right`, `start`, or `end`? The default is `none`.
-  final FTFloat float;
+  final FCFloat float;
 
   /// Should the child "clear" (i.e. be placed below) floating siblings?
   /// And if so, should it be placed below floating siblings on just one side
   /// (`left`, `right`, `start`, or `end`) or `both`? The default is `none`.
-  final FTClear clear;
+  final FCClear clear;
 
   @override
   bool operator ==(Object other) {
