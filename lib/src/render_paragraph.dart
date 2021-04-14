@@ -17,7 +17,7 @@ class RenderParagraphHelper {
     DefaultTextStyle defaultTextStyle,
     double defaultTextScaleFactor,
   ) : painter = TextPainter(
-            text: ft.text,
+            text: TextSpan(style: defaultTextStyle.style, children: [ft.text]),
             textAlign: ft.textAlign ?? defaultTextStyle.textAlign ?? TextAlign.start,
             textDirection: ft.textDirection ?? defaultTextDirection,
             textScaleFactor: ft.textScaleFactor ?? defaultTextScaleFactor,
@@ -48,18 +48,19 @@ class RenderParagraphHelper {
     var needsPaint = false;
     var needsLayout = false;
 
-    switch (painter.text!.compareTo(ft.text)) {
+    final textSpan = TextSpan(style: defaultTextStyle.style, children: [ft.text]);
+    switch (painter.text!.compareTo(textSpan)) {
       case RenderComparison.identical:
       case RenderComparison.metadata:
         break;
       case RenderComparison.paint:
-        painter.text = ft.text;
-        _extractPlaceholderSpans(ft.text);
+        painter.text = textSpan;
+        _extractPlaceholderSpans(textSpan);
         needsPaint = true;
         break;
       case RenderComparison.layout:
-        painter.text = ft.text;
-        _extractPlaceholderSpans(ft.text);
+        painter.text = textSpan;
+        _extractPlaceholderSpans(textSpan);
         needsLayout = true;
         break;
     }
