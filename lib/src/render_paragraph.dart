@@ -11,12 +11,16 @@ import 'render_float_column.dart';
 import 'wrappable_text.dart';
 
 class RenderParagraphHelper {
-  RenderParagraphHelper(WrappableText ft)
-      : painter = TextPainter(
+  RenderParagraphHelper(
+    WrappableText ft,
+    TextDirection? defaultTextDirection,
+    DefaultTextStyle defaultTextStyle,
+    double defaultTextScaleFactor,
+  ) : painter = TextPainter(
             text: ft.text,
-            textAlign: ft.textAlign,
-            textDirection: ft.textDirection,
-            textScaleFactor: ft.textScaleFactor,
+            textAlign: ft.textAlign ?? defaultTextStyle.textAlign ?? TextAlign.start,
+            textDirection: ft.textDirection ?? defaultTextDirection,
+            textScaleFactor: ft.textScaleFactor ?? defaultTextScaleFactor,
             locale: ft.locale,
             strutStyle: ft.strutStyle,
             textHeightBehavior: ft.textHeightBehavior) {
@@ -34,7 +38,13 @@ class RenderParagraphHelper {
     });
   }
 
-  void updateWith(WrappableText ft, RenderBox parent) {
+  void updateWith(
+    WrappableText ft,
+    RenderBox parent,
+    TextDirection? defaultTextDirection,
+    DefaultTextStyle defaultTextStyle,
+    double defaultTextScaleFactor,
+  ) {
     var needsPaint = false;
     var needsLayout = false;
 
@@ -54,18 +64,21 @@ class RenderParagraphHelper {
         break;
     }
 
-    if (painter.textAlign != ft.textAlign) {
-      painter.textAlign = ft.textAlign;
+    final textAlign = ft.textAlign ?? defaultTextStyle.textAlign ?? TextAlign.start;
+    if (painter.textAlign != textAlign) {
+      painter.textAlign = textAlign;
       needsLayout = true;
     }
 
-    if (painter.textDirection != ft.textDirection) {
-      painter.textDirection = ft.textDirection;
+    final textDirection = ft.textDirection ?? defaultTextDirection;
+    if (painter.textDirection != textDirection) {
+      painter.textDirection = textDirection;
       needsLayout = true;
     }
 
-    if (painter.textScaleFactor != ft.textScaleFactor) {
-      painter.textScaleFactor = ft.textScaleFactor;
+    final textScaleFactor = ft.textScaleFactor ?? defaultTextScaleFactor;
+    if (painter.textScaleFactor != textScaleFactor) {
+      painter.textScaleFactor = textScaleFactor;
       needsLayout = true;
     }
 

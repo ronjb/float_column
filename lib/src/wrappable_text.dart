@@ -27,20 +27,46 @@ class WrappableText {
     Key? key,
     required this.text,
     this.clear = FCClear.none,
-    this.textAlign = TextAlign.start,
+    this.textAlign,
     this.textDirection,
-    this.textScaleFactor = 1.0,
+    this.textScaleFactor,
     this.locale,
     this.strutStyle,
     this.textHeightBehavior,
     this.indent = 0,
-  })  : assert(text != null), // ignore: unnecessary_null_comparison
-        assert(textAlign != null), // ignore: unnecessary_null_comparison
-        assert(textScaleFactor != null), // ignore: unnecessary_null_comparison
+  })  : assert(
+          text != null, // ignore: unnecessary_null_comparison
+          'A non-null TextSpan must be provided to a WrappableText.',
+        ),
         _key = key;
 
-  /// Unique key for this object. If a key was provided, use it, otherwise use `this`.
-  Object get key => _key ?? this;
+  WrappableText copyWith({
+    Key? key,
+    TextSpan? text,
+    FCClear? clear,
+    TextAlign? textAlign,
+    TextDirection? textDirection,
+    double? textScaleFactor,
+    Locale? locale,
+    StrutStyle? strutStyle,
+    ui.TextHeightBehavior? textHeightBehavior,
+    double? indent,
+  }) =>
+      WrappableText(
+        key: key ?? _key,
+        text: text ?? this.text,
+        clear: clear ?? this.clear,
+        textAlign: textAlign ?? this.textAlign,
+        textDirection: textDirection ?? this.textDirection,
+        textScaleFactor: textScaleFactor ?? this.textScaleFactor,
+        locale: locale ?? this.locale,
+        strutStyle: strutStyle ?? this.strutStyle,
+        textHeightBehavior: textHeightBehavior ?? this.textHeightBehavior,
+        indent: indent ?? this.indent,
+      );
+
+  /// Unique key for this object. If a key was provided, use it, otherwise use `ValueKey(this)`.
+  Key get key => _key ?? ValueKey(this);
   final Key? _key;
 
   /// The text to display in this widget.
@@ -48,11 +74,11 @@ class WrappableText {
 
   /// Should this paragraph "clear" (i.e. be placed below) floating siblings?
   /// And if so, should it be placed below floating siblings on just one side
-  /// (`start` or `end`) or `both`? The default is `none`.
+  /// (`left`, `right`, `start`, or `end`) or `both`? The default is `none`.
   final FCClear clear;
 
   /// How the text should be aligned horizontally.
-  final TextAlign textAlign;
+  final TextAlign? textAlign;
 
   /// The directionality of the text.
   ///
@@ -74,7 +100,11 @@ class WrappableText {
   ///
   /// For example, if the text scale factor is 1.5, text will be 50% larger than
   /// the specified font size.
-  final double textScaleFactor;
+  ///
+  /// The value given to the constructor as textScaleFactor. If null, will
+  /// use the [MediaQueryData.textScaleFactor] obtained from the ambient
+  /// [MediaQuery], or 1.0 if there is no [MediaQuery] in scope.
+  final double? textScaleFactor;
 
   /// Used to select a font when the same Unicode character can be rendered
   /// differently, depending on the locale.

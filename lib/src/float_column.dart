@@ -11,7 +11,7 @@ import 'shared.dart';
 import 'wrappable_text.dart';
 
 /// A vertical column of widgets and text with the ability to "float" child widgets
-/// to the left or right, allowing the text to wrap around them -- duplicating, as
+/// to the left or right, allowing the text to wrap around them -- copying, as
 /// closely as possible, the functionality of the CSS `float` and `clear` properties.
 class FloatColumn extends MultiChildRenderObjectWidget {
   /// Creates and returns a new FloatColumn.
@@ -134,6 +134,8 @@ class FloatColumn extends MultiChildRenderObjectWidget {
       _textAndWidgets,
       crossAxisAlignment: crossAxisAlignment,
       textDirection: getEffectiveTextDirection(context),
+      defaultTextStyle: DefaultTextStyle.of(context),
+      defaultTextScaleFactor: MediaQuery.textScaleFactorOf(context),
       clipBehavior: clipBehavior,
     );
   }
@@ -144,6 +146,8 @@ class FloatColumn extends MultiChildRenderObjectWidget {
       ..textAndWidgets = _textAndWidgets
       ..crossAxisAlignment = crossAxisAlignment
       ..textDirection = getEffectiveTextDirection(context)
+      ..defaultTextStyle = DefaultTextStyle.of(context)
+      ..defaultTextScaleFactor = MediaQuery.textScaleFactorOf(context)
       ..clipBehavior = clipBehavior;
   }
 
