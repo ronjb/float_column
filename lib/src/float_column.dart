@@ -5,10 +5,10 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 import 'float_tag.dart';
-import 'float_text.dart';
 import 'floatable.dart';
 import 'render_float_column.dart';
 import 'shared.dart';
+import 'wrappable_text.dart';
 
 /// A vertical column of widgets and text with the ability to "float" child widgets
 /// to the left or right, allowing the text to wrap around them -- duplicating, as
@@ -16,7 +16,7 @@ import 'shared.dart';
 class FloatColumn extends MultiChildRenderObjectWidget {
   /// Creates and returns a new FloatColumn.
   ///
-  /// The [children] argument must only contain [Widget] and [FloatText] children.
+  /// The [children] argument must only contain [Widget] and [WrappableText] children.
   ///
   /// For child widgets that should "float", wrap them in a [Floatable] widget,
   /// indicating, via the `float` parameter, which side they should float on.
@@ -38,7 +38,7 @@ class FloatColumn extends MultiChildRenderObjectWidget {
         _textAndWidgets = children,
         super(key: key, children: _extractWidgets(children));
 
-  /// The list of FloatText and Widget children.
+  /// The list of WrappableText and Widget children.
   final List<Object> _textAndWidgets;
 
   static List<Widget> _extractWidgets(List<Object> list) {
@@ -49,7 +49,7 @@ class FloatColumn extends MultiChildRenderObjectWidget {
         final float = child is Floatable ? child.float : FCFloat.none;
         final clear = child is Floatable ? child.clear : FCClear.none;
         result.add(MetaData(metaData: FloatTag(index, 0, float, clear), child: child));
-      } else if (child is FloatText) {
+      } else if (child is WrappableText) {
         // Traverses the paragraph's InlineSpan tree and depth-first collects the list of
         // child widgets that are created in WidgetSpans.
         var placeholderIndex = 0;
@@ -67,7 +67,7 @@ class FloatColumn extends MultiChildRenderObjectWidget {
           return true;
         });
       } else {
-        assert(false, 'FloatColumn only supports Widget and FloatText children.');
+        assert(false, 'FloatColumn only supports Widget and WrappableText children.');
       }
       index++;
     }

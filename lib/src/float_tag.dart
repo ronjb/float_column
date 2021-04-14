@@ -1,3 +1,6 @@
+// Copyright 2021 Ron Booth. All rights reserved.
+// Use of this source code is governed by a license that can be found in the LICENSE file.
+
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -17,7 +20,7 @@ class FloatTag extends SemanticsTag {
   /// The index of the child.
   final int index;
 
-  /// Index of the placeholder span in the child `FloatText`, or 0 for child
+  /// Index of the placeholder span in the child `WrappableText`, or 0 for child
   /// `Widget`s.
   final int placeholderIndex;
 

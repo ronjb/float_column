@@ -1,15 +1,14 @@
 // Copyright 2021 Ron Booth. All rights reserved.
 // Use of this source code is governed by a license that can be found in the LICENSE file.
 
-import 'dart:math' as math;
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 import 'float_tag.dart';
-import 'float_text.dart';
+import 'render_paragraph.dart';
 import 'shared.dart';
+import 'wrappable_text.dart';
 
 /// Parent data for use with [RenderFloatColumn].
 class FloatColumnParentData extends ContainerBoxParentData<RenderBox> {
@@ -80,9 +79,26 @@ class RenderFloatColumn extends RenderBox
     assert(value != null); // ignore: unnecessary_null_comparison
     if (_textAndWidgets != value) {
       _textAndWidgets = value;
-      _textPainters.clear();
-      markNeedsLayout();
+      _updateCache();
     }
+  }
+
+  final _cache = <Object, RenderParagraphHelper>{};
+  void _updateCache() {
+    final keys = <Object>{};
+    for (final el in _textAndWidgets) {
+      if (el is WrappableText) {
+        keys.add(el.key);
+        final prh = _cache[el.key];
+        if (prh == null) {
+          _cache[el.key] = RenderParagraphHelper(el);
+        } else {
+          prh.updateWith(el, this);
+        }
+      }
+    }
+
+    _cache.removeWhere((key, value) => !keys.contains(key));
   }
 
   /// How the children should be placed along the cross axis.
@@ -144,8 +160,19 @@ class RenderFloatColumn extends RenderBox
   }
 
   @override
+  void markNeedsLayout() {
+    super.markNeedsLayout();
+    _overflow = 0;
+  }
+
+  @override
   void setupParentData(RenderBox child) {
     if (child.parentData is! FloatColumnParentData) child.parentData = FloatColumnParentData();
+  }
+
+  @override
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
+    return defaultHitTestChildren(result, position: position);
   }
 
   /*
@@ -280,21 +307,19 @@ class RenderFloatColumn extends RenderBox
   }
   */
 
-  final _textPainters = <TextPainter>[];
-
   @override
   void performLayout() {
     assert(_debugHasNecessaryDirections);
 
     final constraints = this.constraints;
 
-    var maxWidth = 0.0;
+    final maxWidth = constraints.maxWidth;
     var totalHeight = 0.0;
 
     var child = firstChild;
 
-    final leftRects = <Rect>[];
-    final rightRects = <Rect>[];
+    // final leftRects = <Rect>[];
+    // final rightRects = <Rect>[];
 
     var i = 0;
     for (final el in textAndWidgets) {
@@ -306,9 +331,9 @@ class RenderFloatColumn extends RenderBox
         final childParentData = child.parentData! as FloatColumnParentData;
         final BoxConstraints innerConstraints;
         if (crossAxisAlignment == CrossAxisAlignment.stretch) {
-          innerConstraints = BoxConstraints.tightFor(width: constraints.maxWidth);
+          innerConstraints = BoxConstraints.tightFor(width: maxWidth);
         } else {
-          innerConstraints = BoxConstraints(maxWidth: constraints.maxWidth);
+          innerConstraints = BoxConstraints(maxWidth: maxWidth);
         }
         child.layout(innerConstraints, parentUsesSize: true);
         final childSize = child.size;
@@ -318,25 +343,60 @@ class RenderFloatColumn extends RenderBox
           // TODO(ron): ...
         }
 
+        final double childCrossPosition;
+        switch (_crossAxisAlignment) {
+          case CrossAxisAlignment.start:
+          case CrossAxisAlignment.end:
+            childCrossPosition =
+                _crossAxisAlignment == CrossAxisAlignment.start ? 0.0 : maxWidth - child.size.width;
+            break;
+          case CrossAxisAlignment.center:
+            childCrossPosition = maxWidth / 2.0 - child.size.width / 2.0;
+            break;
+          case CrossAxisAlignment.stretch:
+            childCrossPosition = 0.0;
+            break;
+          case CrossAxisAlignment.baseline:
+            childCrossPosition = 0.0;
+            break;
+        }
+        childParentData.offset = Offset(childCrossPosition, totalHeight);
 
         totalHeight += childSize.height;
-        maxWidth = math.max(maxWidth, childSize.width);
-
-
-
 
         assert(child.parentData == childParentData);
         child = childParentData.nextSibling;
       }
 
-      // Else, if it is a FloatText
-      else if (el is FloatText) {
-        while (child != null && child.tag.index == i) {
-          // TODO(ron): ...
-          child = childAfter(child);
+      // Else, if it is a WrappableText
+      else if (el is WrappableText) {
+        final rph = _cache[el.key]!;
+
+        // If this paragraph has any inline widget children...
+        if (child != null && child.tag.index == i) {
+          rph
+            // First, set the placeholder dimensions for each child.
+            ..setPlaceholderDimensions(child, constraints, el.textScaleFactor)
+
+            // Next, layout the text and the children.
+            ..layout(constraints);
+
+          // And finally, set the `offset` and `scale` for each child.
+          var childIndex = 0;
+          while (child != null && child.tag.index == i) {
+            final textBox = rph.painter.inlinePlaceholderBoxes![childIndex];
+            final childParentData = child.parentData! as FloatColumnParentData
+              ..offset = Offset(textBox.left, textBox.top + totalHeight)
+              ..scale = rph.painter.inlinePlaceholderScales![childIndex];
+            child = childParentData.nextSibling;
+            childIndex++;
+          }
+        } else {
+          // This paragraph has no inline widget children, but we still need to layout the text.
+          rph.layout(constraints);
         }
 
-        // TODO(ron): ...
+        totalHeight += rph.painter.height;
       } else {
         assert(false);
       }
@@ -344,8 +404,7 @@ class RenderFloatColumn extends RenderBox
       i++;
     }
 
-    // for (final paragraph in textAndWidgets.whereType<FloatText>()) {
-    // }
+    size = constraints.constrain(Size(maxWidth, totalHeight));
 
     /*
     final sizes = _computeSizes(
@@ -394,11 +453,6 @@ class RenderFloatColumn extends RenderBox
   }
 
   @override
-  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
-    return defaultHitTestChildren(result, position: position);
-  }
-
-  @override
   void paint(PaintingContext context, Offset offset) {
     if (!_hasOverflow) {
       defaultPaint(context, offset);
@@ -421,13 +475,13 @@ class RenderFloatColumn extends RenderBox
     assert(() {
       // Only set this if it's null to save work.
       final debugOverflowHints = <DiagnosticsNode>[
-        ErrorDescription('The edge of the $runtimeType that is overflowing has been marked '
-            'in the rendering with a yellow and black striped pattern. This is '
-            'usually caused by the contents being too big for the $runtimeType.'),
+        ErrorDescription('The edge of the $runtimeType that is overflowing has been '
+            'marked in the rendering with a yellow and black striped pattern. This is '
+            'usually caused by the contents being too big for the constraints.'),
         ErrorHint('This is considered an error condition because it indicates that there '
-            'is content that cannot be seen. If the content is legitimately bigger '
-            'than the available space, consider placing it in a scrollable container, '
-            'like a ListView.'),
+            'is content that cannot be seen. If the content is legitimately bigger than '
+            'the available space, consider placing the $runtimeType in a scrollable '
+            'container, like a ListView.'),
       ];
 
       // Simulate a child rect that overflows by the right amount. This child

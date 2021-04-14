@@ -12,10 +12,10 @@ import 'shared.dart';
 ///
 /// An immutable span of inline content which forms a paragraph. Only useful as a child
 /// of a `FloatColumn`, which provides the capability of wrapping the paragraph around
-/// child widgets that "float" to the right and/or left.
+/// child widgets that "float" to the right or left.
 ///
 @immutable
-class FloatText {
+class WrappableText {
   /// Creates a paragraph of rich text.
   ///
   /// The [text], [clear], [textAlign], [indent], and [textScaleFactor] arguments
@@ -23,7 +23,8 @@ class FloatText {
   ///
   /// The [textDirection], if null, defaults to the ambient `Directionality`,
   /// which in that case must not be null.
-  const FloatText({
+  const WrappableText({
+    Key? key,
     required this.text,
     this.clear = FCClear.none,
     this.textAlign = TextAlign.start,
@@ -35,7 +36,12 @@ class FloatText {
     this.indent = 0,
   })  : assert(text != null), // ignore: unnecessary_null_comparison
         assert(textAlign != null), // ignore: unnecessary_null_comparison
-        assert(textScaleFactor != null); // ignore: unnecessary_null_comparison
+        assert(textScaleFactor != null), // ignore: unnecessary_null_comparison
+        _key = key;
+
+  /// Unique key for this object. If a key was provided, use it, otherwise use `this`.
+  Object get key => _key ?? this;
+  final Key? _key;
 
   /// The text to display in this widget.
   final TextSpan text;
@@ -93,7 +99,8 @@ class FloatText {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other.runtimeType != runtimeType) return false;
-    return other is FloatText &&
+    return other is WrappableText &&
+        other._key == _key &&
         other.text == text &&
         other.clear == clear &&
         other.textAlign == textAlign &&
@@ -106,6 +113,6 @@ class FloatText {
   }
 
   @override
-  int get hashCode => hashValues(text, clear, textAlign, textDirection, textScaleFactor, locale,
-      strutStyle, textHeightBehavior, indent);
+  int get hashCode => hashValues(_key, text, clear, textAlign, textDirection, textScaleFactor,
+      locale, strutStyle, textHeightBehavior, indent);
 }
