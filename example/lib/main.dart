@@ -36,27 +36,37 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    const TextAlign? textAlign = null;
+    // const textAlign = TextAlign.center;
+    // const textAlign = TextAlign.start;
+    // const textAlign = TextAlign.end;
+    // const textAlign = TextAlign.left;
+    // const textAlign = TextAlign.right;
+
+    // const crossAxisAlignment = CrossAxisAlignment.center;
+    const crossAxisAlignment = CrossAxisAlignment.start;
+    // const crossAxisAlignment = CrossAxisAlignment.end;
+    // const crossAxisAlignment = CrossAxisAlignment.stretch;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('FloatColumn Demo Home Page'),
       ),
       body: Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: TextDirection.ltr,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          // crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: crossAxisAlignment,
           children: [
-            Text.rich(getText()), //textAlign: TextAlign.center),
-            Text.rich(getText()), //textAlign: TextAlign.center),
+            Text.rich(getText1(), textAlign: textAlign),
+            Text.rich(getText2(), textAlign: textAlign),
             Text('$_counter', style: Theme.of(context).textTheme.headline4),
             FloatColumn(
               // textDirection: TextDirection.rtl,
-              // crossAxisAlignment: CrossAxisAlignment.end,
-              // crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: crossAxisAlignment,
               children: [
-                WrappableText(text: getText(), textAlign: TextAlign.center),
-                WrappableText(text: getText(), textAlign: TextAlign.center),
+                WrappableText(text: getText1(), textAlign: textAlign),
+                WrappableText(text: getText2(), textAlign: textAlign),
                 Text('$_counter', style: Theme.of(context).textTheme.headline4),
               ],
             ),
@@ -72,8 +82,20 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-TextSpan getText() => TextSpan(children: [
+TextSpan getText1() => TextSpan(children: [
       const TextSpan(text: 'You '),
       WidgetSpan(child: Container(width: 16, height: 16, color: Colors.red)),
       const TextSpan(text: ' have pushed the button this many times:')
+    ]);
+
+TextSpan getText2() => TextSpan(children: [
+      const TextSpan(text: 'You '),
+      WidgetSpan(child: Container(width: 16, height: 16, color: Colors.red)),
+      const TextSpan(text: ' have '),
+      WidgetSpan(
+        alignment: PlaceholderAlignment.baseline,
+        baseline: TextBaseline.alphabetic,
+        child: Container(width: 12, height: 12, color: Colors.blue),
+      ),
+      const TextSpan(text: ' pushed:')
     ]);

@@ -1,7 +1,6 @@
 // Copyright 2021 Ron Booth. All rights reserved.
 // Use of this source code is governed by a license that can be found in the LICENSE file.
 
-import 'package:float_column/src/util.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -9,6 +8,7 @@ import 'package:flutter/rendering.dart';
 import 'float_tag.dart';
 import 'render_paragraph.dart';
 import 'shared.dart';
+import 'util.dart';
 import 'wrappable_text.dart';
 
 /// Parent data for use with [RenderFloatColumn].
@@ -60,7 +60,7 @@ class RenderFloatColumn extends RenderBox
   RenderFloatColumn(
     this._textAndWidgets, {
     required CrossAxisAlignment crossAxisAlignment,
-    required TextDirection? textDirection,
+    required TextDirection textDirection,
     required DefaultTextStyle defaultTextStyle,
     required double defaultTextScaleFactor,
     Clip clipBehavior = Clip.none,
@@ -146,9 +146,9 @@ class RenderFloatColumn extends RenderBox
   ///
   /// If the [crossAxisAlignment] is either [CrossAxisAlignment.start] or
   /// [CrossAxisAlignment.end], then the [textDirection] must not be null.
-  TextDirection? get textDirection => _textDirection;
-  TextDirection? _textDirection;
-  set textDirection(TextDirection? value) {
+  TextDirection get textDirection => _textDirection;
+  TextDirection _textDirection;
+  set textDirection(TextDirection value) {
     if (_textDirection != value) {
       _textDirection = value;
       _updateCache();
@@ -319,12 +319,41 @@ class RenderFloatColumn extends RenderBox
     */
   }
 
+  double xWithWidth(double width, double maxWidth) {
+    final double childCrossPosition;
+    switch (crossAxisAlignment) {
+      case CrossAxisAlignment.start:
+        childCrossPosition = textDirection == TextDirection.ltr ? 0.0 : maxWidth - width;
+        break;
+      case CrossAxisAlignment.end:
+        childCrossPosition = textDirection == TextDirection.rtl ? 0.0 : maxWidth - width;
+        break;
+      case CrossAxisAlignment.center:
+        childCrossPosition = maxWidth / 2.0 - width / 2.0;
+        break;
+      case CrossAxisAlignment.stretch:
+        childCrossPosition = 0.0;
+        break;
+      case CrossAxisAlignment.baseline:
+        childCrossPosition = 0.0;
+        break;
+    }
+    return childCrossPosition;
+  }
+
   @override
   void performLayout() {
     assert(_debugHasNecessaryDirections);
 
     final constraints = this.constraints;
     final maxWidth = constraints.maxWidth;
+
+    final BoxConstraints childConstraints;
+    if (crossAxisAlignment == CrossAxisAlignment.stretch) {
+      childConstraints = BoxConstraints.tightFor(width: maxWidth);
+    } else {
+      childConstraints = BoxConstraints(maxWidth: maxWidth);
+    }
 
     var totalHeight = 0.0;
     var child = firstChild;
@@ -342,13 +371,7 @@ class RenderFloatColumn extends RenderBox
         assert(tag.index == i && tag.placeholderIndex == 0);
 
         final childParentData = child.parentData! as FloatColumnParentData;
-        final BoxConstraints innerConstraints;
-        if (crossAxisAlignment == CrossAxisAlignment.stretch) {
-          innerConstraints = BoxConstraints.tightFor(width: maxWidth);
-        } else {
-          innerConstraints = BoxConstraints(maxWidth: maxWidth);
-        }
-        child.layout(innerConstraints, parentUsesSize: true);
+        child.layout(childConstraints, parentUsesSize: true);
         final childSize = child.size;
 
         // Does it float?
@@ -356,24 +379,8 @@ class RenderFloatColumn extends RenderBox
           // TODO(ron): ...
         }
 
-        final double childCrossPosition;
-        switch (_crossAxisAlignment) {
-          case CrossAxisAlignment.start:
-          case CrossAxisAlignment.end:
-            childCrossPosition =
-                _crossAxisAlignment == CrossAxisAlignment.start ? 0.0 : maxWidth - child.size.width;
-            break;
-          case CrossAxisAlignment.center:
-            childCrossPosition = maxWidth / 2.0 - child.size.width / 2.0;
-            break;
-          case CrossAxisAlignment.stretch:
-            childCrossPosition = 0.0;
-            break;
-          case CrossAxisAlignment.baseline:
-            childCrossPosition = 0.0;
-            break;
-        }
-        childParentData.offset = Offset(childCrossPosition, totalHeight);
+        final x = xWithWidth(child.size.width, maxWidth);
+        childParentData.offset = Offset(x, totalHeight);
 
         totalHeight += childSize.height;
 
@@ -386,10 +393,12 @@ class RenderFloatColumn extends RenderBox
       //
       else if (el is WrappableText) {
         final rph = _cache[el.key]!;
+        double x;
 
         // If this paragraph does NOT have inline widget children, just layout the text.
         if (child == null || child.tag.index != i) {
-          rph.layout(constraints);
+          rph.layout(childConstraints);
+          x = xWithWidth(rph.painter.width, maxWidth);
         }
 
         // Else, this paragraph DOES have inline widget children...
@@ -400,7 +409,9 @@ class RenderFloatColumn extends RenderBox
                 child, constraints, el.textScaleFactor ?? defaultTextScaleFactor)
 
             // Next, layout the text and widgets.
-            ..layout(constraints);
+            ..layout(childConstraints);
+
+          x = xWithWidth(rph.painter.width, maxWidth);
 
           // And finally, set the `offset` and `scale` for each widget.
           var widgetIndex = 0;
@@ -408,14 +419,14 @@ class RenderFloatColumn extends RenderBox
             assert(child.tag.placeholderIndex == widgetIndex);
             final box = rph.painter.inlinePlaceholderBoxes![widgetIndex];
             final childParentData = child.parentData! as FloatColumnParentData
-              ..offset = Offset(box.left, box.top + totalHeight)
+              ..offset = Offset(box.left + x, box.top + totalHeight)
               ..scale = rph.painter.inlinePlaceholderScales![widgetIndex];
             child = childParentData.nextSibling;
             widgetIndex++;
           }
         }
 
-        rph.offset = Offset(0, totalHeight);
+        rph.offset = Offset(x, totalHeight);
         totalHeight += rph.painter.height;
       } else {
         assert(false);
@@ -452,16 +463,11 @@ class RenderFloatColumn extends RenderBox
       else if (el is WrappableText) {
         final rph = _cache[el.key]!;
 
+        rph.painter.paint(context.canvas, rph.offset! + offset);
         dmPrint('painted $i, text at ${rph.offset! + offset}');
 
-        rph.painter.paint(context.canvas, rph.offset! + offset);
-
-        // If this paragraph does NOT have inline widget children, just layout the text.
-        if (child == null || child.tag.index != i) {
-        }
-
-        // Else, this paragraph DOES have inline widget children...
-        else {
+        // If this paragraph DOES have inline widget children...
+        if (child != null && child.tag.index == i) {
           var widgetIndex = 0;
           while (child != null && child.tag.index == i) {
             assert(child.tag.placeholderIndex == widgetIndex);
@@ -474,7 +480,7 @@ class RenderFloatColumn extends RenderBox
               Matrix4.diagonal3Values(scale, scale, scale),
               (context, offset) {
                 context.paintChild(child!, offset);
-                dmPrint('painted $i/$widgetIndex, a widget in text at $offset');
+                dmPrint('painted $i:$widgetIndex, a widget in text at $offset');
               },
             );
 
@@ -584,11 +590,11 @@ extension on RenderBox {
     while (child != null) {
       final childParentData = child.parentData! as FloatColumnParentData;
       final double childCrossPosition;
-      switch (_crossAxisAlignment) {
+      switch (crossAxisAlignment) {
         case CrossAxisAlignment.start:
         case CrossAxisAlignment.end:
           childCrossPosition =
-              _crossAxisAlignment == CrossAxisAlignment.start ? 0.0 : crossSize - child.size.width;
+              crossAxisAlignment == CrossAxisAlignment.start ? 0.0 : crossSize - child.size.width;
           break;
         case CrossAxisAlignment.center:
           childCrossPosition = crossSize / 2.0 - child.size.width / 2.0;

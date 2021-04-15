@@ -13,7 +13,7 @@ import 'wrappable_text.dart';
 class RenderParagraphHelper {
   RenderParagraphHelper(
     WrappableText ft,
-    TextDirection? defaultTextDirection,
+    TextDirection defaultTextDirection,
     DefaultTextStyle defaultTextStyle,
     double defaultTextScaleFactor,
   ) : painter = TextPainter(
@@ -43,7 +43,7 @@ class RenderParagraphHelper {
   void updateWith(
     WrappableText ft,
     RenderBox parent,
-    TextDirection? defaultTextDirection,
+    TextDirection defaultTextDirection,
     DefaultTextStyle defaultTextStyle,
     double defaultTextScaleFactor,
   ) {
