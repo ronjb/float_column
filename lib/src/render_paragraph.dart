@@ -29,6 +29,8 @@ class RenderParagraphHelper {
 
   final TextPainter painter;
 
+  Offset? offset;
+
   late List<PlaceholderSpan> placeholderSpans;
   void _extractPlaceholderSpans(InlineSpan span) {
     placeholderSpans = <PlaceholderSpan>[];

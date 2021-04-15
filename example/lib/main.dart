@@ -40,12 +40,26 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: const Text('FloatColumn Demo Home Page'),
       ),
-      body: Center(
-        child: FloatColumn(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
+      body: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          // crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text.rich(getText()), //textAlign: TextAlign.center),
+            Text.rich(getText()), //textAlign: TextAlign.center),
             Text('$_counter', style: Theme.of(context).textTheme.headline4),
+            FloatColumn(
+              // textDirection: TextDirection.rtl,
+              // crossAxisAlignment: CrossAxisAlignment.end,
+              // crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                WrappableText(text: getText(), textAlign: TextAlign.center),
+                WrappableText(text: getText(), textAlign: TextAlign.center),
+                Text('$_counter', style: Theme.of(context).textTheme.headline4),
+              ],
+            ),
           ],
         ),
       ),
@@ -57,3 +71,9 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
+
+TextSpan getText() => TextSpan(children: [
+      const TextSpan(text: 'You '),
+      WidgetSpan(child: Container(width: 16, height: 16, color: Colors.red)),
+      const TextSpan(text: ' have pushed the button this many times:')
+    ]);

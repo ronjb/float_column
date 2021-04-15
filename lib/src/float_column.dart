@@ -22,9 +22,7 @@ class FloatColumn extends MultiChildRenderObjectWidget {
   /// indicating, via the `float` parameter, which side they should float on.
   ///
   /// The [textDirection] argument defaults to the ambient [Directionality], if
-  /// any. If there is no ambient directionality, and a text direction is going
-  /// to be necessary to disambiguate `start` or `end` values for the cross axis
-  /// directions, the [textDirection] must not be null.
+  /// any. If there is no ambient directionality, [textDirection] must not be null.
   FloatColumn({
     Key? key,
     this.crossAxisAlignment = CrossAxisAlignment.start,
@@ -59,9 +57,9 @@ class FloatColumn extends MultiChildRenderObjectWidget {
             final float = child is Floatable ? child.float : FCFloat.none;
             final clear = child is Floatable ? child.clear : FCClear.none;
             final tag = FloatTag(index, placeholderIndex++, float, clear);
-            result.add(Semantics(
-              tagForChildren: tag,
-              child: MetaData(metaData: tag, child: child),
+            result.add(MetaData(
+              metaData: tag,
+              child: Semantics(tagForChildren: tag, child: child),
             ));
           }
           return true;
@@ -95,9 +93,7 @@ class FloatColumn extends MultiChildRenderObjectWidget {
   /// Controls the meaning of the [crossAxisAlignment] property's
   /// [CrossAxisAlignment.start] and [CrossAxisAlignment.end] values.
   ///
-  /// If the [crossAxisAlignment] is either [CrossAxisAlignment.start] or
-  /// [CrossAxisAlignment.end], then the [textDirection] (or the ambient
-  /// [Directionality]) must not be null.
+  /// The [textDirection] (or the ambient [Directionality]) must not be null.
   ///
   final TextDirection? textDirection;
 
@@ -106,34 +102,13 @@ class FloatColumn extends MultiChildRenderObjectWidget {
   /// Defaults to [Clip.none].
   final Clip clipBehavior;
 
-  bool get _needTextDirection {
-    assert(crossAxisAlignment != null); // ignore: unnecessary_null_comparison
-    return crossAxisAlignment == CrossAxisAlignment.start ||
-        crossAxisAlignment == CrossAxisAlignment.end;
-  }
-
-  /// The value to pass to [RenderFloatColumn.textDirection].
-  ///
-  /// This value is derived from the [textDirection] property and the ambient
-  /// [Directionality]. The value is null if there is no need to specify the
-  /// text direction. In practice there's always a need to specify the direction
-  /// except when the [crossAxisAlignment] is not dependent on the text direction
-  /// (not `start` or `end`).
-  ///
-  /// This method exists so that subclasses of [FloatColumn] that create their own
-  /// render objects that are derived from [RenderFloatColumn] can do so and still use
-  /// the logic for providing a text direction only when it is necessary.
-  @protected
-  TextDirection? getEffectiveTextDirection(BuildContext context) {
-    return textDirection ?? (_needTextDirection ? Directionality.maybeOf(context) : null);
-  }
-
   @override
   RenderFloatColumn createRenderObject(BuildContext context) {
+    assert(textDirection != null || debugCheckHasDirectionality(context));
     return RenderFloatColumn(
       _textAndWidgets,
       crossAxisAlignment: crossAxisAlignment,
-      textDirection: getEffectiveTextDirection(context),
+      textDirection: textDirection ?? Directionality.of(context),
       defaultTextStyle: DefaultTextStyle.of(context),
       defaultTextScaleFactor: MediaQuery.textScaleFactorOf(context),
       clipBehavior: clipBehavior,
@@ -145,7 +120,7 @@ class FloatColumn extends MultiChildRenderObjectWidget {
     renderObject
       ..textAndWidgets = _textAndWidgets
       ..crossAxisAlignment = crossAxisAlignment
-      ..textDirection = getEffectiveTextDirection(context)
+      ..textDirection = textDirection ?? Directionality.of(context)
       ..defaultTextStyle = DefaultTextStyle.of(context)
       ..defaultTextScaleFactor = MediaQuery.textScaleFactorOf(context)
       ..clipBehavior = clipBehavior;

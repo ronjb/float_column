@@ -1,6 +1,7 @@
 // Copyright 2021 Ron Booth. All rights reserved.
 // Use of this source code is governed by a license that can be found in the LICENSE file.
 
+import 'package:float_column/src/util.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -404,6 +405,7 @@ class RenderFloatColumn extends RenderBox
           // And finally, set the `offset` and `scale` for each widget.
           var widgetIndex = 0;
           while (child != null && child.tag.index == i) {
+            assert(child.tag.placeholderIndex == widgetIndex);
             final box = rph.painter.inlinePlaceholderBoxes![widgetIndex];
             final childParentData = child.parentData! as FloatColumnParentData
               ..offset = Offset(box.left, box.top + totalHeight)
@@ -413,6 +415,7 @@ class RenderFloatColumn extends RenderBox
           }
         }
 
+        rph.offset = Offset(0, totalHeight);
         totalHeight += rph.painter.height;
       } else {
         assert(false);
@@ -426,6 +429,67 @@ class RenderFloatColumn extends RenderBox
 
   @override
   void paint(PaintingContext context, Offset offset) {
+    var child = firstChild;
+    var i = 0;
+    for (final el in _internalTextAndWidgets) {
+      //---------------------------------------------------------------------
+      // If it is a Widget
+      //
+      if (el is Widget) {
+        final tag = child!.tag;
+        assert(tag.index == i && tag.placeholderIndex == 0);
+
+        final childParentData = child.parentData! as FloatColumnParentData;
+        context.paintChild(child, childParentData.offset + offset);
+        child = childParentData.nextSibling;
+
+        dmPrint('painted $i, a widget at ${childParentData.offset + offset}');
+      }
+
+      //---------------------------------------------------------------------
+      // Else, if it is a WrappableText
+      //
+      else if (el is WrappableText) {
+        final rph = _cache[el.key]!;
+
+        dmPrint('painted $i, text at ${rph.offset! + offset}');
+
+        rph.painter.paint(context.canvas, rph.offset! + offset);
+
+        // If this paragraph does NOT have inline widget children, just layout the text.
+        if (child == null || child.tag.index != i) {
+        }
+
+        // Else, this paragraph DOES have inline widget children...
+        else {
+          var widgetIndex = 0;
+          while (child != null && child.tag.index == i) {
+            assert(child.tag.placeholderIndex == widgetIndex);
+            final childParentData = child.parentData! as FloatColumnParentData;
+
+            final scale = childParentData.scale!;
+            context.pushTransform(
+              needsCompositing,
+              offset + childParentData.offset,
+              Matrix4.diagonal3Values(scale, scale, scale),
+              (context, offset) {
+                context.paintChild(child!, offset);
+                dmPrint('painted $i/$widgetIndex, a widget in text at $offset');
+              },
+            );
+
+            child = childParentData.nextSibling;
+            widgetIndex++;
+          }
+        }
+      } else {
+        assert(false);
+      }
+
+      i++;
+    }
+
+    /*
     if (!_hasOverflow) {
       defaultPaint(context, offset);
       return;
@@ -465,9 +529,10 @@ class RenderFloatColumn extends RenderBox
           overflowHints: debugOverflowHints);
       return true;
     }());
+    */
   }
 
-  ClipRectLayer? _clipRectLayer;
+  // ClipRectLayer? _clipRectLayer;
 
   @override
   Rect? describeApproximatePaintClip(RenderObject child) =>
