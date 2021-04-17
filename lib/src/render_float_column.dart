@@ -1,6 +1,8 @@
 // Copyright 2021 Ron Booth. All rights reserved.
 // Use of this source code is governed by a license that can be found in the LICENSE file.
 
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -180,8 +182,9 @@ class RenderFloatColumn extends RenderBox
     assert(crossAxisAlignment != null); // ignore: unnecessary_null_comparison
     if (crossAxisAlignment == CrossAxisAlignment.start ||
         crossAxisAlignment == CrossAxisAlignment.end) {
-      assert(textDirection != null,
-          'Vertical $runtimeType with $crossAxisAlignment has a null textDirection, so the alignment cannot be resolved.');
+      assert(
+          textDirection != null, // ignore: unnecessary_null_comparison
+          '$runtimeType has a null textDirection, so the alignment cannot be resolved.');
     }
     return true;
   }
@@ -319,23 +322,22 @@ class RenderFloatColumn extends RenderBox
     */
   }
 
-  double xWithWidth(double width, double maxWidth) {
+  double xPosForChildWithWidth(
+      double width, CrossAxisAlignment alignment, double minX, double maxX) {
     final double childCrossPosition;
-    switch (crossAxisAlignment) {
+    switch (alignment) {
       case CrossAxisAlignment.start:
-        childCrossPosition = textDirection == TextDirection.ltr ? 0.0 : maxWidth - width;
+        childCrossPosition = isLTR ? minX : maxX - width;
         break;
       case CrossAxisAlignment.end:
-        childCrossPosition = textDirection == TextDirection.rtl ? 0.0 : maxWidth - width;
+        childCrossPosition = isRTL ? minX : maxX - width;
         break;
       case CrossAxisAlignment.center:
-        childCrossPosition = maxWidth / 2.0 - width / 2.0;
+        childCrossPosition = (minX + maxX) / 2.0 - width / 2.0;
         break;
       case CrossAxisAlignment.stretch:
-        childCrossPosition = 0.0;
-        break;
       case CrossAxisAlignment.baseline:
-        childCrossPosition = 0.0;
+        childCrossPosition = minX;
         break;
     }
     return childCrossPosition;
@@ -355,11 +357,14 @@ class RenderFloatColumn extends RenderBox
       childConstraints = BoxConstraints(maxWidth: maxWidth);
     }
 
-    var totalHeight = 0.0;
+    var yPosNext = 0.0;
     var child = firstChild;
 
-    // final flRects = <Rect>[];
-    // final frRects = <Rect>[];
+    final floatL = <Rect>[];
+    final floatR = <Rect>[];
+
+    final lineHeight =
+        (defaultTextStyle.style.fontSize ?? 16.0) * (defaultTextStyle.style.height ?? 1.15);
 
     var i = 0;
     for (final el in _internalTextAndWidgets) {
@@ -374,15 +379,55 @@ class RenderFloatColumn extends RenderBox
         child.layout(childConstraints, parentUsesSize: true);
         final childSize = child.size;
 
+        var yPos = yPosNext;
+        var minX = 0.0;
+        var maxX = maxWidth;
+
+        var alignment = crossAxisAlignment;
+
         // Does it float?
+        List<Rect>? addToFloatRects;
         if (tag.float != FCFloat.none) {
-          // TODO(ron): ...
+          final float = resolveFloat(tag.float, withDir: textDirection);
+          assert(float == FCFloat.left || float == FCFloat.right);
+          if (float == FCFloat.left) {
+            addToFloatRects = floatL;
+            alignment = isLTR ? CrossAxisAlignment.start : CrossAxisAlignment.end;
+          } else {
+            addToFloatRects = floatR;
+            alignment = isRTL ? CrossAxisAlignment.start : CrossAxisAlignment.end;
+          }
         }
 
-        final x = xWithWidth(child.size.width, maxWidth);
-        childParentData.offset = Offset(x, totalHeight);
+        final clear = resolveClear(tag.clear, withDir: textDirection);
 
-        totalHeight += childSize.height;
+        // Position below the bottom float-left rect?
+        if (clear == FCClear.left || clear == FCClear.both) yPos = floatL.maxY(yPos);
+
+        // Position below the bottom float-right rect?
+        if (clear == FCClear.right || clear == FCClear.both) yPos = floatR.maxY(yPos);
+
+        final rect = findSpaceFor(
+          startY: yPos,
+          width: childSize.width,
+          height: childSize.height,
+          maxX: maxWidth,
+          floatL: floatL,
+          floatR: floatR,
+        );
+        yPos = rect.top;
+        minX = rect.left;
+        maxX = rect.right;
+
+        final xPos = xPosForChildWithWidth(child.size.width, alignment, minX, maxX);
+        childParentData.offset = Offset(xPos, yPos);
+
+        if (addToFloatRects != null) {
+          addToFloatRects.add(Rect.fromLTWH(xPos, yPos, childSize.width, childSize.height));
+        } else {
+          final childBottom = yPos + childSize.height;
+          if (childBottom > yPosNext) yPosNext = childBottom;
+        }
 
         assert(child.parentData == childParentData);
         child = childParentData.nextSibling;
@@ -393,41 +438,48 @@ class RenderFloatColumn extends RenderBox
       //
       else if (el is WrappableText) {
         final rph = _cache[el.key]!;
-        double x;
+        double xPos;
+        var yPos = yPosNext;
 
-        // If this paragraph does NOT have inline widget children, just layout the text.
-        if (child == null || child.tag.index != i) {
-          rph.layout(childConstraints);
-          x = xWithWidth(rph.painter.width, maxWidth);
+        // If this paragraph has inline widget children, first set placeholder dimensions.
+        if (child != null && child.tag.index == i) {
+          rph.setPlaceholderDimensions(
+              child, constraints, el.textScaleFactor ?? defaultTextScaleFactor);
         }
 
-        // Else, this paragraph DOES have inline widget children...
-        else {
-          rph
-            // First, set the placeholder dimensions for all the widgets.
-            ..setPlaceholderDimensions(
-                child, constraints, el.textScaleFactor ?? defaultTextScaleFactor)
+        final clear = resolveClear(el.clear, withDir: textDirection);
 
-            // Next, layout the text and widgets.
-            ..layout(childConstraints);
+        // Position below the bottom float-left rect?
+        if (clear == FCClear.left || clear == FCClear.both) yPos = floatL.maxY(yPos);
 
-          x = xWithWidth(rph.painter.width, maxWidth);
+        // Position below the bottom float-right rect?
+        if (clear == FCClear.right || clear == FCClear.both) yPos = floatR.maxY(yPos);
 
-          // And finally, set the `offset` and `scale` for each widget.
+        // What's the available space at `yPos` for the first line of text?
+        final rect = spaceAt(
+            startY: yPos, height: lineHeight, maxX: maxWidth, floatL: floatL, floatR: floatR);
+
+        // Layout the text and inline widget children.
+        rph.layout(childConstraints.copyWith(maxWidth: rect.width));
+
+        xPos = xPosForChildWithWidth(rph.painter.width, crossAxisAlignment, rect.left, rect.right);
+
+        // If this paragraph has inline widget children, set the `offset` and `scale` for each.
+        if (child != null && child.tag.index == i) {
           var widgetIndex = 0;
           while (child != null && child.tag.index == i) {
             assert(child.tag.placeholderIndex == widgetIndex);
             final box = rph.painter.inlinePlaceholderBoxes![widgetIndex];
             final childParentData = child.parentData! as FloatColumnParentData
-              ..offset = Offset(box.left + x, box.top + totalHeight)
+              ..offset = Offset(box.left + xPos, box.top + yPos)
               ..scale = rph.painter.inlinePlaceholderScales![widgetIndex];
             child = childParentData.nextSibling;
             widgetIndex++;
           }
         }
 
-        rph.offset = Offset(x, totalHeight);
-        totalHeight += rph.painter.height;
+        rph.offset = Offset(xPos, yPos);
+        yPosNext = yPos + rph.painter.height;
       } else {
         assert(false);
       }
@@ -435,6 +487,7 @@ class RenderFloatColumn extends RenderBox
       i++;
     }
 
+    final totalHeight = math.max(floatL.maxY(yPosNext), floatR.maxY(yPosNext));
     size = constraints.constrain(Size(maxWidth, totalHeight));
   }
 
@@ -562,6 +615,11 @@ class RenderFloatColumn extends RenderBox
 
 extension on RenderBox {
   FloatTag get tag => ((this as RenderMetaData).metaData as FloatTag);
+}
+
+extension on RenderFloatColumn {
+  bool get isLTR => textDirection == TextDirection.ltr;
+  bool get isRTL => textDirection == TextDirection.rtl;
 }
 
 /* Old code from `performLayout`:

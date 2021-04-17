@@ -36,15 +36,15 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    const TextAlign? textAlign = null;
-    // const textAlign = TextAlign.center;
+    // const TextAlign? textAlign = null;
+    const textAlign = TextAlign.center;
     // const textAlign = TextAlign.start;
     // const textAlign = TextAlign.end;
     // const textAlign = TextAlign.left;
     // const textAlign = TextAlign.right;
 
-    // const crossAxisAlignment = CrossAxisAlignment.center;
-    const crossAxisAlignment = CrossAxisAlignment.start;
+    const crossAxisAlignment = CrossAxisAlignment.center;
+    // const crossAxisAlignment = CrossAxisAlignment.start;
     // const crossAxisAlignment = CrossAxisAlignment.end;
     // const crossAxisAlignment = CrossAxisAlignment.stretch;
 
@@ -65,7 +65,17 @@ class _MyHomePageState extends State<MyHomePage> {
               // textDirection: TextDirection.rtl,
               crossAxisAlignment: crossAxisAlignment,
               children: [
-                WrappableText(text: getText1(), textAlign: textAlign),
+                Floatable(
+                    float: FCFloat.start,
+                    child: Container(width: 50, height: 100, color: Colors.orange)),
+                Floatable(
+                    float: FCFloat.start,
+                    child: Container(width: 50, height: 100, color: Colors.blue)),
+                Floatable(
+                    float: FCFloat.end,
+                    clear: FCClear.end,
+                    child: Container(width: 100, height: 100, color: Colors.green)),
+                WrappableText(text: getText1(), textAlign: textAlign, clear: FCClear.none),
                 WrappableText(text: getText2(), textAlign: textAlign),
                 Text('$_counter', style: Theme.of(context).textTheme.headline4),
               ],
@@ -83,19 +93,24 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 TextSpan getText1() => TextSpan(children: [
+      const TextSpan(
+          text: 'Neque porro quisquam est, qui dolorem '
+              'ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia '
+              'non numquam eius modi tempora incidunt ut labore et dolore magnam '
+              'aliquam quaerat voluptatem. '),
       const TextSpan(text: 'You '),
       WidgetSpan(child: Container(width: 16, height: 16, color: Colors.red)),
-      const TextSpan(text: ' have pushed the button this many times:')
+      const TextSpan(text: ' have pushed the button')
     ]);
 
 TextSpan getText2() => TextSpan(children: [
-      const TextSpan(text: 'You '),
+      const TextSpan(text: 'this '),
       WidgetSpan(child: Container(width: 16, height: 16, color: Colors.red)),
-      const TextSpan(text: ' have '),
+      const TextSpan(text: ' many '),
       WidgetSpan(
         alignment: PlaceholderAlignment.baseline,
         baseline: TextBaseline.alphabetic,
         child: Container(width: 12, height: 12, color: Colors.blue),
       ),
-      const TextSpan(text: ' pushed:')
+      const TextSpan(text: ' times:')
     ]);
