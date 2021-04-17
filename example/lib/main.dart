@@ -95,9 +95,7 @@ class _MyHomePageState extends State<MyHomePage> {
 TextSpan getText1() => TextSpan(children: [
       const TextSpan(
           text: 'Neque porro quisquam est, qui dolorem '
-              'ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia '
-              'non numquam eius modi tempora incidunt ut labore et dolore magnam '
-              'aliquam quaerat voluptatem. '),
+              'ipsum quia dolor sit amet, consectetur, adipisci velit. '),
       const TextSpan(text: 'You '),
       WidgetSpan(child: Container(width: 16, height: 16, color: Colors.red)),
       const TextSpan(text: ' have pushed the button')

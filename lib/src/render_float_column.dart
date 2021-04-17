@@ -379,13 +379,9 @@ class RenderFloatColumn extends RenderBox
         child.layout(childConstraints, parentUsesSize: true);
         final childSize = child.size;
 
-        var yPos = yPosNext;
-        var minX = 0.0;
-        var maxX = maxWidth;
-
         var alignment = crossAxisAlignment;
 
-        // Does it float?
+        // Should this child widget be floated to the left or right?
         List<Rect>? addToFloatRects;
         if (tag.float != FCFloat.none) {
           final float = resolveFloat(tag.float, withDir: textDirection);
@@ -399,14 +395,14 @@ class RenderFloatColumn extends RenderBox
           }
         }
 
+        var yPos = yPosNext;
+
+        // Check for `clear` and adjust `yPos` accordingly.
         final clear = resolveClear(tag.clear, withDir: textDirection);
-
-        // Position below the bottom float-left rect?
         if (clear == FCClear.left || clear == FCClear.both) yPos = floatL.maxY(yPos);
-
-        // Position below the bottom float-right rect?
         if (clear == FCClear.right || clear == FCClear.both) yPos = floatR.maxY(yPos);
 
+        // Find space for this widget...
         final rect = findSpaceFor(
           startY: yPos,
           width: childSize.width,
@@ -416,10 +412,9 @@ class RenderFloatColumn extends RenderBox
           floatR: floatR,
         );
         yPos = rect.top;
-        minX = rect.left;
-        maxX = rect.right;
 
-        final xPos = xPosForChildWithWidth(child.size.width, alignment, minX, maxX);
+        // Calculate `xPos` based on alignment and available space.
+        final xPos = xPosForChildWithWidth(child.size.width, alignment, rect.left, rect.right);
         childParentData.offset = Offset(xPos, yPos);
 
         if (addToFloatRects != null) {
@@ -438,8 +433,6 @@ class RenderFloatColumn extends RenderBox
       //
       else if (el is WrappableText) {
         final rph = _cache[el.key]!;
-        double xPos;
-        var yPos = yPosNext;
 
         // If this paragraph has inline widget children, first set placeholder dimensions.
         if (child != null && child.tag.index == i) {
@@ -447,12 +440,11 @@ class RenderFloatColumn extends RenderBox
               child, constraints, el.textScaleFactor ?? defaultTextScaleFactor);
         }
 
+        var yPos = yPosNext;
+
+        // Check for `clear` and adjust `yPos` accordingly.
         final clear = resolveClear(el.clear, withDir: textDirection);
-
-        // Position below the bottom float-left rect?
         if (clear == FCClear.left || clear == FCClear.both) yPos = floatL.maxY(yPos);
-
-        // Position below the bottom float-right rect?
         if (clear == FCClear.right || clear == FCClear.both) yPos = floatR.maxY(yPos);
 
         // What's the available space at `yPos` for the first line of text?
@@ -462,7 +454,9 @@ class RenderFloatColumn extends RenderBox
         // Layout the text and inline widget children.
         rph.layout(childConstraints.copyWith(maxWidth: rect.width));
 
-        xPos = xPosForChildWithWidth(rph.painter.width, crossAxisAlignment, rect.left, rect.right);
+        // Calculate `xPos` based on alignment and available space.
+        final xPos =
+            xPosForChildWithWidth(rph.painter.width, crossAxisAlignment, rect.left, rect.right);
 
         // If this paragraph has inline widget children, set the `offset` and `scale` for each.
         if (child != null && child.tag.index == i) {
