@@ -363,8 +363,10 @@ class RenderFloatColumn extends RenderBox
     final floatL = <Rect>[];
     final floatR = <Rect>[];
 
-    final lineHeight =
-        (defaultTextStyle.style.fontSize ?? 16.0) * (defaultTextStyle.style.height ?? 1.15);
+    final lineHeight = (defaultTextStyle.style.fontSize ?? 16.0) *
+        (defaultTextStyle.style.height ?? 1.15) *
+        defaultTextScaleFactor;
+    dmPrint('RenderFloatColumn performLayout, lineHeight = $lineHeight');
 
     var i = 0;
     for (final el in _internalTextAndWidgets) {
@@ -447,12 +449,44 @@ class RenderFloatColumn extends RenderBox
         if (clear == FCClear.left || clear == FCClear.both) yPos = floatL.maxY(yPos);
         if (clear == FCClear.right || clear == FCClear.both) yPos = floatR.maxY(yPos);
 
-        // What's the available space at `yPos` for the first line of text?
-        final rect = spaceAt(
-            startY: yPos, height: lineHeight, maxX: maxWidth, floatL: floatL, floatR: floatR);
+        // Find space for at least a width of `lineHeight * 4.0`. This may need to be
+        // tweaked, or it could be an option passed in? Or, we could layout the text and
+        // find the actual width of the first word, and that could be the minimum width?
+        final rect = findSpaceFor(
+            startY: yPos,
+            width: math.min(maxWidth, lineHeight * 4.0),
+            height: lineHeight,
+            maxX: maxWidth,
+            floatL: floatL,
+            floatR: floatR);
+        yPos = rect.top;
+
+        dmPrint('Space for text: $rect');
 
         // Layout the text and inline widget children.
         rph.layout(childConstraints.copyWith(maxWidth: rect.width));
+
+        // The `rect.bottom` is where the layout of available space for the text changes,
+        // so if the text extends past `rect.bottom`, we need to split the text into
+        // multiple pieces, and layout each individually...
+        if (yPos + rph.painter.height > rect.bottom) {
+          final span = rph.painter.text;
+          if (span is TextSpan) {
+            final text = span.toPlainText(includeSemanticsLabels: false, includePlaceholders: true);
+
+            final textPos = rph.painter.getPositionForOffset(Offset(rect.width, rect.height));
+            if (textPos.offset > 0) {
+              final sub = text.substring(0, textPos.offset);
+              dmPrint('split text after "$sub"');
+            }
+
+            // final selection = TextSelection(baseOffset: 0, extentOffset: text.length);
+            // final boxes = rph.painter.getBoxesForSelection(selection);
+            // for (final box in boxes) {
+            //   dmPrint(box);
+            // }
+          }
+        }
 
         // Calculate `xPos` based on alignment and available space.
         final xPos =
@@ -501,7 +535,7 @@ class RenderFloatColumn extends RenderBox
         context.paintChild(child, childParentData.offset + offset);
         child = childParentData.nextSibling;
 
-        dmPrint('painted $i, a widget at ${childParentData.offset + offset}');
+        // dmPrint('painted $i, a widget at ${childParentData.offset + offset}');
       }
 
       //---------------------------------------------------------------------
@@ -511,7 +545,7 @@ class RenderFloatColumn extends RenderBox
         final rph = _cache[el.key]!;
 
         rph.painter.paint(context.canvas, rph.offset! + offset);
-        dmPrint('painted $i, text at ${rph.offset! + offset}');
+        // dmPrint('painted $i, text at ${rph.offset! + offset}');
 
         // If this paragraph DOES have inline widget children...
         if (child != null && child.tag.index == i) {
@@ -527,7 +561,7 @@ class RenderFloatColumn extends RenderBox
               Matrix4.diagonal3Values(scale, scale, scale),
               (context, offset) {
                 context.paintChild(child!, offset);
-                dmPrint('painted $i:$widgetIndex, a widget in text at $offset');
+                // dmPrint('painted $i:$widgetIndex, a widget in text at $offset');
               },
             );
 

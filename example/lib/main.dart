@@ -48,6 +48,8 @@ class _MyHomePageState extends State<MyHomePage> {
     // const crossAxisAlignment = CrossAxisAlignment.end;
     // const crossAxisAlignment = CrossAxisAlignment.stretch;
 
+    const boxHeight = 101.0;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('FloatColumn Demo Home Page'),
@@ -67,14 +69,14 @@ class _MyHomePageState extends State<MyHomePage> {
               children: [
                 Floatable(
                     float: FCFloat.start,
-                    child: Container(width: 50, height: 100, color: Colors.orange)),
+                    child: Container(width: 105, height: boxHeight, color: Colors.orange)),
                 Floatable(
                     float: FCFloat.start,
-                    child: Container(width: 50, height: 100, color: Colors.blue)),
+                    child: Container(width: 50, height: boxHeight, color: Colors.blue)),
                 Floatable(
                     float: FCFloat.end,
                     clear: FCClear.end,
-                    child: Container(width: 100, height: 100, color: Colors.green)),
+                    child: Container(width: 100, height: boxHeight, color: Colors.green)),
                 WrappableText(text: getText1(), textAlign: textAlign, clear: FCClear.none),
                 WrappableText(text: getText2(), textAlign: textAlign),
                 Text('$_counter', style: Theme.of(context).textTheme.headline4),

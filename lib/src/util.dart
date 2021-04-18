@@ -1,3 +1,6 @@
+// Copyright 2021 Ron Booth. All rights reserved.
+// Use of this source code is governed by a license that can be found in the LICENSE file.
+
 import 'dart:math' as math;
 import 'dart:ui' show Rect, TextDirection;
 
@@ -110,7 +113,7 @@ Rect findSpaceFor({
 
   // If the float lists are empty, just return what was given.
   if (floatL.isEmpty && floatR.isEmpty) {
-    return Rect.fromLTRB(minX, startY, maxX, startY + height);
+    return Rect.fromLTRB(minX, startY, maxX, double.infinity);
   }
 
   final lNext = _Double(startY);
@@ -135,9 +138,10 @@ Rect findSpaceFor({
     right = floatR.minXInRange(top, bottom, lessThan: maxX, rectBottom: rNext);
   } while (width > right - left);
 
-  return Rect.fromLTRB(left, top, right, top + height);
+  return Rect.fromLTRB(left, top, right, math.min(lNext.value, rNext.value));
 }
 
+/*
 ///
 /// Given a starting Y position ([startY]), an optional [minX] value (defaults to 0.0),
 /// [maxX] value, and the floating rectangle lists ([floatL] and [floatR]), returns the
@@ -165,7 +169,7 @@ Rect spaceAt({
   final right = floatR.minXInRange(startY, startY + height, lessThan: maxX);
 
   return Rect.fromLTRB(left, startY, right, startY + height);
-}
+} */
 
 /// Mutable wrapper of a double that can be passed by reference.
 class _Double {
