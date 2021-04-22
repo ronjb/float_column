@@ -48,7 +48,7 @@ class _MyHomePageState extends State<MyHomePage> {
     // const crossAxisAlignment = CrossAxisAlignment.end;
     // const crossAxisAlignment = CrossAxisAlignment.stretch;
 
-    const boxHeight = 101.0;
+    const boxHeight = 70.0;
 
     return Scaffold(
       appBar: AppBar(
@@ -95,9 +95,10 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 TextSpan getText1() => TextSpan(children: [
-      const TextSpan(
-          text: 'Neque porro quisquam est, qui dolorem '
-              'ipsum quia dolor sit amet, consectetur, adipisci velit. '),
+      const TextSpan(text: 'این یک متن فارسی است که در سمت راست قرار می‌گیرد'),
+      // const TextSpan(
+      //     text: ' Neque porro quisquam est, qui dolorem '
+      //         'ipsum quia dolor sit amet. '),
       const TextSpan(text: 'You '),
       WidgetSpan(child: Container(width: 16, height: 16, color: Colors.red)),
       const TextSpan(text: ' have pushed the button')

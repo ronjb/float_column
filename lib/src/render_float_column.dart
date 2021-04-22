@@ -8,7 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 import 'float_tag.dart';
-import 'render_paragraph.dart';
+import 'inline_span_ext.dart';
+import 'render_text.dart';
 import 'shared.dart';
 import 'util.dart';
 import 'wrappable_text.dart';
@@ -92,7 +93,7 @@ class RenderFloatColumn extends RenderBox
     }
   }
 
-  final _cache = <Object, RenderParagraphHelper>{};
+  final _cache = <Object, WrappableTextRenderer>{};
   void _updateCache() {
     final keys = <Object>{};
     for (var i = 0; i < _internalTextAndWidgets.length; i++) {
@@ -119,7 +120,7 @@ class RenderFloatColumn extends RenderBox
         final prh = _cache[el.key];
         if (prh == null) {
           _cache[el.key] =
-              RenderParagraphHelper(el, textDirection, defaultTextStyle, defaultTextScaleFactor);
+              WrappableTextRenderer(el, textDirection, defaultTextStyle, defaultTextScaleFactor);
         } else {
           prh.updateWith(el, this, textDirection, defaultTextStyle, defaultTextScaleFactor);
         }
@@ -434,80 +435,124 @@ class RenderFloatColumn extends RenderBox
       // Else, if it is a WrappableText
       //
       else if (el is WrappableText) {
-        final rph = _cache[el.key]!;
+        final wtr = _cache[el.key]!;
 
-        // If this paragraph has inline widget children, first set placeholder dimensions.
-        if (child != null && child.tag.index == i) {
-          rph.setPlaceholderDimensions(
-              child, constraints, el.textScaleFactor ?? defaultTextScaleFactor);
-        }
-
-        var yPos = yPosNext;
-
-        // Check for `clear` and adjust `yPos` accordingly.
+        // Check for `clear` and adjust `yPosNext` accordingly.
         final clear = resolveClear(el.clear, withDir: textDirection);
-        if (clear == FCClear.left || clear == FCClear.both) yPos = floatL.maxY(yPos);
-        if (clear == FCClear.right || clear == FCClear.both) yPos = floatR.maxY(yPos);
+        if (clear == FCClear.left || clear == FCClear.both) yPosNext = floatL.maxY(yPosNext);
+        if (clear == FCClear.right || clear == FCClear.both) yPosNext = floatR.maxY(yPosNext);
 
-        // Find space for at least a width of `lineHeight * 4.0`. This may need to be
-        // tweaked, or it could be an option passed in? Or, we could layout the text and
-        // find the actual width of the first word, and that could be the minimum width?
-        final rect = findSpaceFor(
-            startY: yPos,
-            width: math.min(maxWidth, lineHeight * 4.0),
-            height: lineHeight,
-            maxX: maxWidth,
-            floatL: floatL,
-            floatR: floatR);
-        yPos = rect.top;
+        // Clear the subs (sub-paragraph renderers for wrapping text).
+        wtr.subs.clear();
 
-        dmPrint('Space for text: $rect');
+        //
+        // Loop over this WrappableText's renderers. It starts out with the default text
+        // renderer which includes all the text, but if the text needs to be split because
+        // the available width and/or x position changes (because of float widgets), the
+        // the text is split into two new renderers that replace the current renderer,
+        // and the loop is run again. This continues until all the text is layed-out,
+        // using as many renderers as necessary to wrap around float widget positions.
+        //
+        var subIndex = -1;
+        while (subIndex < wtr.subs.length) {
+          var yPos = yPosNext;
 
-        // Layout the text and inline widget children.
-        rph.layout(childConstraints.copyWith(maxWidth: rect.width));
+          // Find space for at least a width of `lineHeight * 4.0`. This may need to be
+          // tweaked, or it could be an option passed in, or we could layout the text and
+          // find the actual width of the first word, and that could be the minimum width?
+          final rect = findSpaceFor(
+              startY: yPos,
+              width: math.min(maxWidth, lineHeight * 4.0),
+              height: lineHeight,
+              maxX: maxWidth,
+              floatL: floatL,
+              floatR: floatR);
+          dmPrint('Space for text: $rect');
+          yPos = rect.top;
 
-        // The `rect.bottom` is where the layout of available space for the text changes,
-        // so if the text extends past `rect.bottom`, we need to split the text into
-        // multiple pieces, and layout each individually...
-        if (yPos + rph.painter.height > rect.bottom) {
-          final span = rph.painter.text;
-          if (span is TextSpan) {
-            final text = span.toPlainText(includeSemanticsLabels: false, includePlaceholders: true);
+          final subConstraints = childConstraints.copyWith(maxWidth: rect.width);
 
-            final textPos = rph.painter.getPositionForOffset(Offset(rect.width, rect.height));
-            if (textPos.offset > 0) {
-              final sub = text.substring(0, textPos.offset);
-              dmPrint('split text after "$sub"');
-            }
-
-            // final selection = TextSelection(baseOffset: 0, extentOffset: text.length);
-            // final boxes = rph.painter.getBoxesForSelection(selection);
-            // for (final box in boxes) {
-            //   dmPrint(box);
-            // }
+          // If sub-renderer has inline widget children, set placeholder dimensions.
+          if (wtr[subIndex].placeholderSpans.isNotEmpty) {
+            assert(child != null && child.tag.index == i);
+            wtr[subIndex].setPlaceholderDimensions(
+                child, subConstraints, el.textScaleFactor ?? defaultTextScaleFactor);
           }
-        }
 
-        // Calculate `xPos` based on alignment and available space.
-        final xPos =
-            xPosForChildWithWidth(rph.painter.width, crossAxisAlignment, rect.left, rect.right);
+          // Layout the text and inline widget children.
+          wtr[subIndex].layout(subConstraints);
+
+          // If this is the default (-1) or last renderer, check to see if it needs to be
+          // split.
+          if (subIndex == -1 || subIndex == wtr.subs.length - 1) {
+            // The `rect.bottom` is where the layout of available space for the text changes,
+            // so if the text extends past `rect.bottom`, we need to split the text, and layout
+            // each part individually...
+            if (yPos + wtr[subIndex].painter.height > rect.bottom) {
+              final span = wtr[subIndex].painter.text;
+              if (span is TextSpan) {
+                final textPos =
+                    wtr[subIndex].painter.getPositionForOffset(Offset(rect.width, rect.height));
+                if (textPos.offset > 0) {
+                  final text =
+                      span.toPlainText(includeSemanticsLabels: false, includePlaceholders: true);
+                  if (kDebugMode) {
+                    final sub = text.substring(0, textPos.offset);
+                    dmPrint('split text after "$sub"');
+                  }
+
+                  final split = span.splitAtCharacterIndex(textPos.offset);
+                  if (split.length == 2) {
+                    final textRenderer = wtr[subIndex];
+                    if (subIndex == -1) {
+                      subIndex = 0;
+                    } else {
+                      wtr.subs.removeLast();
+                    }
+                    wtr.subs
+                      ..add(textRenderer.copyWith(split.first,
+                          subIndex == 0 ? 0 : wtr.subs[subIndex - 1].nextPlaceholderIndex))
+                      ..add(textRenderer.copyWith(
+                          split.last, wtr.subs[subIndex].nextPlaceholderIndex));
+                    continue; // Run the loop again, keeping the index the same
+                  }
+                }
+              }
+
+              // final selection = TextSelection(baseOffset: 0, extentOffset: text.length);
+              // final boxes = wtr.painter.getBoxesForSelection(selection);
+              // for (final box in boxes) {
+              //   dmPrint(box);
+              // }
+            }
+          }
+
+          // Calculate `xPos` based on alignment and available space.
+          final xPos = xPosForChildWithWidth(
+              wtr[subIndex].painter.width, crossAxisAlignment, rect.left, rect.right);
+
+          wtr[subIndex].offset = Offset(xPos, yPos);
+          yPosNext = yPos + wtr[subIndex].painter.height;
+
+          subIndex++;
+        }
 
         // If this paragraph has inline widget children, set the `offset` and `scale` for each.
         if (child != null && child.tag.index == i) {
           var widgetIndex = 0;
           while (child != null && child.tag.index == i) {
             assert(child.tag.placeholderIndex == widgetIndex);
-            final box = rph.painter.inlinePlaceholderBoxes![widgetIndex];
+
+            final renderer = wtr.rendererWithPlaceholder(widgetIndex);
+            final box = renderer.placeholderBoxForWidgetIndex(widgetIndex);
             final childParentData = child.parentData! as FloatColumnParentData
-              ..offset = Offset(box.left + xPos, box.top + yPos)
-              ..scale = rph.painter.inlinePlaceholderScales![widgetIndex];
+              ..offset = Offset(box.left + renderer.offset!.dx, box.top + renderer.offset!.dy)
+              ..scale = renderer.placeholderScaleForWidgetIndex(widgetIndex);
+
             child = childParentData.nextSibling;
             widgetIndex++;
           }
         }
-
-        rph.offset = Offset(xPos, yPos);
-        yPosNext = yPos + rph.painter.height;
       } else {
         assert(false);
       }
@@ -542,10 +587,13 @@ class RenderFloatColumn extends RenderBox
       // Else, if it is a WrappableText
       //
       else if (el is WrappableText) {
-        final rph = _cache[el.key]!;
+        final wtr = _cache[el.key]!;
 
-        rph.painter.paint(context.canvas, rph.offset! + offset);
-        // dmPrint('painted $i, text at ${rph.offset! + offset}');
+        for (final textRenderer in wtr.renderers) {
+          textRenderer.painter.paint(context.canvas, textRenderer.offset! + offset);
+        }
+
+        // dmPrint('painted $i, text at ${wtr.offset! + offset}');
 
         // If this paragraph DOES have inline widget children...
         if (child != null && child.tag.index == i) {
