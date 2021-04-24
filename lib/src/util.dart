@@ -16,78 +16,57 @@ void dmPrint(Object object) {
   if (kDebugMode) print(object); // ignore: avoid_print
 }
 
-bool _isLTR(TextDirection direction) => direction == TextDirection.ltr;
-
+/// If float is `start` or `end`, returns `left` or `right` depending on the text direction.
 FCFloat resolveFloat(FCFloat float, {required TextDirection withDir}) {
   if (float == FCFloat.start) return _isLTR(withDir) ? FCFloat.left : FCFloat.right;
   if (float == FCFloat.end) return _isLTR(withDir) ? FCFloat.right : FCFloat.left;
   return float;
 }
 
+/// If clear is `start` or `end`, returns `left` or `right` depending on the text direction.
 FCClear resolveClear(FCClear clear, {required TextDirection withDir}) {
   if (clear == FCClear.start) return _isLTR(withDir) ? FCClear.left : FCClear.right;
   if (clear == FCClear.end) return _isLTR(withDir) ? FCClear.right : FCClear.left;
   return clear;
 }
 
-///
+bool _isLTR(TextDirection direction) => direction == TextDirection.ltr;
+
+extension FloatColumnExtOnList<T> on List<T> {
+  ///
+  /// Evaluates every item in this list using the provided [eval] function, and returns
+  /// the first item that has the minimum non-null evaluation result. If this list is
+  /// empty, or the [eval] function returns `null` for every item in the list, `null`
+  /// is returned.
+  ///
+  T? min(double? Function(T) eval) {
+    T? minObject;
+    double? minValue;
+    for (final rect in this) {
+      final value = eval(rect);
+      if (value != null && (minValue == null || value < minValue)) {
+        minValue = value;
+        minObject = rect;
+      }
+    }
+    return minObject;
+  }
+
+  ///
+  /// Evaluates every item in this list using the provided [eval] function, and returns
+  /// the first item that has the maximum non-null evaluation result. If this list is
+  /// empty, or the [eval] function returns `null` for every item in the list, `null`
+  /// is returned.
+  ///
+  T? max(double? Function(T) eval) => min((rect) {
+        final value = eval(rect);
+        return value != null ? -value : value;
+      });
+}
+
 /// List<Rect> extensions
-///
 extension FloatColumnExtOnListOfRect on List<Rect> {
-  ///
-  /// Returns the right edge value of the first rectangle in this list whose right edge value
-  /// is greater than [greaterThan] (which defaults to 0.0), and whose vertical position
-  /// overlaps the range [top] through [bottom], and is the rectangle furthest to the right.
-  ///
-  /// If no rectangle in this list meets those requirements, the [greaterThan] value is returned.
-  ///
-  /// If the optional [rectBottom] is non-null, its `value` is set to the `bottom` edge value
-  /// of the matching rectangle, or `double.infinity` if no matching rectangle was found.
-  ///
-  double maxXInRange(
-    double top,
-    double bottom, {
-    double greaterThan = 0.0,
-    _Double? rectBottom,
-  }) {
-    var maxX = greaterThan;
-    rectBottom?.value = double.infinity;
-    for (final rect in this) {
-      if (rect.right > maxX && rect.top < bottom && rect.bottom > top) {
-        maxX = rect.right;
-        rectBottom?.value = rect.bottom;
-      }
-    }
-    return maxX;
-  }
-
-  ///
-  /// Returns the left edge value of the first rectangle in this list whose left edge value
-  /// is less than [lessThan], and whose vertical position overlaps the range [top] through
-  /// [bottom], and is the rectangle furthest to the left.
-  ///
-  /// If no rectangle in this list meets those requirements, the [lessThan] value is returned.
-  ///
-  /// If the optional [rectBottom] is non-null, its `value` is set to the `bottom` edge value
-  /// of the matching rectangle, or `double.infinity` if no matching rectangle was found.
-  ///
-  double minXInRange(
-    double top,
-    double bottom, {
-    required double lessThan,
-    _Double? rectBottom,
-  }) {
-    var minX = lessThan;
-    rectBottom?.value = double.infinity;
-    for (final rect in this) {
-      if (rect.left < minX && rect.top < bottom && rect.bottom > top) {
-        minX = rect.left;
-        rectBottom?.value = rect.bottom;
-      }
-    }
-    return minX;
-  }
-
+  /// Returns the `bottom` of the bottom rectangle in this list (i.e. the max `bottom`).
   double maxY(double startY) => fold<double>(startY, (p, r) => math.max(p, r.bottom));
 }
 
@@ -104,6 +83,7 @@ Rect findSpaceFor({
   required double maxX,
   required List<Rect> floatL,
   required List<Rect> floatR,
+  // TextDirection? textDir,
 }) {
   assert(startY < double.infinity);
   assert(width > 0.0 && width < double.infinity);
@@ -116,16 +96,17 @@ Rect findSpaceFor({
     return Rect.fromLTRB(minX, startY, maxX, double.infinity);
   }
 
-  final lNext = _Double(startY);
-  final rNext = _Double(startY);
+  Rect? lRect;
+  Rect? rRect;
+  var nextY = startY;
 
   const minStep = 1.0;
   var top = startY - minStep;
   var left = minX;
   var right = startY;
+
   do {
-    final nextY = math.min(lNext.value, rNext.value);
-    if (nextY == double.infinity) {
+    if (nextY.isInfinite) {
       assert(false);
       break;
     }
@@ -134,45 +115,30 @@ Rect findSpaceFor({
     top = nextY > top ? nextY : top + minStep;
 
     final bottom = top + height;
-    left = floatL.maxXInRange(top, bottom, greaterThan: minX, rectBottom: lNext);
-    right = floatR.minXInRange(top, bottom, lessThan: maxX, rectBottom: rNext);
+
+    lRect = floatL.max((r) => r.top < bottom && r.bottom > top && r.right > minX ? r.right : null);
+    rRect = floatR.min((r) => r.top < bottom && r.bottom > top && r.left < maxX ? r.left : null);
+
+    left = lRect?.right ?? minX;
+    right = rRect?.left ?? maxX;
+
+    nextY = math.min(lRect?.bottom ?? double.infinity, rRect?.bottom ?? double.infinity);
   } while (width > right - left);
 
-  return Rect.fromLTRB(left, top, right, math.min(lNext.value, rNext.value));
-}
+  // If a textDir was provided...
+  // if (textDir != null) {
+  //   // Find the next floating rects on the left and right, if any.
+  //   final bottom = top + height;
+  //   lRect = floatL.min((r) => r.top > bottom && r.top < nextY && r.right > left ? r.top : null);
+  //   rRect = floatR.min((r) => r.top > bottom && r.top < nextY && r.left < right ? r.top : null);
 
-/*
-///
-/// Given a starting Y position ([startY]), an optional [minX] value (defaults to 0.0),
-/// [maxX] value, and the floating rectangle lists ([floatL] and [floatR]), returns the
-/// maximum available space at [startY] with the given [height].
-///
-Rect spaceAt({
-  required double startY,
-  required double height,
-  double minX = 0.0,
-  required double maxX,
-  required List<Rect> floatL,
-  required List<Rect> floatR,
-}) {
-  assert(startY < double.infinity);
-  assert(height >= 0.0 && height < double.infinity);
-  assert(minX < double.infinity);
-  assert(maxX < double.infinity);
+  //   // Update `nextY` based on the top rect, if any.
+  //   if (lRect != null && (rRect == null || lRect.top < rRect.top)) {
+  //     nextY = lRect.top - (textDir == TextDirection.ltr ? height : 0.0);
+  //   } else if (rRect != null) {
+  //     nextY = rRect.top - (textDir == TextDirection.rtl ? height : 0.0);
+  //   }
+  // }
 
-  // If the float lists are empty, just return what was given.
-  if (floatL.isEmpty && floatR.isEmpty) {
-    return Rect.fromLTRB(minX, startY, maxX, startY + height);
-  }
-
-  final left = floatL.maxXInRange(startY, startY + height, greaterThan: minX);
-  final right = floatR.minXInRange(startY, startY + height, lessThan: maxX);
-
-  return Rect.fromLTRB(left, startY, right, startY + height);
-} */
-
-/// Mutable wrapper of a double that can be passed by reference.
-class _Double {
-  _Double(this.value);
-  double value;
+  return Rect.fromLTRB(left, top, right, nextY);
 }

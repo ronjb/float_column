@@ -364,10 +364,10 @@ class RenderFloatColumn extends RenderBox
     final floatL = <Rect>[];
     final floatR = <Rect>[];
 
-    final lineHeight = (defaultTextStyle.style.fontSize ?? 16.0) *
-        (defaultTextStyle.style.height ?? 1.15) *
-        defaultTextScaleFactor;
-    dmPrint('RenderFloatColumn performLayout, lineHeight = $lineHeight');
+    // final lineHeight = (defaultTextStyle.style.fontSize ?? 14.0) *
+    //     (defaultTextStyle.style.height ?? 1.15) *
+    //     defaultTextScaleFactor;
+    // dmPrint('RenderFloatColumn performLayout, lineHeight = $lineHeight');
 
     var i = 0;
     for (final el in _internalTextAndWidgets) {
@@ -457,7 +457,10 @@ class RenderFloatColumn extends RenderBox
         while (subIndex < wtr.subs.length) {
           var yPos = yPosNext;
 
-          // Find space for at least a width of `lineHeight * 4.0`. This may need to be
+          final lineHeight = wtr[subIndex].initialLineHeight();
+          dmPrint('Finding space for text at $yPos with lineHeight = $lineHeight');
+
+          // Find space for a width of at least `lineHeight * 4.0`. This may need to be
           // tweaked, or it could be an option passed in, or we could layout the text and
           // find the actual width of the first word, and that could be the minimum width?
           final rect = findSpaceFor(
@@ -485,6 +488,11 @@ class RenderFloatColumn extends RenderBox
           // If this is the default (-1) or last renderer, check to see if it needs to be
           // split.
           if (subIndex == -1 || subIndex == wtr.subs.length - 1) {
+            // `findSpaceFor` just checked for space for the first line of text. Now that
+            // the text has been layed-out, we need to see if the available space extends
+            // the full height of the layed-out text.
+            // TODO(ron): ... wtr[subIndex].painter.height
+
             // The `rect.bottom` is where the layout of available space for the text changes,
             // so if the text extends past `rect.bottom`, we need to split the text, and layout
             // each part individually...
@@ -494,9 +502,11 @@ class RenderFloatColumn extends RenderBox
                 final textPos =
                     wtr[subIndex].painter.getPositionForOffset(Offset(rect.width, rect.height));
                 if (textPos.offset > 0) {
-                  final text =
-                      span.toPlainText(includeSemanticsLabels: false, includePlaceholders: true);
+                  // TODO(ron): ...
+
                   if (kDebugMode) {
+                    final text =
+                        span.toPlainText(includeSemanticsLabels: false, includePlaceholders: true);
                     final sub = text.substring(0, textPos.offset);
                     dmPrint('split text after "$sub"');
                   }
@@ -514,7 +524,9 @@ class RenderFloatColumn extends RenderBox
                           subIndex == 0 ? 0 : wtr.subs[subIndex - 1].nextPlaceholderIndex))
                       ..add(textRenderer.copyWith(
                           split.last, wtr.subs[subIndex].nextPlaceholderIndex));
-                    continue; // Run the loop again, keeping the index the same
+
+                    // Re-run the loop, keeping the index the same.
+                    continue;
                   }
                 }
               }

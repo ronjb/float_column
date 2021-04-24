@@ -7,9 +7,46 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 
+import 'package:collection/collection.dart';
+
 import 'splittable_mixin.dart';
 
 extension FCInlineSpanExt on InlineSpan {
+  ///
+  /// Returns the `style?.fontSize` of the first `TextSpan` with text, or `null` if none.
+  ///
+  double? initialFontSize() {
+    final span = this;
+    if (span is TextSpan) {
+      double? fontSize;
+      if (span.text?.isNotEmpty ?? false) {
+        return span.style?.fontSize;
+      } else {
+        fontSize = span.children?.firstWhereOrNull((s) => s is TextSpan)?.initialFontSize();
+      }
+      return fontSize ?? span.style?.fontSize;
+    }
+    return null; // ignore: avoid_returning_null
+  }
+
+  ///
+  /// Returns the `style?.height` of the first `TextSpan` with text, or `null` if none.
+  ///
+  double? initialLineHeightScale() {
+    final span = this;
+    if (span is TextSpan) {
+      double? lineHeight;
+      if (span.text?.isNotEmpty ?? false) {
+        return span.style?.height;
+      } else {
+        lineHeight =
+            span.children?.firstWhereOrNull((s) => s is TextSpan)?.initialLineHeightScale();
+      }
+      return lineHeight ?? span.style?.height;
+    }
+    return null; // ignore: avoid_returning_null
+  }
+
   ///
   /// Splits this span at the given character [index] and returns a list of one or two spans.
   /// If [index] is zero, or if [index] is greater than the number of characters in this span,

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 import 'float_tag.dart';
+import 'inline_span_ext.dart';
 import 'render_float_column.dart';
 import 'wrappable_text.dart';
 
@@ -191,6 +192,14 @@ class TextRenderer {
       assert(false);
       return 1.0;
     }
+  }
+
+  /// Returns an estimate of the initial line height based on the initial font size,
+  /// initial line height scale, and the text scale factor.
+  double initialLineHeight() {
+    final fontSize = painter.text!.initialFontSize() ?? 14.0;
+    final lineHeightScale = painter.text!.initialLineHeightScale() ?? 1.12;
+    return fontSize * lineHeightScale * painter.textScaleFactor;
   }
 
   /// Sets the placeholder dimensions for this paragraph's inline widget children, if any.

@@ -37,18 +37,18 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     // const TextAlign? textAlign = null;
-    const textAlign = TextAlign.center;
-    // const textAlign = TextAlign.start;
+    // const textAlign = TextAlign.center;
+    const textAlign = TextAlign.start;
     // const textAlign = TextAlign.end;
     // const textAlign = TextAlign.left;
     // const textAlign = TextAlign.right;
 
-    const crossAxisAlignment = CrossAxisAlignment.center;
-    // const crossAxisAlignment = CrossAxisAlignment.start;
+    // const crossAxisAlignment = CrossAxisAlignment.center;
+    const crossAxisAlignment = CrossAxisAlignment.start;
     // const crossAxisAlignment = CrossAxisAlignment.end;
     // const crossAxisAlignment = CrossAxisAlignment.stretch;
 
-    const boxHeight = 70.0;
+    const boxHeight = 40.0;
 
     return Scaffold(
       appBar: AppBar(
@@ -68,15 +68,20 @@ class _MyHomePageState extends State<MyHomePage> {
               crossAxisAlignment: crossAxisAlignment,
               children: [
                 Floatable(
-                    float: FCFloat.start,
-                    child: Container(width: 105, height: boxHeight, color: Colors.orange)),
-                Floatable(
-                    float: FCFloat.start,
-                    child: Container(width: 50, height: boxHeight, color: Colors.blue)),
-                Floatable(
-                    float: FCFloat.end,
-                    clear: FCClear.end,
+                    float: FCFloat.right,
+                    clear: FCClear.both,
                     child: Container(width: 100, height: boxHeight, color: Colors.green)),
+                Floatable(
+                    float: FCFloat.start,
+                    clear: FCClear.both,
+                    child: Container(width: 100, height: boxHeight, color: Colors.orange)),
+                // Floatable(
+                //     float: FCFloat.start,
+                //     child: Container(width: 50, height: boxHeight, color: Colors.blue)),
+                // Floatable(
+                //     float: FCFloat.right,
+                //     clear: FCClear.both,
+                //     child: Container(width: 1, height: 1, color: Colors.transparent)),
                 WrappableText(text: getText1(), textAlign: textAlign, clear: FCClear.none),
                 WrappableText(text: getText2(), textAlign: textAlign),
                 Text('$_counter', style: Theme.of(context).textTheme.headline4),
@@ -95,10 +100,12 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 TextSpan getText1() => TextSpan(children: [
-      const TextSpan(text: 'این یک متن فارسی است که در سمت راست قرار می‌گیرد'),
-      // const TextSpan(
-      //     text: ' Neque porro quisquam est, qui dolorem '
-      //         'ipsum quia dolor sit amet. '),
+      // const TextSpan(text: 'این یک متن فارسی است که در سمت راست قرار می‌گیرد'),
+      const TextSpan(
+          text: 'Neque porro quisquam est, qui dolorem '
+              'ipsum quia dolor sit amet. '
+              'Neque porro quisquam est, qui dolorem '
+              'ipsum quia dolor sit amet. '),
       const TextSpan(text: 'You '),
       WidgetSpan(child: Container(width: 16, height: 16, color: Colors.red)),
       const TextSpan(text: ' have pushed the button')
