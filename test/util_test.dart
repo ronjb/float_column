@@ -75,6 +75,3 @@ void main() {
     }
   });
 }
-
-const _ltr = TextDirection.ltr;
-const _rtl = TextDirection.ltr;

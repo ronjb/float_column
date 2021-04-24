@@ -32,48 +32,32 @@ FCClear resolveClear(FCClear clear, {required TextDirection withDir}) {
 
 bool _isLTR(TextDirection direction) => direction == TextDirection.ltr;
 
-extension FloatColumnExtOnList<T> on List<T> {
-  ///
-  /// Evaluates every item in this list using the provided [eval] function, and returns
-  /// the first item that has the minimum non-null evaluation result. If this list is
-  /// empty, or the [eval] function returns `null` for every item in the list, `null`
-  /// is returned.
-  ///
-  T? min(double? Function(T) eval) {
-    T? minObject;
-    double? minValue;
-    for (final rect in this) {
-      final value = eval(rect);
-      if (value != null && (minValue == null || value < minValue)) {
-        minValue = value;
-        minObject = rect;
-      }
-    }
-    return minObject;
-  }
-
-  ///
-  /// Evaluates every item in this list using the provided [eval] function, and returns
-  /// the first item that has the maximum non-null evaluation result. If this list is
-  /// empty, or the [eval] function returns `null` for every item in the list, `null`
-  /// is returned.
-  ///
-  T? max(double? Function(T) eval) => min((rect) {
-        final value = eval(rect);
-        return value != null ? -value : value;
-      });
-}
-
 /// List<Rect> extensions
 extension FloatColumnExtOnListOfRect on List<Rect> {
-  /// Returns the `bottom` of the bottom rectangle in this list (i.e. the max `bottom`).
-  double maxY(double startY) => fold<double>(startY, (p, r) => math.max(p, r.bottom));
+  ///
+  /// Returns the `bottom` of the bottom-most rectangle in this list that is greater than
+  /// [startY], or [startY] if there is none.
+  ///
+  double maxYBelow(double startY) => fold<double>(startY, (max, r) => math.max(max, r.bottom));
+
+  ///
+  /// Returns the `top` of the top-most rectangle in this list that is greater than
+  /// [startY], or `double.infinity` if there is none.
+  ///
+  double minYBelow(double startY) =>
+      fold<double?>(
+          null, (min, r) => r.top > startY && (min == null || r.top < min) ? r.top : min) ??
+      double.infinity;
 }
 
 ///
-/// Given a starting Y position ([startY]), an optional [minX] value (defaults to 0.0),
-/// [maxX] value, and the floating rectangle lists ([floatL] and [floatR]), returns the
+/// Given a starting Y position, [startY], an optional [minX] value (defaults to 0.0),
+/// a [maxX] value, and the floating rectangle lists [floatL] and [floatR], returns the
 /// first vertical space that a rectangle with the given [width] and [height] will fit.
+///
+/// The `bottom` value in the returned rectangle contains the minimum `bottom` value of
+/// the right or left floating rect that constrains the returned rectangle's width, or
+/// `double.infinity` if no floating rect constrains it.
 ///
 Rect findSpaceFor({
   required double startY,
@@ -116,8 +100,23 @@ Rect findSpaceFor({
 
     final bottom = top + height;
 
-    lRect = floatL.max((r) => r.top < bottom && r.bottom > top && r.right > minX ? r.right : null);
-    rRect = floatR.min((r) => r.top < bottom && r.bottom > top && r.left < maxX ? r.left : null);
+    // Find the rightmost rect in the float-left rects that overlaps the range `top` - `bottom`.
+    lRect = floatL.fold<Rect?>(
+        null,
+        (max, r) => r.top < bottom &&
+                r.bottom > top &&
+                r.right > minX &&
+                (max == null || r.right > max.right)
+            ? r
+            : max);
+
+    // Find the leftmost rect in the float-right rects that overlaps the range `top` - `bottom`.
+    rRect = floatR.fold<Rect?>(
+        null,
+        (min, r) =>
+            r.top < bottom && r.bottom > top && r.left < maxX && (min == null || r.left < min.left)
+                ? r
+                : min);
 
     left = lRect?.right ?? minX;
     right = rRect?.left ?? maxX;

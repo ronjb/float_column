@@ -364,11 +364,6 @@ class RenderFloatColumn extends RenderBox
     final floatL = <Rect>[];
     final floatR = <Rect>[];
 
-    // final lineHeight = (defaultTextStyle.style.fontSize ?? 14.0) *
-    //     (defaultTextStyle.style.height ?? 1.15) *
-    //     defaultTextScaleFactor;
-    // dmPrint('RenderFloatColumn performLayout, lineHeight = $lineHeight');
-
     var i = 0;
     for (final el in _internalTextAndWidgets) {
       //---------------------------------------------------------------------
@@ -402,8 +397,8 @@ class RenderFloatColumn extends RenderBox
 
         // Check for `clear` and adjust `yPos` accordingly.
         final clear = resolveClear(tag.clear, withDir: textDirection);
-        if (clear == FCClear.left || clear == FCClear.both) yPos = floatL.maxY(yPos);
-        if (clear == FCClear.right || clear == FCClear.both) yPos = floatR.maxY(yPos);
+        if (clear == FCClear.left || clear == FCClear.both) yPos = floatL.maxYBelow(yPos);
+        if (clear == FCClear.right || clear == FCClear.both) yPos = floatR.maxYBelow(yPos);
 
         // Find space for this widget...
         final rect = findSpaceFor(
@@ -439,8 +434,8 @@ class RenderFloatColumn extends RenderBox
 
         // Check for `clear` and adjust `yPosNext` accordingly.
         final clear = resolveClear(el.clear, withDir: textDirection);
-        if (clear == FCClear.left || clear == FCClear.both) yPosNext = floatL.maxY(yPosNext);
-        if (clear == FCClear.right || clear == FCClear.both) yPosNext = floatR.maxY(yPosNext);
+        if (clear == FCClear.left || clear == FCClear.both) yPosNext = floatL.maxYBelow(yPosNext);
+        if (clear == FCClear.right || clear == FCClear.both) yPosNext = floatR.maxYBelow(yPosNext);
 
         // Clear the subs (sub-paragraph renderers for wrapping text).
         wtr.subs.clear();
@@ -450,23 +445,26 @@ class RenderFloatColumn extends RenderBox
         // renderer which includes all the text, but if the text needs to be split because
         // the available width and/or x position changes (because of float widgets), the
         // the text is split into two new renderers that replace the current renderer,
-        // and the loop is run again. This continues until all the text is layed-out,
+        // and the loop is run again. This continues until all the text is laid out,
         // using as many renderers as necessary to wrap around float widget positions.
         //
         var subIndex = -1;
         while (subIndex < wtr.subs.length) {
           var yPos = yPosNext;
 
-          final lineHeight = wtr[subIndex].initialLineHeight();
-          dmPrint('Finding space for text at $yPos with lineHeight = $lineHeight');
+          // Get the estimated line height for the first line. We want to find space for at
+          // least the first line of text.
+          final estLineHeight = wtr[subIndex].initialLineHeight();
 
-          // Find space for a width of at least `lineHeight * 4.0`. This may need to be
+          dmPrint('Finding space for text at $yPos with estimated line height $estLineHeight');
+
+          // Find space for a width of at least `estLineHeight * 4.0`. This may need to be
           // tweaked, or it could be an option passed in, or we could layout the text and
           // find the actual width of the first word, and that could be the minimum width?
           final rect = findSpaceFor(
               startY: yPos,
-              width: math.min(maxWidth, lineHeight * 4.0),
-              height: lineHeight,
+              width: math.min(maxWidth, estLineHeight * 4.0),
+              height: estLineHeight,
               maxX: maxWidth,
               floatL: floatL,
               floatR: floatR);
@@ -488,30 +486,63 @@ class RenderFloatColumn extends RenderBox
           // If this is the default (-1) or last renderer, check to see if it needs to be
           // split.
           if (subIndex == -1 || subIndex == wtr.subs.length - 1) {
-            // `findSpaceFor` just checked for space for the first line of text. Now that
-            // the text has been layed-out, we need to see if the available space extends
-            // the full height of the layed-out text.
-            // TODO(ron): ... wtr[subIndex].painter.height
+            // TODO(ron): It is possible that the estimated line height is less than the
+            // actual first line height, which could cause the text in the line to overlap
+            // floating widgets below it. This could be fixed by using
+            // `painter.computeLineMetrics` to check, and then call `findSpaceFor` again,
+            // if necessary, with the actual first line height.
 
-            // The `rect.bottom` is where the layout of available space for the text changes,
-            // so if the text extends past `rect.bottom`, we need to split the text, and layout
+            // `findSpaceFor` just checked for space for the first line of text. Now that
+            // the text has been laid out, we need to see if the available space extends
+            // the full height of the text.
+            final startY = rect.top + estLineHeight;
+            final nextFloatTop = math.min(floatL.minYBelow(startY), floatR.minYBelow(startY));
+            final nextChangeY = math.min(rect.bottom, nextFloatTop);
+
+            // If the text extends past `nextChangeY`, we need to split the text, and layout
             // each part individually...
-            if (yPos + wtr[subIndex].painter.height > rect.bottom) {
+            if (yPos + wtr[subIndex].painter.height > nextChangeY) {
               final span = wtr[subIndex].painter.text;
               if (span is TextSpan) {
-                final textPos =
-                    wtr[subIndex].painter.getPositionForOffset(Offset(rect.width, rect.height));
-                if (textPos.offset > 0) {
-                  // TODO(ron): ...
+                //
+                // Calculate the approximate x, y to split the text at, which depends on
+                // the text direction.
+                //
+                // ⦿ Shows the x, y offsets the text should be split at:
+                //
+                // RTL example:
+                //  | This is what you   ┌──────────┐
+                //  | shall do; Love the ⦿          │
+                //  ├────────┐ earth and ⦿──────────┤
+                //  │        │ sun and the animals, |
+                //  ├────────┘ despise riches, give ⦿
+                //  │ alms to every one that asks...|
+                //
+                // LTR example:
+                //  |   you what is This ┌──────────┐
+                //  ⦿ the Love ;do shall │          │
+                //  ├────────⦿ and earth └──────────┤
+                //  │        │ ,animals the and sun |
+                //  ├────────⦿ give ,riches despise |
+                //  │...asks that one every to alms |
+                //
+                final dir = wtr[subIndex].painter.textDirection!;
+                final x = dir == TextDirection.ltr ? rect.width : 0.0;
+                final y = rect.top - math.min(nextChangeY, nextFloatTop - estLineHeight);
 
+                // Get the position in the text from the point offset.
+                final textPos = wtr[subIndex].painter.getPositionForOffset(Offset(x, y));
+                if (textPos.offset > 0) {
                   if (kDebugMode) {
-                    final text =
-                        span.toPlainText(includeSemanticsLabels: false, includePlaceholders: true);
+                    final text = span.toPlainText(includeSemanticsLabels: false);
                     final sub = text.substring(0, textPos.offset);
-                    dmPrint('split text after "$sub"');
+                    dmPrint('Splitting text after "$sub"');
                   }
 
+                  // Split the TextSpan...
                   final split = span.splitAtCharacterIndex(textPos.offset);
+
+                  // If it was split into two parts...
                   if (split.length == 2) {
                     final textRenderer = wtr[subIndex];
                     if (subIndex == -1) {
@@ -572,7 +603,7 @@ class RenderFloatColumn extends RenderBox
       i++;
     }
 
-    final totalHeight = math.max(floatL.maxY(yPosNext), floatR.maxY(yPosNext));
+    final totalHeight = math.max(floatL.maxYBelow(yPosNext), floatR.maxYBelow(yPosNext));
     size = constraints.constrain(Size(maxWidth, totalHeight));
   }
 
