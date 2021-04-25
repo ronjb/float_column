@@ -44,13 +44,15 @@ class FloatColumn extends MultiChildRenderObjectWidget {
     final result = <Widget>[];
     for (final child in list) {
       if (child is Widget) {
-        final float = child is Floatable ? child.float : FCFloat.none;
-        final clear = child is Floatable ? child.clear : FCClear.none;
-        final clearMinSpacing = child is Floatable ? child.clearMinSpacing : 0.0;
-        final maxWidthPercentage = child is Floatable ? child.maxWidthPercentage : 1.0;
         result.add(MetaData(
-            metaData: FloatTag(index, 0, float, clear,
-                clearMinSpacing: clearMinSpacing, maxWidthPercentage: maxWidthPercentage),
+            metaData: FloatTag(
+              index,
+              0,
+              child is Floatable ? child.float : FCFloat.none,
+              child is Floatable ? child.clear : FCClear.none,
+              clearMinSpacing: child is Floatable ? child.clearMinSpacing : 0.0,
+              maxWidthPercentage: child is Floatable ? child.maxWidthPercentage : 1.0,
+            ),
             child: child));
       } else if (child is WrappableText) {
         // Traverses the paragraph's InlineSpan tree and depth-first collects the list of
@@ -59,12 +61,14 @@ class FloatColumn extends MultiChildRenderObjectWidget {
         child.text.visitChildren((span) {
           if (span is WidgetSpan) {
             final child = span.child;
-            final float = child is Floatable ? child.float : FCFloat.none;
-            final clear = child is Floatable ? child.clear : FCClear.none;
-            final clearMinSpacing = child is Floatable ? child.clearMinSpacing : 0.0;
-            final maxWidthPercentage = child is Floatable ? child.maxWidthPercentage : 1.0;
-            final tag = FloatTag(index, placeholderIndex++, float, clear,
-                clearMinSpacing: clearMinSpacing, maxWidthPercentage: maxWidthPercentage);
+            final tag = FloatTag(
+              index,
+              placeholderIndex++,
+              child is Floatable ? child.float : FCFloat.none,
+              child is Floatable ? child.clear : FCClear.none,
+              clearMinSpacing: child is Floatable ? child.clearMinSpacing : 0.0,
+              maxWidthPercentage: child is Floatable ? child.maxWidthPercentage : 1.0,
+            );
             result.add(MetaData(
               metaData: tag,
               child: Semantics(tagForChildren: tag, child: child),
