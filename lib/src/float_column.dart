@@ -46,7 +46,12 @@ class FloatColumn extends MultiChildRenderObjectWidget {
       if (child is Widget) {
         final float = child is Floatable ? child.float : FCFloat.none;
         final clear = child is Floatable ? child.clear : FCClear.none;
-        result.add(MetaData(metaData: FloatTag(index, 0, float, clear), child: child));
+        final clearMinSpacing = child is Floatable ? child.clearMinSpacing : 0.0;
+        final maxWidthPercentage = child is Floatable ? child.maxWidthPercentage : 1.0;
+        result.add(MetaData(
+            metaData: FloatTag(index, 0, float, clear,
+                clearMinSpacing: clearMinSpacing, maxWidthPercentage: maxWidthPercentage),
+            child: child));
       } else if (child is WrappableText) {
         // Traverses the paragraph's InlineSpan tree and depth-first collects the list of
         // child widgets that are created in WidgetSpans.
@@ -56,7 +61,10 @@ class FloatColumn extends MultiChildRenderObjectWidget {
             final child = span.child;
             final float = child is Floatable ? child.float : FCFloat.none;
             final clear = child is Floatable ? child.clear : FCClear.none;
-            final tag = FloatTag(index, placeholderIndex++, float, clear);
+            final clearMinSpacing = child is Floatable ? child.clearMinSpacing : 0.0;
+            final maxWidthPercentage = child is Floatable ? child.maxWidthPercentage : 1.0;
+            final tag = FloatTag(index, placeholderIndex++, float, clear,
+                clearMinSpacing: clearMinSpacing, maxWidthPercentage: maxWidthPercentage);
             result.add(MetaData(
               metaData: tag,
               child: Semantics(tagForChildren: tag, child: child),

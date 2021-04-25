@@ -40,6 +40,9 @@ extension FloatColumnExtOnListOfRect on List<Rect> {
   ///
   double maxYBelow(double startY) => fold<double>(startY, (max, r) => math.max(max, r.bottom));
 
+  double nextY(double startY, double clearMinSpacing) =>
+      maxYBelow(startY - clearMinSpacing) + clearMinSpacing;
+
   ///
   /// Returns the `top` of the top-most rectangle in this list that is greater than
   /// [startY], or `double.infinity` if there is none.

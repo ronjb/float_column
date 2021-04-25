@@ -202,6 +202,11 @@ class TextRenderer {
     return fontSize * lineHeightScale * painter.textScaleFactor;
   }
 
+  double initialScaledFontSize() {
+    final fontSize = painter.text!.initialFontSize() ?? 14.0;
+    return fontSize * painter.textScaleFactor;
+  }
+
   /// Sets the placeholder dimensions for this paragraph's inline widget children, if any.
   void setPlaceholderDimensions(
     RenderBox? firstChild,

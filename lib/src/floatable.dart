@@ -12,6 +12,8 @@ class Floatable extends StatelessWidget {
     Key? key,
     this.float = FCFloat.none,
     this.clear = FCClear.none,
+    this.clearMinSpacing = 0.0,
+    this.maxWidthPercentage = 1.0,
     required this.child,
   }) : super(key: key);
 
@@ -23,6 +25,14 @@ class Floatable extends StatelessWidget {
   /// And if so, should it be placed below floating siblings on just one side
   /// (`left`, `right`, `start`, or `end`) or `both`? The default is `none`.
   final FCClear clear;
+
+  /// Minimum vertical spacing below a cleared sibling. Defaults to 0.0. Only used
+  /// if `clear` is set to `left`, `right`, `start`, or `end`, and it is below a
+  /// floated sibling.
+  final double clearMinSpacing;
+
+  /// Maximum width as percentage of the parent FloatColumn's width. Defaults to 100%.
+  final double maxWidthPercentage;
 
   /// The child widget.
   final Widget child;

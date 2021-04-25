@@ -312,15 +312,6 @@ class RenderFloatColumn extends RenderBox
   Size computeDryLayout(BoxConstraints constraints) {
     assert(debugCannotComputeDryLayout(reason: 'Dry layout cannot be efficiently computed.'));
     return Size.zero;
-
-    /*
-    final sizes = _computeSizes(
-      layoutChild: ChildLayoutHelper.dryLayoutChild,
-      constraints: constraints,
-    );
-
-    return constraints.constrain(Size(sizes.crossSize, sizes.mainSize));
-    */
   }
 
   double xPosForChildWithWidth(
@@ -373,8 +364,14 @@ class RenderFloatColumn extends RenderBox
         final tag = child!.tag;
         assert(tag.index == i && tag.placeholderIndex == 0);
 
+        var layoutConstraints = childConstraints;
+        if (tag.maxWidthPercentage != 1.0) {
+          layoutConstraints =
+              childConstraints.copyWith(maxWidth: maxWidth * tag.maxWidthPercentage);
+        }
+
         final childParentData = child.parentData! as FloatColumnParentData;
-        child.layout(childConstraints, parentUsesSize: true);
+        child.layout(layoutConstraints, parentUsesSize: true);
         final childSize = child.size;
 
         var alignment = crossAxisAlignment;
@@ -397,8 +394,9 @@ class RenderFloatColumn extends RenderBox
 
         // Check for `clear` and adjust `yPos` accordingly.
         final clear = resolveClear(tag.clear, withDir: textDirection);
-        if (clear == FCClear.left || clear == FCClear.both) yPos = floatL.maxYBelow(yPos);
-        if (clear == FCClear.right || clear == FCClear.both) yPos = floatR.maxYBelow(yPos);
+        final spacing = tag.clearMinSpacing;
+        if (clear == FCClear.left || clear == FCClear.both) yPos = floatL.nextY(yPos, spacing);
+        if (clear == FCClear.right || clear == FCClear.both) yPos = floatR.nextY(yPos, spacing);
 
         // Find space for this widget...
         final rect = findSpaceFor(
@@ -443,10 +441,10 @@ class RenderFloatColumn extends RenderBox
         //
         // Loop over this WrappableText's renderers. It starts out with the default text
         // renderer which includes all the text, but if the text needs to be split because
-        // the available width and/or x position changes (because of float widgets), the
+        // the available width and/or x position changes (because of floating widgets), the
         // the text is split into two new renderers that replace the current renderer,
         // and the loop is run again. This continues until all the text is laid out,
-        // using as many renderers as necessary to wrap around float widget positions.
+        // using as many renderers as necessary to wrap around floating widget positions.
         //
         var subIndex = -1;
         while (subIndex < wtr.subs.length) {
@@ -455,20 +453,21 @@ class RenderFloatColumn extends RenderBox
           // Get the estimated line height for the first line. We want to find space for at
           // least the first line of text.
           final estLineHeight = wtr[subIndex].initialLineHeight();
-
-          dmPrint('Finding space for text at $yPos with estimated line height $estLineHeight');
+          final estScaledFontSize = wtr[subIndex].initialScaledFontSize();
 
           // Find space for a width of at least `estLineHeight * 4.0`. This may need to be
           // tweaked, or it could be an option passed in, or we could layout the text and
           // find the actual width of the first word, and that could be the minimum width?
           final rect = findSpaceFor(
               startY: yPos,
-              width: math.min(maxWidth, estLineHeight * 4.0),
+              width: math.min(maxWidth, estScaledFontSize * 4.0),
               height: estLineHeight,
               maxX: maxWidth,
               floatL: floatL,
               floatR: floatR);
-          dmPrint('Space for text: $rect');
+
+          dmPrint('findSpaceFor $yPos, estLineHeight $estLineHeight: $rect');
+
           yPos = rect.top;
 
           final subConstraints = childConstraints.copyWith(maxWidth: rect.width);
@@ -528,7 +527,7 @@ class RenderFloatColumn extends RenderBox
                 //
                 final dir = wtr[subIndex].painter.textDirection!;
                 final x = dir == TextDirection.ltr ? rect.width : 0.0;
-                final y = rect.top - math.min(nextChangeY, nextFloatTop - estLineHeight);
+                final y = math.min(nextChangeY, nextFloatTop - estLineHeight) - rect.top;
 
                 // Get the position in the text from the point offset.
                 final textPos = wtr[subIndex].painter.getPositionForOffset(Offset(x, y));
@@ -536,7 +535,7 @@ class RenderFloatColumn extends RenderBox
                   if (kDebugMode) {
                     final text = span.toPlainText(includeSemanticsLabels: false);
                     final sub = text.substring(0, textPos.offset);
-                    dmPrint('Splitting text after "$sub"');
+                    dmPrint('Splitting text at ${Offset(x, y)} after "$sub"');
                   }
 
                   // Split the TextSpan...
@@ -740,101 +739,3 @@ extension on RenderFloatColumn {
   bool get isLTR => textDirection == TextDirection.ltr;
   bool get isRTL => textDirection == TextDirection.rtl;
 }
-
-/* Old code from `performLayout`:
-
-    ...
-
-    final sizes = _computeSizes(
-      layoutChild: ChildLayoutHelper.layoutChild,
-      constraints: constraints,
-    );
-
-    final allocatedSize = sizes.allocatedSize;
-    var actualSize = sizes.mainSize;
-    var crossSize = sizes.crossSize;
-
-    // Align items along the main axis.
-    size = constraints.constrain(Size(crossSize, actualSize));
-    actualSize = size.height;
-    crossSize = size.width;
-    final actualSizeDelta = actualSize - allocatedSize;
-    _overflow = math.max(0.0, -actualSizeDelta);
-
-    // Position elements
-    var childMainPosition = 0.0;
-    var child = firstChild;
-    while (child != null) {
-      final childParentData = child.parentData! as FloatColumnParentData;
-      final double childCrossPosition;
-      switch (crossAxisAlignment) {
-        case CrossAxisAlignment.start:
-        case CrossAxisAlignment.end:
-          childCrossPosition =
-              crossAxisAlignment == CrossAxisAlignment.start ? 0.0 : crossSize - child.size.width;
-          break;
-        case CrossAxisAlignment.center:
-          childCrossPosition = crossSize / 2.0 - child.size.width / 2.0;
-          break;
-        case CrossAxisAlignment.stretch:
-          childCrossPosition = 0.0;
-          break;
-        case CrossAxisAlignment.baseline:
-          childCrossPosition = 0.0;
-          break;
-      }
-      childParentData.offset = Offset(childCrossPosition, childMainPosition);
-      childMainPosition += child.size.height;
-      child = childParentData.nextSibling;
-    }
-  }
-
-  _LayoutSizes _computeSizes({
-    required BoxConstraints constraints,
-    required ChildLayouter layoutChild,
-  }) {
-    assert(_debugHasNecessaryDirections);
-    assert(constraints != null); // ignore: unnecessary_null_comparison
-
-    var crossSize = 0.0;
-    var allocatedSize = 0.0; // Sum of the sizes of the children.
-    var child = firstChild;
-    while (child != null) {
-      final childParentData = child.parentData! as FloatColumnParentData;
-      final BoxConstraints innerConstraints;
-      if (crossAxisAlignment == CrossAxisAlignment.stretch) {
-        innerConstraints = BoxConstraints.tightFor(width: constraints.maxWidth);
-      } else {
-        innerConstraints = BoxConstraints(maxWidth: constraints.maxWidth);
-      }
-      final childSize = layoutChild(child, innerConstraints);
-      allocatedSize += childSize.height;
-      crossSize = math.max(crossSize, childSize.width);
-      assert(child.parentData == childParentData);
-      child = childParentData.nextSibling;
-    }
-
-    final idealSize = allocatedSize;
-    return _LayoutSizes(
-      mainSize: idealSize,
-      crossSize: crossSize,
-      allocatedSize: allocatedSize,
-    );
-  }
-
-// ignore: avoid_private_typedef_functions
-typedef _ChildSizingFunction = double Function(RenderBox child, double extent);
-
-class _LayoutSizes {
-  const _LayoutSizes({
-    required this.mainSize,
-    required this.crossSize,
-    required this.allocatedSize,
-  });
-
-  final double mainSize;
-  final double crossSize;
-  final double allocatedSize;
-}
-
-*/
