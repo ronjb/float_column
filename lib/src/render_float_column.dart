@@ -466,7 +466,7 @@ class RenderFloatColumn extends RenderBox
               floatL: floatL,
               floatR: floatR);
 
-          dmPrint('findSpaceFor $yPos, estLineHeight $estLineHeight: $rect');
+          // dmPrint('findSpaceFor $yPos, estLineHeight $estLineHeight: $rect');
 
           yPos = rect.top;
 
@@ -532,11 +532,11 @@ class RenderFloatColumn extends RenderBox
                 // Get the position in the text from the point offset.
                 final textPos = wtr[subIndex].painter.getPositionForOffset(Offset(x, y));
                 if (textPos.offset > 0) {
-                  if (kDebugMode) {
-                    final text = span.toPlainText(includeSemanticsLabels: false);
-                    final sub = text.substring(0, textPos.offset);
-                    dmPrint('Splitting text at ${Offset(x, y)} after "$sub"');
-                  }
+                  // if (kDebugMode) {
+                  //   final text = span.toPlainText(includeSemanticsLabels: false);
+                  //   final sub = text.substring(0, textPos.offset);
+                  //   dmPrint('Splitting text at ${Offset(x, y)} after "$sub"');
+                  // }
 
                   // Split the TextSpan...
                   final split = span.splitAtCharacterIndex(textPos.offset);
