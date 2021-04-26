@@ -1,8 +1,12 @@
 # CHANGELOG
 
+## [0.1.0-dev.3] - April 26, 2021
+
+* Fixed a bug where a child widget with a width of zero would cause an exception.
+
 ## [0.1.0-dev.2] - April 26, 2021
 
-* Fixed bug where a child widget with an unconstrained width would cause an exception.
+* Fixed a bug where a child widget with an unconstrained width would cause an exception.
 
 ## [0.1.0-dev.1] - April 25, 2021
 
