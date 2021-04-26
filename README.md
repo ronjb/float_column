@@ -2,7 +2,7 @@
 
 A Flutter package for building a vertical column of widgets and text with the ability to "float" child widgets to the left or right, allowing the text to wrap around them -- copying, as closely as possible, the functionality of the CSS `float` and `clear` properties.
 
-![](https://raw.githubusercontent.com/ronjb/float_column/master/example/FloatColumnLTR.gif)
+![](https://raw.githubusercontent.com/ronjb/float_column/main/example/FloatColumnLTR.gif)
 
 ## Getting Started
 
