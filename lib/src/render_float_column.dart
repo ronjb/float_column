@@ -401,7 +401,7 @@ class RenderFloatColumn extends RenderBox
         // Find space for this widget...
         final rect = findSpaceFor(
           startY: yPos,
-          width: childSize.width,
+          width: math.min(maxWidth, childSize.width),
           height: childSize.height,
           maxX: maxWidth,
           floatL: floatL,

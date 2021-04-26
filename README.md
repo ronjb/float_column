@@ -12,7 +12,7 @@ Add this to your app's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  float_column: ^0.1.0-dev.1
+  float_column: ^0.1.0-dev.2
 ```
 
 ## Usage
