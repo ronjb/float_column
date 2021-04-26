@@ -1,6 +1,6 @@
 name: float_column
-description: A vertical column of widgets and text with the ability to "float" child widgets to the left or right, allowing the text to wrap around them.
-version: 0.0.1
+description: A Flutter package for building a vertical column of widgets and text with the ability to "float" child widgets to the left or right, allowing the text to wrap around them — similar to, the functionality of the CSS `float` and `clear` properties.
+version: 0.1.0-dev.1
 repository: https://github.com/ronjb/float_column
 
 environment:

@@ -1,5 +1,5 @@
 # CHANGELOG
 
-## [0.0.1] - TODO: Add release date
+## [0.1.0-dev.1] - April 25, 2021
 
-* TODO: Describe initial release.
+* Prerelease version with basic functionality, and probably a lot of bugs.
