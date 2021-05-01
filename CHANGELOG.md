@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [0.1.1] - April 30, 2021
+
+* Added support for left and right margins and padding for WrappableText.
+
+## [0.1.0] - April 26, 2021
+
+* Removed debug print statements, added more examples to readme file.
+
 ## [0.1.0-dev.3] - April 26, 2021
 
 * Fixed a bug where a child widget with a width of zero would cause an exception.
