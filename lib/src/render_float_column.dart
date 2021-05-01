@@ -328,44 +328,52 @@ class RenderFloatColumn extends RenderBox
       childConstraints = BoxConstraints(maxWidth: maxWidth);
     }
 
-    var yPosNext = 0.0;
-    var child = firstChild;
-
+    // These will hold the rectangles of widgets that are floated to the left or right.
     final floatL = <Rect>[];
     final floatR = <Rect>[];
 
+    var child = firstChild;
+
+    // This gets updated to the y position for the next child.
+    var yPosNext = 0.0;
+
+    // This gets updated to the previous non-floated child's bottom margin.
+    var prevBottomMargin = 0.0;
+
     var i = 0;
     for (final el in _internalTextAndWidgets) {
-      //---------------------------------------------------------------------
-      // If it is a Widget
-      //
+      // If it is a Widget...
       if (el is Widget) {
         final tag = child!.tag;
         assert(tag.index == i && tag.placeholderIndex == 0);
+
+        // If not floated, resolve the margin and update `yPosNext` and `prevBottomMargin`.
+        if (tag.float == FCFloat.none) {
+          final margin = tag.margin.resolve(textDirection);
+          final topMargin = math.max(prevBottomMargin, margin.top);
+          yPosNext += topMargin;
+          prevBottomMargin = margin.bottom;
+        }
+
         final childParentData = child.parentData! as FloatColumnParentData;
 
         yPosNext = _layoutWidget(
-          child,
-          childParentData,
-          childConstraints,
-          yPosNext,
-          maxWidth,
-          tag,
-          floatL,
-          floatR,
-        );
+            child, childParentData, childConstraints, yPosNext, maxWidth, tag, floatL, floatR);
 
         assert(child.parentData == childParentData);
         child = childParentData.nextSibling;
       }
 
-      //---------------------------------------------------------------------
-      // Else, if it is a WrappableText
-      //
+      // Else, if it is a WrappableText...
       else if (el is WrappableText) {
         final wtr = _cache[el.key]!;
-
         assert(wtr.renderer.placeholderSpans.isEmpty || (child != null && child.tag.index == i));
+
+        // Resolve the margin and update `yPosNext` and `prevBottomMargin`.
+        final margin = el.margin.resolve(wtr.textDirection);
+        final topMargin = math.max(prevBottomMargin, margin.top);
+        yPosNext += topMargin;
+        prevBottomMargin = margin.bottom;
 
         yPosNext = _layoutWrappableText(
             el, wtr, child, childConstraints, yPosNext, maxWidth, floatL, floatR);
@@ -393,6 +401,7 @@ class RenderFloatColumn extends RenderBox
       i++;
     }
 
+    yPosNext += prevBottomMargin;
     final totalHeight = math.max(floatL.maxYBelow(yPosNext), floatR.maxYBelow(yPosNext));
     size = constraints.constrain(Size(maxWidth, totalHeight));
   }
@@ -410,13 +419,22 @@ class RenderFloatColumn extends RenderBox
     List<Rect> floatL,
     List<Rect> floatR,
   ) {
+    final margin = tag.margin.resolve(textDirection);
+    final padding = tag.padding.resolve(textDirection);
+
+    final maxWidthMinusPadding =
+        math.max(0.0, maxWidth - margin.left - margin.right - padding.left - padding.right);
+    final childMaxWidth = math.min(maxWidthMinusPadding, maxWidth * tag.maxWidthPercentage);
+
     var layoutConstraints = childConstraints;
-    if (tag.maxWidthPercentage != 1.0) {
-      layoutConstraints = childConstraints.copyWith(maxWidth: maxWidth * tag.maxWidthPercentage);
+    if (childMaxWidth != childConstraints.maxWidth) {
+      layoutConstraints = childConstraints.copyWith(
+        maxWidth: childMaxWidth,
+        minWidth: math.min(layoutConstraints.minWidth, childMaxWidth),
+      );
     }
 
     child.layout(layoutConstraints, parentUsesSize: true);
-    final childSize = child.size;
 
     var alignment = crossAxisAlignment;
 
@@ -442,25 +460,46 @@ class RenderFloatColumn extends RenderBox
     if (clear == FCClear.left || clear == FCClear.both) yPosNext = floatL.nextY(yPosNext, spacing);
     if (clear == FCClear.right || clear == FCClear.both) yPosNext = floatR.nextY(yPosNext, spacing);
 
+    final totalMinWidth = child.size.width + padding.left + padding.right;
+    final minX = margin.left;
+    final maxX = math.max(minX + totalMinWidth, maxWidth - margin.right);
+
     // Find space for this widget...
-    final rect = findSpaceFor(
+    var rect = findSpaceFor(
       startY: yPosNext,
-      width: math.min(maxWidth, childSize.width),
-      height: childSize.height,
-      maxX: maxWidth,
+      width: math.min(maxWidth, totalMinWidth),
+      height: child.size.height + padding.top + padding.bottom,
+      minX: minX,
+      maxX: maxX,
       floatL: floatL,
       floatR: floatR,
     );
+
+    // Adjust rect for padding.
+    if (padding != EdgeInsets.zero) {
+      rect = Rect.fromLTRB(
+        rect.left + padding.left,
+        rect.top + padding.top,
+        rect.right - padding.right,
+        rect.bottom - padding.bottom,
+      );
+    }
 
     // Calculate `xPos` based on alignment and available space.
     final xPos = xPosForChildWithWidth(child.size.width, alignment, rect.left, rect.right);
     parentData.offset = Offset(xPos, rect.top);
 
     if (addToFloatRects != null) {
-      addToFloatRects.add(Rect.fromLTWH(xPos, rect.top, childSize.width, childSize.height));
+      // Include padding for the floated rect.
+      addToFloatRects.add(Rect.fromLTRB(
+        xPos - padding.left,
+        rect.top - padding.top,
+        xPos + child.size.width + padding.right,
+        rect.top + child.size.height + padding.bottom,
+      ));
       yPosNext = yPos; // This widget was floated, so set `yPosNext` back to `yPos`.
     } else {
-      yPosNext = rect.top + childSize.height;
+      yPosNext = rect.top + child.size.height + padding.bottom;
     }
 
     return yPosNext;
@@ -479,10 +518,10 @@ class RenderFloatColumn extends RenderBox
     List<Rect> floatL,
     List<Rect> floatR,
   ) {
-    var yPosNext = yPos;
-
     final margin = el.margin.resolve(wtr.textDirection);
     final padding = el.padding.resolve(wtr.textDirection);
+
+    var yPosNext = yPos + padding.top;
 
     // Check for `clear` and adjust `yPosNext` accordingly.
     final clear = resolveClear(el.clear, withDir: wtr.textDirection);
@@ -539,7 +578,10 @@ class RenderFloatColumn extends RenderBox
 
       // dmPrint('findSpaceFor $yPosNext, estLineHeight $estLineHeight: $rect');
 
-      final subConstraints = childConstraints.copyWith(maxWidth: rect.width);
+      final subConstraints = childConstraints.copyWith(
+        maxWidth: rect.width,
+        minWidth: math.min(childConstraints.minWidth, rect.width),
+      );
 
       // If sub-renderer has inline widget children, set placeholder dimensions.
       if (wtr[subIndex].placeholderSpans.isNotEmpty) {
@@ -653,7 +695,7 @@ class RenderFloatColumn extends RenderBox
       subIndex++;
     }
 
-    return yPosNext;
+    return yPosNext + padding.bottom;
   }
 
   ///

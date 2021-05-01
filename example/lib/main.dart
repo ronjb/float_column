@@ -4,6 +4,7 @@ import 'pages/basic_ltr.dart';
 import 'pages/basic_rtl.dart';
 import 'pages/indents.dart';
 import 'pages/margins_and_padding.dart';
+import 'pages/margins_and_padding2.dart';
 import 'pages/multiple_paragraphs.dart';
 
 void main() {
@@ -33,6 +34,7 @@ class MyHomePage extends StatelessWidget {
       BasicRtl(),
       MultipleParagraphs(),
       MarginsAndPadding(),
+      MarginsAndPadding2(),
       Indents(),
     ];
 
