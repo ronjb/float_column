@@ -34,8 +34,7 @@ class FloatColumnParentData extends ContainerBoxParentData<RenderBox> {
 ///
 /// ## Layout algorithm
 ///
-/// _This section describes how the framework causes [RenderFloatColumn] to position
-/// its children._
+/// _This section describes how [RenderFloatColumn] positions its children._
 /// _See [BoxConstraints] for an introduction to box layout models._
 ///
 /// Layout for a [RenderFloatColumn] proceeds in six steps:

@@ -1,8 +1,8 @@
 # CHANGELOG
 
-## [0.1.1] - April 30, 2021
+## [0.1.1] - May 1, 2021
 
-* Added support for left and right margins and padding for WrappableText.
+* Added support for margins and padding to WrappableText and Floatable.
 
 ## [0.1.0] - April 26, 2021
 

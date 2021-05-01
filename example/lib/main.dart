@@ -6,6 +6,7 @@ import 'pages/indents.dart';
 import 'pages/margins_and_padding.dart';
 import 'pages/margins_and_padding2.dart';
 import 'pages/multiple_paragraphs.dart';
+import 'pages/nested.dart';
 
 void main() {
   runApp(const MyApp());
@@ -32,6 +33,7 @@ class MyHomePage extends StatelessWidget {
     const tabViews = <Widget>[
       BasicLtr(),
       BasicRtl(),
+      Nested(),
       MultipleParagraphs(),
       MarginsAndPadding(),
       MarginsAndPadding2(),

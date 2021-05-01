@@ -13,6 +13,7 @@ class MarginsAndPadding2 extends StatelessWidget {
     // const textAlign = TextAlign.end;
     // const textAlign = TextAlign.left;
     // const textAlign = TextAlign.right;
+    // const textAlign = TextAlign.justify;
 
     // const crossAxisAlignment = CrossAxisAlignment.center;
     const crossAxisAlignment = CrossAxisAlignment.start;
@@ -23,7 +24,7 @@ class MarginsAndPadding2 extends StatelessWidget {
 
     return DefaultTextStyle(
       style: const TextStyle(fontSize: 18, color: Colors.black, height: 1.5),
-      textAlign: TextAlign.justify,
+      textAlign: textAlign,
       child: Directionality(
         textDirection: TextDirection.ltr,
         child: Builder(
@@ -55,34 +56,39 @@ class MarginsAndPadding2 extends StatelessWidget {
                       Floatable(
                         float: FCFloat.start,
                         clear: FCClear.both,
-                        // clearMinSpacing: 40,
                         maxWidthPercentage: 0.333,
-                        child: Container(
-                          height: 200,
-                          color: Colors.blue,
-                          margin: Directionality.of(context) == TextDirection.ltr
-                              ? const EdgeInsets.only(right: 8)
-                              : const EdgeInsets.only(left: 8),
-                        ),
+                        margin: const EdgeInsetsDirectional.fromSTEB(0, 0, 0, 0),
+                        padding: const EdgeInsetsDirectional.fromSTEB(0, 0, 8, 0),
+                        child: Container(height: 200, color: Colors.blue),
                       ),
                       Floatable(
+                        // float: FCFloat.start,
                         maxWidthPercentage: 0.333,
+                        margin: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+                        padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
                         child: Container(height: boxHeight, color: Colors.red),
                       ),
                       const WrappableText(
                         text: _text,
                         textAlign: textAlign,
+                        indent: 0,
+                        margin: EdgeInsets.fromLTRB(0, 0, 0, 0),
+                        padding: EdgeInsets.fromLTRB(0, 0, 0, 0),
                       ),
                       Floatable(
                         float: FCFloat.end,
                         clear: FCClear.end,
-                        // clearMinSpacing: 100,
                         maxWidthPercentage: 0.333,
+                        margin: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+                        padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
                         child: Container(height: boxHeight, color: Colors.green),
                       ),
                       const WrappableText(
                         text: _text,
                         textAlign: textAlign,
+                        indent: 0,
+                        margin: EdgeInsets.fromLTRB(0, 0, 0, 0),
+                        padding: EdgeInsets.fromLTRB(0, 0, 0, 0),
                       ),
                     ],
                   ),

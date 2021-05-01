@@ -10,9 +10,9 @@ import 'render_float_column.dart';
 import 'shared.dart';
 import 'wrappable_text.dart';
 
-/// A vertical column of widgets and text with the ability to "float" child widgets
-/// to the left or right, allowing the text to wrap around them -- copying, as
-/// closely as possible, the functionality of the CSS `float` and `clear` properties.
+/// A vertical column of widgets and text with the ability to "float" child 
+/// widgets to the left or right, allowing the text to wrap around them — 
+/// similar to the functionality of the CSS `float` and `clear` properties.
 class FloatColumn extends MultiChildRenderObjectWidget {
   /// Creates and returns a new FloatColumn.
   ///

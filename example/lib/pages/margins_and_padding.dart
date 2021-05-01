@@ -15,6 +15,7 @@ class MarginsAndPadding extends StatelessWidget {
     // const textAlign = TextAlign.end;
     // const textAlign = TextAlign.left;
     // const textAlign = TextAlign.right;
+    // const textAlign = TextAlign.justify;
 
     // const crossAxisAlignment = CrossAxisAlignment.center;
     const crossAxisAlignment = CrossAxisAlignment.start;
@@ -25,7 +26,7 @@ class MarginsAndPadding extends StatelessWidget {
 
     return DefaultTextStyle(
       style: const TextStyle(fontSize: 18, color: Colors.black, height: 1.5),
-      textAlign: TextAlign.justify,
+      textAlign: textAlign,
       child: Directionality(
         textDirection: TextDirection.ltr,
         child: Builder(
