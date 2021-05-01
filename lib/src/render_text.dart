@@ -16,19 +16,19 @@ import 'wrappable_text.dart';
 ///
 class WrappableTextRenderer {
   WrappableTextRenderer(
-    WrappableText ft,
+    WrappableText wt,
     TextDirection defaultTextDirection,
     DefaultTextStyle defaultTextStyle,
     double defaultTextScaleFactor,
   ) : renderer = TextRenderer(
             TextPainter(
-                text: TextSpan(style: defaultTextStyle.style, children: [ft.text]),
-                textAlign: ft.textAlign ?? defaultTextStyle.textAlign ?? TextAlign.start,
-                textDirection: ft.textDirection ?? defaultTextDirection,
-                textScaleFactor: ft.textScaleFactor ?? defaultTextScaleFactor,
-                locale: ft.locale,
-                strutStyle: ft.strutStyle,
-                textHeightBehavior: ft.textHeightBehavior),
+                text: TextSpan(style: defaultTextStyle.style, children: [wt.text]),
+                textAlign: wt.textAlign ?? defaultTextStyle.textAlign ?? TextAlign.start,
+                textDirection: wt.textDirection ?? defaultTextDirection,
+                textScaleFactor: wt.textScaleFactor ?? defaultTextScaleFactor,
+                locale: wt.locale,
+                strutStyle: wt.strutStyle,
+                textHeightBehavior: wt.textHeightBehavior),
             0);
 
   final TextRenderer renderer;
@@ -36,6 +36,8 @@ class WrappableTextRenderer {
   final subs = <TextRenderer>[];
 
   TextRenderer operator [](int index) => index == -1 ? renderer : subs[index];
+
+  TextDirection get textDirection => renderer.painter.textDirection!;
 
   List<TextRenderer> get renderers => subs.isNotEmpty ? subs : [renderer];
 
@@ -58,7 +60,7 @@ class WrappableTextRenderer {
   }
 
   void updateWith(
-    WrappableText ft,
+    WrappableText wt,
     RenderBox parent,
     TextDirection defaultTextDirection,
     DefaultTextStyle defaultTextStyle,
@@ -67,7 +69,7 @@ class WrappableTextRenderer {
     var needsPaint = false;
     var needsLayout = false;
 
-    final textSpan = TextSpan(style: defaultTextStyle.style, children: [ft.text]);
+    final textSpan = TextSpan(style: defaultTextStyle.style, children: [wt.text]);
     switch (renderer.painter.text!.compareTo(textSpan)) {
       case RenderComparison.identical:
       case RenderComparison.metadata:
@@ -84,36 +86,36 @@ class WrappableTextRenderer {
         break;
     }
 
-    final textAlign = ft.textAlign ?? defaultTextStyle.textAlign ?? TextAlign.start;
+    final textAlign = wt.textAlign ?? defaultTextStyle.textAlign ?? TextAlign.start;
     if (renderer.painter.textAlign != textAlign) {
       renderer.painter.textAlign = textAlign;
       needsLayout = true;
     }
 
-    final textDirection = ft.textDirection ?? defaultTextDirection;
+    final textDirection = wt.textDirection ?? defaultTextDirection;
     if (renderer.painter.textDirection != textDirection) {
       renderer.painter.textDirection = textDirection;
       needsLayout = true;
     }
 
-    final textScaleFactor = ft.textScaleFactor ?? defaultTextScaleFactor;
+    final textScaleFactor = wt.textScaleFactor ?? defaultTextScaleFactor;
     if (renderer.painter.textScaleFactor != textScaleFactor) {
       renderer.painter.textScaleFactor = textScaleFactor;
       needsLayout = true;
     }
 
-    if (renderer.painter.locale != ft.locale) {
-      renderer.painter.locale = ft.locale;
+    if (renderer.painter.locale != wt.locale) {
+      renderer.painter.locale = wt.locale;
       needsLayout = true;
     }
 
-    if (renderer.painter.strutStyle != ft.strutStyle) {
-      renderer.painter.strutStyle = ft.strutStyle;
+    if (renderer.painter.strutStyle != wt.strutStyle) {
+      renderer.painter.strutStyle = wt.strutStyle;
       needsLayout = true;
     }
 
-    if (renderer.painter.textHeightBehavior != ft.textHeightBehavior) {
-      renderer.painter.textHeightBehavior = ft.textHeightBehavior;
+    if (renderer.painter.textHeightBehavior != wt.textHeightBehavior) {
+      renderer.painter.textHeightBehavior = wt.textHeightBehavior;
       needsLayout = true;
     }
 

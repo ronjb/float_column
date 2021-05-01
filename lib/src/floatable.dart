@@ -13,6 +13,8 @@ class Floatable extends StatelessWidget {
     this.float = FCFloat.none,
     this.clear = FCClear.none,
     this.clearMinSpacing = 0.0,
+    this.margin = EdgeInsets.zero,
+    this.padding = EdgeInsets.zero,
     this.maxWidthPercentage = 1.0,
     required this.child,
   }) : super(key: key);
@@ -30,6 +32,14 @@ class Floatable extends StatelessWidget {
   /// if `clear` is set to `left`, `right`, `start`, or `end`, and it is below a
   /// floated sibling.
   final double clearMinSpacing;
+
+  /// Empty space to surround the child. Similar to CSS, the top overlaps
+  /// the previous sibling's bottom margin, the bottom overlaps the next
+  /// sibling's top margin, and the left and right overlap floated siblings.
+  final EdgeInsetsGeometry margin;
+
+  /// Empty space to surround the child that does not overlap siblings.
+  final EdgeInsetsGeometry padding;
 
   /// Maximum width as percentage of the parent FloatColumn's width. Defaults to 100%.
   final double maxWidthPercentage;

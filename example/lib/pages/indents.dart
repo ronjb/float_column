@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:float_column/float_column.dart';
 
-import '../shared/chapter_number.dart';
-
-class MarginsAndPadding extends StatelessWidget {
-  const MarginsAndPadding({Key? key}) : super(key: key);
+class Indents extends StatelessWidget {
+  const Indents({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -21,10 +19,10 @@ class MarginsAndPadding extends StatelessWidget {
     // const crossAxisAlignment = CrossAxisAlignment.end;
     // const crossAxisAlignment = CrossAxisAlignment.stretch;
 
-    const boxHeight = 40.0;
+    const boxHeight = 89.0;
 
     return DefaultTextStyle(
-      style: const TextStyle(fontSize: 18, color: Colors.black, height: 1.5),
+      style: const TextStyle(fontSize: 20, color: Colors.black, height: 1.5),
       textAlign: TextAlign.justify,
       child: Directionality(
         textDirection: TextDirection.ltr,
@@ -39,17 +37,20 @@ class MarginsAndPadding extends StatelessWidget {
                   FloatColumn(
                     crossAxisAlignment: crossAxisAlignment,
                     children: [
-                      const Floatable(float: FCFloat.start, child: ChapterNumber(123)),
                       Floatable(
                           float: FCFloat.end,
                           clear: FCClear.both,
-                          clearMinSpacing: 20,
                           maxWidthPercentage: 0.333,
                           child: Container(height: boxHeight, color: Colors.orange)),
+                      const WrappableText(
+                        text: _text,
+                        indent: 40,
+                        textAlign: textAlign,
+                      ),
                       Floatable(
                           float: FCFloat.start,
                           clear: FCClear.both,
-                          clearMinSpacing: 40,
+                          // clearMinSpacing: 40,
                           maxWidthPercentage: 0.333,
                           child: Container(
                             height: 200,
@@ -58,17 +59,20 @@ class MarginsAndPadding extends StatelessWidget {
                                 ? const EdgeInsets.only(right: 8)
                                 : const EdgeInsets.only(left: 8),
                           )),
+                      const WrappableText(
+                        text: _text,
+                        indent: -40,
+                        textAlign: textAlign,
+                      ),
                       Floatable(
                           float: FCFloat.end,
                           clear: FCClear.end,
-                          clearMinSpacing: 100,
+                          // clearMinSpacing: 100,
                           maxWidthPercentage: 0.333,
                           child: Container(height: boxHeight, color: Colors.green)),
                       const WrappableText(
                         text: _text,
                         textAlign: textAlign,
-                        margin: EdgeInsets.fromLTRB(10, 0, 10, 0),
-                        padding: EdgeInsets.fromLTRB(10, 0, 10, 0),
                       ),
                     ],
                   ),
@@ -85,4 +89,4 @@ class MarginsAndPadding extends StatelessWidget {
 // cspell: disable
 const _text = TextSpan(
     text:
-        '“This is what you shall do; Love the earth and sun and the animals, despise riches, give alms to every one that asks, stand up for the stupid and crazy, devote your income and labor to others, hate tyrants, argue not concerning God, have patience and indulgence toward the people, take off your hat to nothing known or unknown or to any man or number of men, go freely with powerful uneducated persons and with the young and with the mothers of families, read these leaves in the open air every season of every year of your life, re-examine all you have been told at school or church or in any book, dismiss whatever insults your own soul, and your very flesh shall be a great poem and have the richest fluency not only in its words but in the silent lines of its lips and face and between the lashes of your eyes and in every motion and joint of your body.” – Walt Whitman, Song of Myself');
+        '“We are the music-makers, And we are the dreamers of dreams, Wandering by lone sea-breakers, And sitting by desolate streams. World-losers and world-forsakers, Upon whom the pale moon gleams; Yet we are the movers and shakers, Of the world forever, it seems.” – Arthur O’Shaughnessy');

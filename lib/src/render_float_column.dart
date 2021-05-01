@@ -314,27 +314,6 @@ class RenderFloatColumn extends RenderBox
     return Size.zero;
   }
 
-  double xPosForChildWithWidth(
-      double width, CrossAxisAlignment alignment, double minX, double maxX) {
-    final double childCrossPosition;
-    switch (alignment) {
-      case CrossAxisAlignment.start:
-        childCrossPosition = isLTR ? minX : maxX - width;
-        break;
-      case CrossAxisAlignment.end:
-        childCrossPosition = isRTL ? minX : maxX - width;
-        break;
-      case CrossAxisAlignment.center:
-        childCrossPosition = (minX + maxX) / 2.0 - width / 2.0;
-        break;
-      case CrossAxisAlignment.stretch:
-      case CrossAxisAlignment.baseline:
-        childCrossPosition = minX;
-        break;
-    }
-    return childCrossPosition;
-  }
-
   @override
   void performLayout() {
     assert(_debugHasNecessaryDirections);
@@ -363,62 +342,18 @@ class RenderFloatColumn extends RenderBox
       if (el is Widget) {
         final tag = child!.tag;
         assert(tag.index == i && tag.placeholderIndex == 0);
-
-        var layoutConstraints = childConstraints;
-        if (tag.maxWidthPercentage != 1.0) {
-          layoutConstraints =
-              childConstraints.copyWith(maxWidth: maxWidth * tag.maxWidthPercentage);
-        }
-
         final childParentData = child.parentData! as FloatColumnParentData;
-        child.layout(layoutConstraints, parentUsesSize: true);
-        final childSize = child.size;
 
-        var alignment = crossAxisAlignment;
-
-        // Should this child widget be floated to the left or right?
-        List<Rect>? addToFloatRects;
-        if (tag.float != FCFloat.none) {
-          final float = resolveFloat(tag.float, withDir: textDirection);
-          assert(float == FCFloat.left || float == FCFloat.right);
-          if (float == FCFloat.left) {
-            addToFloatRects = floatL;
-            alignment = isLTR ? CrossAxisAlignment.start : CrossAxisAlignment.end;
-          } else {
-            addToFloatRects = floatR;
-            alignment = isRTL ? CrossAxisAlignment.start : CrossAxisAlignment.end;
-          }
-        }
-
-        var yPos = yPosNext;
-
-        // Check for `clear` and adjust `yPos` accordingly.
-        final clear = resolveClear(tag.clear, withDir: textDirection);
-        final spacing = tag.clearMinSpacing;
-        if (clear == FCClear.left || clear == FCClear.both) yPos = floatL.nextY(yPos, spacing);
-        if (clear == FCClear.right || clear == FCClear.both) yPos = floatR.nextY(yPos, spacing);
-
-        // Find space for this widget...
-        final rect = findSpaceFor(
-          startY: yPos,
-          width: math.min(maxWidth, childSize.width),
-          height: childSize.height,
-          maxX: maxWidth,
-          floatL: floatL,
-          floatR: floatR,
+        yPosNext = _layoutWidget(
+          child,
+          childParentData,
+          childConstraints,
+          yPosNext,
+          maxWidth,
+          tag,
+          floatL,
+          floatR,
         );
-        yPos = rect.top;
-
-        // Calculate `xPos` based on alignment and available space.
-        final xPos = xPosForChildWithWidth(child.size.width, alignment, rect.left, rect.right);
-        childParentData.offset = Offset(xPos, yPos);
-
-        if (addToFloatRects != null) {
-          addToFloatRects.add(Rect.fromLTWH(xPos, yPos, childSize.width, childSize.height));
-        } else {
-          final childBottom = yPos + childSize.height;
-          if (childBottom > yPosNext) yPosNext = childBottom;
-        }
 
         assert(child.parentData == childParentData);
         child = childParentData.nextSibling;
@@ -430,175 +365,10 @@ class RenderFloatColumn extends RenderBox
       else if (el is WrappableText) {
         final wtr = _cache[el.key]!;
 
-        // Check for `clear` and adjust `yPosNext` accordingly.
-        final clear = resolveClear(el.clear, withDir: textDirection);
-        if (clear == FCClear.left || clear == FCClear.both) yPosNext = floatL.maxYBelow(yPosNext);
-        if (clear == FCClear.right || clear == FCClear.both) yPosNext = floatR.maxYBelow(yPosNext);
+        assert(wtr.renderer.placeholderSpans.isEmpty || (child != null && child.tag.index == i));
 
-        // Clear the sub-paragraph renderers for wrapping text.
-        wtr.subs.clear();
-
-        //
-        // Loop over this WrappableText's renderers. It starts out with the default text
-        // renderer which includes all the text, but if the text needs to be split because
-        // the available width and/or x position changes (because of floated widgets), the
-        // the text is split into two new renderers that replace the current renderer,
-        // and the loop is run again. This continues until all the text is laid out,
-        // using as many renderers as necessary to wrap around floated widget positions.
-        //
-        var subIndex = -1;
-        while (subIndex < wtr.subs.length) {
-          // Get the estimated line height for the first line. We want to find space for at
-          // least the first line of text.
-          final estLineHeight = wtr[subIndex].initialLineHeight();
-          final estScaledFontSize = wtr[subIndex].initialScaledFontSize();
-
-          // Adjust the left padding based on indent value.
-          final paddingLeft = el.paddingLeft +
-              (subIndex <= 0 && el.indent > 0.0
-                  ? el.indent
-                  : subIndex > 0 && el.indent < 0.0
-                      ? -el.indent
-                      : 0.0);
-
-          final lineMinWidth = estScaledFontSize * 4.0 + paddingLeft + el.paddingRight;
-          final lineMinX = el.marginLeft;
-          final lineMaxX = math.max(lineMinX + lineMinWidth, maxWidth - el.marginRight);
-
-          // Find space for a width of at least `estLineHeight * 4.0`. This may need to be
-          // tweaked, or it could be an option passed in, or we could layout the text and
-          // find the actual width of the first word, and that could be the minimum width?
-          var rect = findSpaceFor(
-              startY: yPosNext,
-              width: lineMinWidth,
-              height: estLineHeight,
-              minX: lineMinX,
-              maxX: lineMaxX,
-              floatL: floatL,
-              floatR: floatR);
-
-          // Adjust rect for padding.
-          if (paddingLeft > 0.0 || el.paddingRight > 0.0) {
-            rect = Rect.fromLTRB(
-                rect.left + paddingLeft, rect.top, rect.right - el.paddingRight, rect.bottom);
-          }
-
-          // dmPrint('findSpaceFor $yPosNext, estLineHeight $estLineHeight: $rect');
-
-          final subConstraints = childConstraints.copyWith(maxWidth: rect.width);
-
-          // If sub-renderer has inline widget children, set placeholder dimensions.
-          if (wtr[subIndex].placeholderSpans.isNotEmpty) {
-            assert(child != null && child.tag.index == i);
-            wtr[subIndex].setPlaceholderDimensions(
-                child, subConstraints, el.textScaleFactor ?? defaultTextScaleFactor);
-          }
-
-          // Layout the text and inline widget children.
-          wtr[subIndex].layout(subConstraints);
-
-          // If this is the default (-1) or last renderer, check to see if it needs to be
-          // split.
-          if (subIndex == -1 || subIndex == wtr.subs.length - 1) {
-            // TODO(ron): It is possible that the estimated line height is less than the
-            // actual first line height, which could cause the text in the line to overlap
-            // floated widgets below it. This could be fixed by using
-            // `painter.computeLineMetrics` to check, and then call `findSpaceFor` again,
-            // if necessary, with the actual first line height.
-
-            // If this is the first line of the paragraph, and the indent value is not zero,
-            // the second line has a different left padding, so it needs to be laid out
-            // separately, so set the `bottom` value accordingly.
-            final bottom = math.min(rect.bottom,
-                subIndex > 0 || el.indent == 0.0 ? rect.bottom : rect.top + estLineHeight / 2.0);
-
-            // `findSpaceFor` just checked for space for the first line of text. Now that
-            // the text has been laid out, we need to see if the available space extends
-            // the full height of the text.
-            final startY = rect.top + estLineHeight;
-            final nextFloatTop = math.min(floatL.minYBelow(startY), floatR.minYBelow(startY));
-            final nextChangeY = math.min(bottom, nextFloatTop);
-
-            // If the text extends past `nextChangeY`, we need to split the text, and layout
-            // each part individually...
-            if (rect.top + wtr[subIndex].painter.height > nextChangeY) {
-              final span = wtr[subIndex].painter.text;
-              if (span is TextSpan) {
-                //
-                // Calculate the approximate x, y to split the text at, which depends on
-                // the text direction.
-                //
-                // ⦿ Shows the x, y offsets the text should be split at:
-                //
-                // RTL example:
-                //  | This is what you   ┌──────────┐
-                //  | shall do; Love the ⦿          │
-                //  ├────────┐ earth and ⦿──────────┤
-                //  │        │ sun and the animals, |
-                //  ├────────┘ despise riches, give ⦿
-                //  │ alms to every one that asks...|
-                //
-                // LTR example:
-                //  |   you what is This ┌──────────┐
-                //  ⦿ the Love ;do shall │          │
-                //  ├────────⦿ and earth └──────────┤
-                //  │        │ ,animals the and sun |
-                //  ├────────⦿ give ,riches despise |
-                //  │...asks that one every to alms |
-                //
-                final dir = wtr[subIndex].painter.textDirection!;
-                final x = dir == TextDirection.ltr ? rect.width : 0.0;
-                final y = math.min(nextChangeY, nextFloatTop - estLineHeight) - rect.top;
-
-                // Get the position in the text from the point offset.
-                final textPos = wtr[subIndex].painter.getPositionForOffset(Offset(x, y));
-                if (textPos.offset > 0) {
-                  // if (kDebugMode) {
-                  //   final text = span.toPlainText(includeSemanticsLabels: false);
-                  //   final sub = text.substring(0, textPos.offset);
-                  //   dmPrint('Splitting text at ${Offset(x, y)} after "$sub"');
-                  // }
-
-                  // Split the TextSpan...
-                  final split = span.splitAtCharacterIndex(textPos.offset);
-
-                  // If it was split into two parts...
-                  if (split.length == 2) {
-                    final textRenderer = wtr[subIndex];
-                    if (subIndex == -1) {
-                      subIndex = 0;
-                    } else {
-                      wtr.subs.removeLast();
-                    }
-                    wtr.subs
-                      ..add(textRenderer.copyWith(split.first,
-                          subIndex == 0 ? 0 : wtr.subs[subIndex - 1].nextPlaceholderIndex))
-                      ..add(textRenderer.copyWith(
-                          split.last, wtr.subs[subIndex].nextPlaceholderIndex));
-
-                    // Re-run the loop, keeping the index the same.
-                    continue;
-                  }
-                }
-              }
-
-              // final selection = TextSelection(baseOffset: 0, extentOffset: text.length);
-              // final boxes = wtr.painter.getBoxesForSelection(selection);
-              // for (final box in boxes) {
-              //   dmPrint(box);
-              // }
-            }
-          }
-
-          // Calculate `xPos` based on alignment and available space.
-          final xPos = xPosForChildWithWidth(
-              wtr[subIndex].painter.width, crossAxisAlignment, rect.left, rect.right);
-
-          wtr[subIndex].offset = Offset(xPos, rect.top);
-          yPosNext = rect.top + wtr[subIndex].painter.height;
-
-          subIndex++;
-        } // End while loop.
+        yPosNext = _layoutWrappableText(
+            el, wtr, child, childConstraints, yPosNext, maxWidth, floatL, floatR);
 
         // If this paragraph has inline widget children, set the `offset` and `scale` for each.
         if (child != null && child.tag.index == i) {
@@ -625,6 +395,290 @@ class RenderFloatColumn extends RenderBox
 
     final totalHeight = math.max(floatL.maxYBelow(yPosNext), floatR.maxYBelow(yPosNext));
     size = constraints.constrain(Size(maxWidth, totalHeight));
+  }
+
+  ///
+  /// Lays out the given [child] widget, and returns the y position for the next child.
+  ///
+  double _layoutWidget(
+    RenderBox child,
+    FloatColumnParentData parentData,
+    BoxConstraints childConstraints,
+    double yPos,
+    double maxWidth,
+    FloatTag tag,
+    List<Rect> floatL,
+    List<Rect> floatR,
+  ) {
+    var layoutConstraints = childConstraints;
+    if (tag.maxWidthPercentage != 1.0) {
+      layoutConstraints = childConstraints.copyWith(maxWidth: maxWidth * tag.maxWidthPercentage);
+    }
+
+    child.layout(layoutConstraints, parentUsesSize: true);
+    final childSize = child.size;
+
+    var alignment = crossAxisAlignment;
+
+    // Should this child widget be floated to the left or right?
+    List<Rect>? addToFloatRects;
+    if (tag.float != FCFloat.none) {
+      final float = resolveFloat(tag.float, withDir: textDirection);
+      assert(float == FCFloat.left || float == FCFloat.right);
+      if (float == FCFloat.left) {
+        addToFloatRects = floatL;
+        alignment = isLTR ? CrossAxisAlignment.start : CrossAxisAlignment.end;
+      } else {
+        addToFloatRects = floatR;
+        alignment = isRTL ? CrossAxisAlignment.start : CrossAxisAlignment.end;
+      }
+    }
+
+    var yPosNext = yPos;
+
+    // Check for `clear` and adjust `yPosNext` accordingly.
+    final clear = resolveClear(tag.clear, withDir: textDirection);
+    final spacing = tag.clearMinSpacing;
+    if (clear == FCClear.left || clear == FCClear.both) yPosNext = floatL.nextY(yPosNext, spacing);
+    if (clear == FCClear.right || clear == FCClear.both) yPosNext = floatR.nextY(yPosNext, spacing);
+
+    // Find space for this widget...
+    final rect = findSpaceFor(
+      startY: yPosNext,
+      width: math.min(maxWidth, childSize.width),
+      height: childSize.height,
+      maxX: maxWidth,
+      floatL: floatL,
+      floatR: floatR,
+    );
+
+    // Calculate `xPos` based on alignment and available space.
+    final xPos = xPosForChildWithWidth(child.size.width, alignment, rect.left, rect.right);
+    parentData.offset = Offset(xPos, rect.top);
+
+    if (addToFloatRects != null) {
+      addToFloatRects.add(Rect.fromLTWH(xPos, rect.top, childSize.width, childSize.height));
+      yPosNext = yPos; // This widget was floated, so set `yPosNext` back to `yPos`.
+    } else {
+      yPosNext = rect.top + childSize.height;
+    }
+
+    return yPosNext;
+  }
+
+  ///
+  /// Lays out the given WrappableText object, and returns the y position for the next child.
+  ///
+  double _layoutWrappableText(
+    WrappableText el,
+    WrappableTextRenderer wtr,
+    RenderBox? child,
+    BoxConstraints childConstraints,
+    double yPos,
+    double maxWidth,
+    List<Rect> floatL,
+    List<Rect> floatR,
+  ) {
+    var yPosNext = yPos;
+
+    final margin = el.margin.resolve(wtr.textDirection);
+    final padding = el.padding.resolve(wtr.textDirection);
+
+    // Check for `clear` and adjust `yPosNext` accordingly.
+    final clear = resolveClear(el.clear, withDir: wtr.textDirection);
+    if (clear == FCClear.left || clear == FCClear.both) yPosNext = floatL.maxYBelow(yPosNext);
+    if (clear == FCClear.right || clear == FCClear.both) yPosNext = floatR.maxYBelow(yPosNext);
+
+    // Clear the sub-paragraph renderers for wrapping text.
+    wtr.subs.clear();
+
+    //
+    // Loop over this WrappableText's renderers. It starts out with the default text
+    // renderer which includes all the text, but if the text needs to be split because
+    // the available width and/or x position changes (because of floated widgets), the
+    // the text is split into two new renderers that replace the current renderer,
+    // and the loop is run again. This continues until all the text is laid out,
+    // using as many renderers as necessary to wrap around floated widget positions.
+    //
+    var subIndex = -1;
+    while (subIndex < wtr.subs.length) {
+      // Get the estimated line height for the first line. We want to find space for at
+      // least the first line of text.
+      final estLineHeight = wtr[subIndex].initialLineHeight();
+      final estScaledFontSize = wtr[subIndex].initialScaledFontSize();
+
+      // Adjust the left padding based on indent value.
+      final paddingLeft = padding.left +
+          (subIndex <= 0 && el.indent > 0.0
+              ? el.indent
+              : subIndex > 0 && el.indent < 0.0
+                  ? -el.indent
+                  : 0.0);
+
+      final lineMinWidth = estScaledFontSize * 4.0 + paddingLeft + padding.right;
+      final lineMinX = margin.left;
+      final lineMaxX = math.max(lineMinX + lineMinWidth, maxWidth - margin.right);
+
+      // Find space for a width of at least `estLineHeight * 4.0`. This may need to be
+      // tweaked, or it could be an option passed in, or we could layout the text and
+      // find the actual width of the first word, and that could be the minimum width?
+      var rect = findSpaceFor(
+          startY: yPosNext,
+          width: lineMinWidth,
+          height: estLineHeight,
+          minX: lineMinX,
+          maxX: lineMaxX,
+          floatL: floatL,
+          floatR: floatR);
+
+      // Adjust rect for padding.
+      if (paddingLeft > 0.0 || padding.right > 0.0) {
+        rect = Rect.fromLTRB(
+            rect.left + paddingLeft, rect.top, rect.right - padding.right, rect.bottom);
+      }
+
+      // dmPrint('findSpaceFor $yPosNext, estLineHeight $estLineHeight: $rect');
+
+      final subConstraints = childConstraints.copyWith(maxWidth: rect.width);
+
+      // If sub-renderer has inline widget children, set placeholder dimensions.
+      if (wtr[subIndex].placeholderSpans.isNotEmpty) {
+        assert(child != null);
+        wtr[subIndex].setPlaceholderDimensions(
+            child, subConstraints, el.textScaleFactor ?? defaultTextScaleFactor);
+      }
+
+      // Layout the text and inline widget children.
+      wtr[subIndex].layout(subConstraints);
+
+      // If this is the default (-1) or last renderer, check to see if it needs to be
+      // split.
+      if (subIndex == -1 || subIndex == wtr.subs.length - 1) {
+        // TODO(ron): It is possible that the estimated line height is less than the
+        // actual first line height, which could cause the text in the line to overlap
+        // floated widgets below it. This could be fixed by using
+        // `painter.computeLineMetrics` to check, and then call `findSpaceFor` again,
+        // if necessary, with the actual first line height.
+
+        // If this is the first line of the paragraph, and the indent value is not zero,
+        // the second line has a different left padding, so it needs to be laid out
+        // separately, so set the `bottom` value accordingly.
+        final bottom = math.min(rect.bottom,
+            subIndex > 0 || el.indent == 0.0 ? rect.bottom : rect.top + estLineHeight / 2.0);
+
+        // `findSpaceFor` just checked for space for the first line of text. Now that
+        // the text has been laid out, we need to see if the available space extends
+        // the full height of the text.
+        final startY = rect.top + estLineHeight;
+        final nextFloatTop = math.min(floatL.minYBelow(startY), floatR.minYBelow(startY));
+        final nextChangeY = math.min(bottom, nextFloatTop);
+
+        // If the text extends past `nextChangeY`, we need to split the text, and layout
+        // each part individually...
+        if (rect.top + wtr[subIndex].painter.height > nextChangeY) {
+          final span = wtr[subIndex].painter.text;
+          if (span is TextSpan) {
+            //
+            // Calculate the approximate x, y to split the text at, which depends on
+            // the text direction.
+            //
+            // ⦿ Shows the x, y offsets the text should be split at:
+            //
+            // RTL example:
+            //  | This is what you   ┌──────────┐
+            //  | shall do; Love the ⦿          │
+            //  ├────────┐ earth and ⦿──────────┤
+            //  │        │ sun and the animals, |
+            //  ├────────┘ despise riches, give ⦿
+            //  │ alms to every one that asks...|
+            //
+            // LTR example:
+            //  |   you what is This ┌──────────┐
+            //  ⦿ the Love ;do shall │          │
+            //  ├────────⦿ and earth └──────────┤
+            //  │        │ ,animals the and sun |
+            //  ├────────⦿ give ,riches despise |
+            //  │...asks that one every to alms |
+            //
+            final dir = wtr[subIndex].painter.textDirection!;
+            final x = dir == TextDirection.ltr ? rect.width : 0.0;
+            final y = math.min(nextChangeY, nextFloatTop - estLineHeight) - rect.top;
+
+            // Get the position in the text from the point offset.
+            final textPos = wtr[subIndex].painter.getPositionForOffset(Offset(x, y));
+            if (textPos.offset > 0) {
+              // if (kDebugMode) {
+              //   final text = span.toPlainText(includeSemanticsLabels: false);
+              //   final sub = text.substring(0, textPos.offset);
+              //   dmPrint('Splitting text at ${Offset(x, y)} after "$sub"');
+              // }
+
+              // Split the TextSpan...
+              final split = span.splitAtCharacterIndex(textPos.offset);
+
+              // If it was split into two parts...
+              if (split.length == 2) {
+                final textRenderer = wtr[subIndex];
+                if (subIndex == -1) {
+                  subIndex = 0;
+                } else {
+                  wtr.subs.removeLast();
+                }
+                wtr.subs
+                  ..add(textRenderer.copyWith(
+                      split.first, subIndex == 0 ? 0 : wtr.subs[subIndex - 1].nextPlaceholderIndex))
+                  ..add(textRenderer.copyWith(split.last, wtr.subs[subIndex].nextPlaceholderIndex));
+
+                // Re-run the loop, keeping the index the same.
+                continue;
+              }
+            }
+          }
+
+          // final selection = TextSelection(baseOffset: 0, extentOffset: text.length);
+          // final boxes = wtr.painter.getBoxesForSelection(selection);
+          // for (final box in boxes) {
+          //   dmPrint(box);
+          // }
+        }
+      }
+
+      // Calculate `xPos` based on alignment and available space.
+      final xPos = xPosForChildWithWidth(
+          wtr[subIndex].painter.width, crossAxisAlignment, rect.left, rect.right);
+
+      wtr[subIndex].offset = Offset(xPos, rect.top);
+      yPosNext = rect.top + wtr[subIndex].painter.height;
+
+      subIndex++;
+    }
+
+    return yPosNext;
+  }
+
+  ///
+  /// Given a child's [width] and [alignment], and the [minX] and [maxX], returns the
+  /// x position for the child.
+  ///
+  double xPosForChildWithWidth(
+      double width, CrossAxisAlignment alignment, double minX, double maxX) {
+    final double childCrossPosition;
+    switch (alignment) {
+      case CrossAxisAlignment.start:
+        childCrossPosition = isLTR ? minX : maxX - width;
+        break;
+      case CrossAxisAlignment.end:
+        childCrossPosition = isRTL ? minX : maxX - width;
+        break;
+      case CrossAxisAlignment.center:
+        childCrossPosition = (minX + maxX) / 2.0 - width / 2.0;
+        break;
+      case CrossAxisAlignment.stretch:
+      case CrossAxisAlignment.baseline:
+        childCrossPosition = minX;
+        break;
+    }
+    return childCrossPosition;
   }
 
   @override

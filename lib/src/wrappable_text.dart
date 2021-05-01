@@ -35,10 +35,8 @@ class WrappableText {
     this.strutStyle,
     this.textHeightBehavior,
     this.indent = 0.0,
-    this.marginLeft = 0.0,
-    this.marginRight = 0.0,
-    this.paddingLeft = 0.0,
-    this.paddingRight = 0.0,
+    this.margin = EdgeInsets.zero,
+    this.padding = EdgeInsets.zero,
   })  : assert(
           text != null, // ignore: unnecessary_null_comparison
           'A non-null TextSpan must be provided to a WrappableText.',
@@ -56,10 +54,8 @@ class WrappableText {
     StrutStyle? strutStyle,
     ui.TextHeightBehavior? textHeightBehavior,
     double? indent,
-    double? marginLeft,
-    double? marginRight,
-    double? paddingLeft,
-    double? paddingRight,
+    EdgeInsetsGeometry? margin,
+    EdgeInsetsGeometry? padding,
   }) =>
       WrappableText(
         key: key ?? _key,
@@ -72,10 +68,8 @@ class WrappableText {
         strutStyle: strutStyle ?? this.strutStyle,
         textHeightBehavior: textHeightBehavior ?? this.textHeightBehavior,
         indent: indent ?? this.indent,
-        marginLeft: marginLeft ?? this.marginLeft,
-        marginRight: marginRight ?? this.marginRight,
-        paddingLeft: paddingLeft ?? this.paddingLeft,
-        paddingRight: paddingRight ?? this.paddingRight,
+        margin: margin ?? this.margin,
+        padding: padding ?? this.padding,
       );
 
   /// Unique key for this object. If a key was provided, use it, otherwise use
@@ -139,21 +133,13 @@ class WrappableText {
   /// laid out with a hanging indent.
   final double indent;
 
-  /// Left margin. Defaults to zero. Margins overlap floated siblings, similar
-  /// to CSS.
-  final double marginLeft;
+  /// Empty space to surround the paragraph. Similar to CSS, the top overlaps
+  /// the previous sibling's bottom margin, the bottom overlaps the next
+  /// sibling's top margin, and the left and right overlap floated siblings.
+  final EdgeInsetsGeometry margin;
 
-  /// Right margin. Defaults to zero. Margins overlap floated siblings, similar
-  /// to CSS.
-  final double marginRight;
-
-  /// Left padding. Defaults to zero. Padding does not overlap floated siblings,
-  /// similar to CSS.
-  final double paddingLeft;
-
-  /// Right padding. Defaults to zero. Padding does not overlap floated siblings,
-  /// similar to CSS.
-  final double paddingRight;
+  /// Empty space to surround the paragraph that does not overlap siblings.
+  final EdgeInsetsGeometry padding;
 
   @override
   bool operator ==(Object other) {
@@ -170,26 +156,11 @@ class WrappableText {
         other.strutStyle == strutStyle &&
         other.textHeightBehavior == textHeightBehavior &&
         other.indent == indent &&
-        other.marginLeft == marginLeft &&
-        other.marginRight == marginRight &&
-        other.paddingLeft == paddingLeft &&
-        other.paddingRight == paddingRight;
+        other.margin == margin &&
+        other.padding == padding;
   }
 
   @override
-  int get hashCode => hashValues(
-      _key,
-      text,
-      clear,
-      textAlign,
-      textDirection,
-      textScaleFactor,
-      locale,
-      strutStyle,
-      textHeightBehavior,
-      indent,
-      marginLeft,
-      marginRight,
-      paddingLeft,
-      paddingRight);
+  int get hashCode => hashValues(_key, text, clear, textAlign, textDirection, textScaleFactor,
+      locale, strutStyle, textHeightBehavior, indent, margin, padding);
 }

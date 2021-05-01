@@ -51,6 +51,8 @@ class FloatColumn extends MultiChildRenderObjectWidget {
               child is Floatable ? child.float : FCFloat.none,
               child is Floatable ? child.clear : FCClear.none,
               clearMinSpacing: child is Floatable ? child.clearMinSpacing : 0.0,
+              margin: child is Floatable ? child.margin : EdgeInsets.zero,
+              padding: child is Floatable ? child.padding : EdgeInsets.zero,
               maxWidthPercentage: child is Floatable ? child.maxWidthPercentage : 1.0,
             ),
             child: child));
@@ -67,6 +69,8 @@ class FloatColumn extends MultiChildRenderObjectWidget {
               child is Floatable ? child.float : FCFloat.none,
               child is Floatable ? child.clear : FCClear.none,
               clearMinSpacing: child is Floatable ? child.clearMinSpacing : 0.0,
+              margin: child is Floatable ? child.margin : EdgeInsets.zero,
+              padding: child is Floatable ? child.padding : EdgeInsets.zero,
               maxWidthPercentage: child is Floatable ? child.maxWidthPercentage : 1.0,
             );
             result.add(MetaData(
