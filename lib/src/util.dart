@@ -55,12 +55,12 @@ extension FloatColumnExtOnListOfRect on List<Rect> {
 
 ///
 /// Given a starting Y position, [startY], an optional [minX] value (defaults to 0.0),
-/// a [maxX] value, and the floating rectangle lists [floatL] and [floatR], returns the
+/// a [maxX] value, and the floated rectangle lists [floatL] and [floatR], returns the
 /// first vertical space that a rectangle with the given [width] and [height] will fit.
 ///
 /// The `bottom` value in the returned rectangle contains the minimum `bottom` value of
-/// the right or left floating rect that constrains the returned rectangle's width, or
-/// `double.infinity` if no floating rect constrains it.
+/// the right or left floated rect that constrains the returned rectangle's width, or
+/// `double.infinity` if no floated rect constrains it.
 ///
 Rect findSpaceFor({
   required double startY,
@@ -126,21 +126,6 @@ Rect findSpaceFor({
 
     nextY = math.min(lRect?.bottom ?? double.infinity, rRect?.bottom ?? double.infinity);
   } while (width > right - left);
-
-  // If a textDir was provided...
-  // if (textDir != null) {
-  //   // Find the next floating rects on the left and right, if any.
-  //   final bottom = top + height;
-  //   lRect = floatL.min((r) => r.top > bottom && r.top < nextY && r.right > left ? r.top : null);
-  //   rRect = floatR.min((r) => r.top > bottom && r.top < nextY && r.left < right ? r.top : null);
-
-  //   // Update `nextY` based on the top rect, if any.
-  //   if (lRect != null && (rRect == null || lRect.top < rRect.top)) {
-  //     nextY = lRect.top - (textDir == TextDirection.ltr ? height : 0.0);
-  //   } else if (rRect != null) {
-  //     nextY = rRect.top - (textDir == TextDirection.rtl ? height : 0.0);
-  //   }
-  // }
 
   return Rect.fromLTRB(left, top, right, nextY);
 }

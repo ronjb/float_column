@@ -435,40 +435,55 @@ class RenderFloatColumn extends RenderBox
         if (clear == FCClear.left || clear == FCClear.both) yPosNext = floatL.maxYBelow(yPosNext);
         if (clear == FCClear.right || clear == FCClear.both) yPosNext = floatR.maxYBelow(yPosNext);
 
-        // Clear the subs (sub-paragraph renderers for wrapping text).
+        // Clear the sub-paragraph renderers for wrapping text.
         wtr.subs.clear();
 
         //
         // Loop over this WrappableText's renderers. It starts out with the default text
         // renderer which includes all the text, but if the text needs to be split because
-        // the available width and/or x position changes (because of floating widgets), the
+        // the available width and/or x position changes (because of floated widgets), the
         // the text is split into two new renderers that replace the current renderer,
         // and the loop is run again. This continues until all the text is laid out,
-        // using as many renderers as necessary to wrap around floating widget positions.
+        // using as many renderers as necessary to wrap around floated widget positions.
         //
         var subIndex = -1;
         while (subIndex < wtr.subs.length) {
-          var yPos = yPosNext;
-
           // Get the estimated line height for the first line. We want to find space for at
           // least the first line of text.
           final estLineHeight = wtr[subIndex].initialLineHeight();
           final estScaledFontSize = wtr[subIndex].initialScaledFontSize();
 
+          // Adjust the left padding based on indent value.
+          final paddingLeft = el.paddingLeft +
+              (subIndex <= 0 && el.indent > 0.0
+                  ? el.indent
+                  : subIndex > 0 && el.indent < 0.0
+                      ? -el.indent
+                      : 0.0);
+
+          final lineMinWidth = estScaledFontSize * 4.0 + paddingLeft + el.paddingRight;
+          final lineMinX = el.marginLeft;
+          final lineMaxX = math.max(lineMinX + lineMinWidth, maxWidth - el.marginRight);
+
           // Find space for a width of at least `estLineHeight * 4.0`. This may need to be
           // tweaked, or it could be an option passed in, or we could layout the text and
           // find the actual width of the first word, and that could be the minimum width?
-          final rect = findSpaceFor(
-              startY: yPos,
-              width: math.min(maxWidth, estScaledFontSize * 4.0),
+          var rect = findSpaceFor(
+              startY: yPosNext,
+              width: lineMinWidth,
               height: estLineHeight,
-              maxX: maxWidth,
+              minX: lineMinX,
+              maxX: lineMaxX,
               floatL: floatL,
               floatR: floatR);
 
-          // dmPrint('findSpaceFor $yPos, estLineHeight $estLineHeight: $rect');
+          // Adjust rect for padding.
+          if (paddingLeft > 0.0 || el.paddingRight > 0.0) {
+            rect = Rect.fromLTRB(
+                rect.left + paddingLeft, rect.top, rect.right - el.paddingRight, rect.bottom);
+          }
 
-          yPos = rect.top;
+          // dmPrint('findSpaceFor $yPosNext, estLineHeight $estLineHeight: $rect');
 
           final subConstraints = childConstraints.copyWith(maxWidth: rect.width);
 
@@ -487,20 +502,26 @@ class RenderFloatColumn extends RenderBox
           if (subIndex == -1 || subIndex == wtr.subs.length - 1) {
             // TODO(ron): It is possible that the estimated line height is less than the
             // actual first line height, which could cause the text in the line to overlap
-            // floating widgets below it. This could be fixed by using
+            // floated widgets below it. This could be fixed by using
             // `painter.computeLineMetrics` to check, and then call `findSpaceFor` again,
             // if necessary, with the actual first line height.
+
+            // If this is the first line of the paragraph, and the indent value is not zero,
+            // the second line has a different left padding, so it needs to be laid out
+            // separately, so set the `bottom` value accordingly.
+            final bottom = math.min(rect.bottom,
+                subIndex > 0 || el.indent == 0.0 ? rect.bottom : rect.top + estLineHeight / 2.0);
 
             // `findSpaceFor` just checked for space for the first line of text. Now that
             // the text has been laid out, we need to see if the available space extends
             // the full height of the text.
             final startY = rect.top + estLineHeight;
             final nextFloatTop = math.min(floatL.minYBelow(startY), floatR.minYBelow(startY));
-            final nextChangeY = math.min(rect.bottom, nextFloatTop);
+            final nextChangeY = math.min(bottom, nextFloatTop);
 
             // If the text extends past `nextChangeY`, we need to split the text, and layout
             // each part individually...
-            if (yPos + wtr[subIndex].painter.height > nextChangeY) {
+            if (rect.top + wtr[subIndex].painter.height > nextChangeY) {
               final span = wtr[subIndex].painter.text;
               if (span is TextSpan) {
                 //
@@ -573,11 +594,11 @@ class RenderFloatColumn extends RenderBox
           final xPos = xPosForChildWithWidth(
               wtr[subIndex].painter.width, crossAxisAlignment, rect.left, rect.right);
 
-          wtr[subIndex].offset = Offset(xPos, yPos);
-          yPosNext = yPos + wtr[subIndex].painter.height;
+          wtr[subIndex].offset = Offset(xPos, rect.top);
+          yPosNext = rect.top + wtr[subIndex].painter.height;
 
           subIndex++;
-        }
+        } // End while loop.
 
         // If this paragraph has inline widget children, set the `offset` and `scale` for each.
         if (child != null && child.tag.index == i) {

@@ -29,8 +29,8 @@ class FloatTag extends SemanticsTag {
   /// Should the child float to the `left`, `right`, `start`, or `end`? The default is `none`.
   final FCFloat float;
 
-  /// Should the child "clear" (i.e. be placed below) floating siblings?
-  /// And if so, should it be placed below floating siblings on just one side
+  /// Should the child "clear" (i.e. be placed below) floated siblings?
+  /// And if so, should it be placed below floated siblings on just one side
   /// (`left`, `right`, `start`, or `end`) or `both`? The default is `none`.
   final FCClear clear;
 

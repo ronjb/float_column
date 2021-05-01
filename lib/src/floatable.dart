@@ -21,8 +21,8 @@ class Floatable extends StatelessWidget {
   /// The default is `none`.
   final FCFloat float;
 
-  /// Should the child widget "clear" (i.e. be placed below) floating siblings?
-  /// And if so, should it be placed below floating siblings on just one side
+  /// Should the child widget "clear" (i.e. be placed below) floated siblings?
+  /// And if so, should it be placed below floated siblings on just one side
   /// (`left`, `right`, `start`, or `end`) or `both`? The default is `none`.
   final FCClear clear;
 

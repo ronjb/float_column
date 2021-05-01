@@ -10,16 +10,17 @@ import 'package:flutter/rendering.dart';
 import 'shared.dart';
 
 ///
-/// An immutable span of inline content which forms a paragraph. Only useful as a child
-/// of a `FloatColumn`, which provides the capability of wrapping the paragraph around
-/// child widgets that "float" to the right or left.
+/// An immutable span of inline content which forms a paragraph. Only useful as
+/// a child of a `FloatColumn`, which provides the capability of wrapping the
+/// paragraph around child widgets that "float" to the right or left.
 ///
 @immutable
 class WrappableText {
-  /// Creates a paragraph of rich text.
+  /// Creates a paragraph of rich text, that when used in a `FloatColumn` can
+  /// wrap around floated siblings.
   ///
-  /// The [text], [clear], [textAlign], [indent], and [textScaleFactor] arguments
-  /// must not be null.
+  /// The [text], [clear], [textAlign], [indent], and [textScaleFactor]
+  /// arguments must not be null.
   ///
   /// The [textDirection], if null, defaults to the ambient `Directionality`,
   /// which in that case must not be null.
@@ -33,7 +34,11 @@ class WrappableText {
     this.locale,
     this.strutStyle,
     this.textHeightBehavior,
-    this.indent = 0,
+    this.indent = 0.0,
+    this.marginLeft = 0.0,
+    this.marginRight = 0.0,
+    this.paddingLeft = 0.0,
+    this.paddingRight = 0.0,
   })  : assert(
           text != null, // ignore: unnecessary_null_comparison
           'A non-null TextSpan must be provided to a WrappableText.',
@@ -51,6 +56,10 @@ class WrappableText {
     StrutStyle? strutStyle,
     ui.TextHeightBehavior? textHeightBehavior,
     double? indent,
+    double? marginLeft,
+    double? marginRight,
+    double? paddingLeft,
+    double? paddingRight,
   }) =>
       WrappableText(
         key: key ?? _key,
@@ -63,17 +72,22 @@ class WrappableText {
         strutStyle: strutStyle ?? this.strutStyle,
         textHeightBehavior: textHeightBehavior ?? this.textHeightBehavior,
         indent: indent ?? this.indent,
+        marginLeft: marginLeft ?? this.marginLeft,
+        marginRight: marginRight ?? this.marginRight,
+        paddingLeft: paddingLeft ?? this.paddingLeft,
+        paddingRight: paddingRight ?? this.paddingRight,
       );
 
-  /// Unique key for this object. If a key was provided, use it, otherwise use `ValueKey(this)`.
+  /// Unique key for this object. If a key was provided, use it, otherwise use
+  /// `ValueKey(this)`.
   Key get key => _key ?? ValueKey(this);
   final Key? _key;
 
   /// The text to display in this widget.
   final TextSpan text;
 
-  /// Should this paragraph "clear" (i.e. be placed below) floating siblings?
-  /// And if so, should it be placed below floating siblings on just one side
+  /// Should this paragraph "clear" (i.e. be placed below) floated siblings?
+  /// And if so, should it be placed below floated siblings on just one side
   /// (`left`, `right`, `start`, or `end`) or `both`? The default is `none`.
   final FCClear clear;
 
@@ -98,8 +112,8 @@ class WrappableText {
 
   /// The number of font pixels for each logical pixel.
   ///
-  /// For example, if the text scale factor is 1.5, text will be 50% larger than
-  /// the specified font size.
+  /// For example, if the text scale factor is 1.5, text will be 50% larger
+  /// than the specified font size.
   ///
   /// The value given to the constructor as textScaleFactor. If null, will
   /// use the [MediaQueryData.textScaleFactor] obtained from the ambient
@@ -122,8 +136,24 @@ class WrappableText {
   final ui.TextHeightBehavior? textHeightBehavior;
 
   /// First line indent value. Defaults to zero. If it is negative, the text is
-  /// formatted with a hanging indent.
+  /// laid out with a hanging indent.
   final double indent;
+
+  /// Left margin. Defaults to zero. Margins overlap floated siblings, similar
+  /// to CSS.
+  final double marginLeft;
+
+  /// Right margin. Defaults to zero. Margins overlap floated siblings, similar
+  /// to CSS.
+  final double marginRight;
+
+  /// Left padding. Defaults to zero. Padding does not overlap floated siblings,
+  /// similar to CSS.
+  final double paddingLeft;
+
+  /// Right padding. Defaults to zero. Padding does not overlap floated siblings,
+  /// similar to CSS.
+  final double paddingRight;
 
   @override
   bool operator ==(Object other) {
@@ -139,10 +169,27 @@ class WrappableText {
         other.locale == locale &&
         other.strutStyle == strutStyle &&
         other.textHeightBehavior == textHeightBehavior &&
-        other.indent == indent;
+        other.indent == indent &&
+        other.marginLeft == marginLeft &&
+        other.marginRight == marginRight &&
+        other.paddingLeft == paddingLeft &&
+        other.paddingRight == paddingRight;
   }
 
   @override
-  int get hashCode => hashValues(_key, text, clear, textAlign, textDirection, textScaleFactor,
-      locale, strutStyle, textHeightBehavior, indent);
+  int get hashCode => hashValues(
+      _key,
+      text,
+      clear,
+      textAlign,
+      textDirection,
+      textScaleFactor,
+      locale,
+      strutStyle,
+      textHeightBehavior,
+      indent,
+      marginLeft,
+      marginRight,
+      paddingLeft,
+      paddingRight);
 }
