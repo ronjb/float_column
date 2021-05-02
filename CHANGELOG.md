@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [0.1.3] - May 2, 2021
+
+* Added `RenderBox get renderBox` and `Offset get offset` to RenderTextMixin.
+
 ## [0.1.2] - May 2, 2021
 
 * Added support for visiting the children (render objects and text renderers) of a RenderFloatColumn, via the `visitChildrenOfAnyType` function.

@@ -17,11 +17,13 @@ import 'wrappable_text.dart';
 ///
 class WrappableTextRenderer {
   WrappableTextRenderer(
+    RenderBox parent,
     WrappableText wt,
     TextDirection defaultTextDirection,
     DefaultTextStyle defaultTextStyle,
     double defaultTextScaleFactor,
   ) : renderer = TextRenderer(
+            parent,
             TextPainter(
                 text: TextSpan(style: defaultTextStyle.style, children: [wt.text]),
                 textAlign: wt.textAlign ?? defaultTextStyle.textAlign ?? TextAlign.start,
@@ -134,12 +136,16 @@ class WrappableTextRenderer {
 /// TextRenderer
 ///
 class TextRenderer with RenderTextMixin {
-  TextRenderer(this._painter, this._startingPlaceholderIndex) : assert(_painter.text != null);
+  TextRenderer(this._parent, this._painter, this._startingPlaceholderIndex)
+      : assert(_painter.text != null);
 
+  final RenderBox _parent;
   final TextPainter _painter;
   final int _startingPlaceholderIndex;
   List<PlaceholderSpan>? _placeholderSpans;
-  Offset? offset;
+
+  Offset? _offset;
+  set offset(Offset value) => _offset = value;
 
   int get nextPlaceholderIndex => _startingPlaceholderIndex + placeholderSpans.length;
 
@@ -167,6 +173,7 @@ class TextRenderer with RenderTextMixin {
     int _startingPlaceholderIndex,
   ) =>
       TextRenderer(
+          _parent,
           TextPainter(
               text: text,
               textAlign: _painter.textAlign,
@@ -313,6 +320,12 @@ class TextRenderer with RenderTextMixin {
   int? get maxLines => _painter.maxLines;
 
   @override
+  Offset get offset => _offset!;
+
+  @override
+  RenderBox get renderBox => _parent;
+
+  @override
   StrutStyle? get strutStyle => _painter.strutStyle;
 
   @override
@@ -338,7 +351,7 @@ class TextRenderer with RenderTextMixin {
 
   @override
   void paint(PaintingContext context, Offset offset) {
-    _painter.paint(context.canvas, this.offset! + offset);
+    _painter.paint(context.canvas, this.offset + offset);
   }
 
   @override

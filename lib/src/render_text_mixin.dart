@@ -4,6 +4,12 @@ import 'package:flutter/rendering.dart';
 /// Mix this into classes that should mirror the functionality of RenderParagraph.
 ///
 mixin RenderTextMixin {
+  /// The render box containing this text.
+  RenderBox get renderBox;
+
+  /// The offset of the text in the render box.
+  Offset get offset;
+
   /// The text to display.
   InlineSpan get text;
 
@@ -146,6 +152,12 @@ class RenderParagraphAdapter with RenderTextMixin {
 
   @override
   int? get maxLines => rp.maxLines;
+
+  @override
+  Offset get offset => Offset.zero;
+
+  @override
+  RenderBox get renderBox => rp;
 
   @override
   StrutStyle? get strutStyle => rp.strutStyle;

@@ -120,8 +120,8 @@ class RenderFloatColumn extends RenderBox
         keys.add(el.defaultKey);
         final prh = _cache[el.defaultKey];
         if (prh == null) {
-          _cache[el.defaultKey] =
-              WrappableTextRenderer(el, textDirection, defaultTextStyle, defaultTextScaleFactor);
+          _cache[el.defaultKey] = WrappableTextRenderer(
+              this, el, textDirection, defaultTextStyle, defaultTextScaleFactor);
         } else {
           prh.updateWith(el, this, textDirection, defaultTextStyle, defaultTextScaleFactor);
         }
@@ -388,7 +388,7 @@ class RenderFloatColumn extends RenderBox
             final renderer = wtr.rendererWithPlaceholder(widgetIndex);
             final box = renderer.placeholderBoxForWidgetIndex(widgetIndex);
             final childParentData = child.parentData! as FloatColumnParentData
-              ..offset = Offset(box.left + renderer.offset!.dx, box.top + renderer.offset!.dy)
+              ..offset = Offset(box.left + renderer.offset.dx, box.top + renderer.offset.dy)
               ..scale = renderer.placeholderScaleForWidgetIndex(widgetIndex);
 
             child = childParentData.nextSibling;
