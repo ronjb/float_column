@@ -53,8 +53,8 @@ extension FCInlineSpanExt on InlineSpan {
   /// a list containing just this span is returned. If this span was split, a list of two spans
   /// is returned, containing the two new spans.
   ///
-  List<InlineSpan> splitAtCharacterIndex(int index) => this is Splittable<InlineSpan>
-      ? (this as Splittable<InlineSpan>).splitAt(index)
+  List<InlineSpan> splitAtCharacterIndex(int index) => this is SplittableMixin<InlineSpan>
+      ? (this as SplittableMixin<InlineSpan>).splitAt(index)
       : _splitAtIndex(SplitAtIndex(index));
 
   List<InlineSpan> _splitAtIndex(SplitAtIndex index) {
@@ -124,8 +124,8 @@ extension FCListOfInlineSpanExt on List<InlineSpan> {
 
     var i = 0;
     for (final span in this) {
-      final result = span is Splittable<InlineSpan>
-          ? (span as Splittable<InlineSpan>).splitAtIndex(index)
+      final result = span is SplittableMixin<InlineSpan>
+          ? (span as SplittableMixin<InlineSpan>).splitAtIndex(index)
           : span._splitAtIndex(index);
 
       if (index.value == 0) {

@@ -5,6 +5,10 @@ library float_column;
 
 export 'src/float_column.dart';
 export 'src/floatable.dart';
+export 'src/inline_span_ext.dart';
 export 'src/render_float_column.dart';
+export 'src/render_object_ext.dart';
+export 'src/render_text_mixin.dart';
 export 'src/shared.dart';
+export 'src/splittable_mixin.dart';
 export 'src/wrappable_text.dart';

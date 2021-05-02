@@ -25,7 +25,7 @@ class WrappableText {
   /// The [textDirection], if null, defaults to the ambient `Directionality`,
   /// which in that case must not be null.
   const WrappableText({
-    Key? key,
+    this.key,
     required this.text,
     this.clear = FCClear.none,
     this.textAlign,
@@ -40,8 +40,7 @@ class WrappableText {
   })  : assert(
           text != null, // ignore: unnecessary_null_comparison
           'A non-null TextSpan must be provided to a WrappableText.',
-        ),
-        _key = key;
+        );
 
   WrappableText copyWith({
     Key? key,
@@ -58,7 +57,7 @@ class WrappableText {
     EdgeInsetsGeometry? padding,
   }) =>
       WrappableText(
-        key: key ?? _key,
+        key: key ?? this.key,
         text: text ?? this.text,
         clear: clear ?? this.clear,
         textAlign: textAlign ?? this.textAlign,
@@ -72,10 +71,8 @@ class WrappableText {
         padding: padding ?? this.padding,
       );
 
-  /// Unique key for this object. If a key was provided, use it, otherwise use
-  /// `ValueKey(this)`.
-  Key get key => _key ?? ValueKey(this);
-  final Key? _key;
+  /// Unique key for this object.
+  final Key? key;
 
   /// The text to display in this widget.
   final TextSpan text;
@@ -146,7 +143,7 @@ class WrappableText {
     if (identical(this, other)) return true;
     if (other.runtimeType != runtimeType) return false;
     return other is WrappableText &&
-        other._key == _key &&
+        other.key == key &&
         other.text == text &&
         other.clear == clear &&
         other.textAlign == textAlign &&
@@ -161,6 +158,6 @@ class WrappableText {
   }
 
   @override
-  int get hashCode => hashValues(_key, text, clear, textAlign, textDirection, textScaleFactor,
+  int get hashCode => hashValues(key, text, clear, textAlign, textDirection, textScaleFactor,
       locale, strutStyle, textHeightBehavior, indent, margin, padding);
 }

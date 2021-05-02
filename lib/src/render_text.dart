@@ -9,6 +9,7 @@ import 'package:flutter/rendering.dart';
 import 'float_tag.dart';
 import 'inline_span_ext.dart';
 import 'render_float_column.dart';
+import 'render_text_mixin.dart';
 import 'wrappable_text.dart';
 
 ///
@@ -37,7 +38,7 @@ class WrappableTextRenderer {
 
   TextRenderer operator [](int index) => index == -1 ? renderer : subs[index];
 
-  TextDirection get textDirection => renderer.painter.textDirection!;
+  TextDirection get textDirection => renderer._painter.textDirection!;
 
   List<TextRenderer> get renderers => subs.isNotEmpty ? subs : [renderer];
 
@@ -70,52 +71,52 @@ class WrappableTextRenderer {
     var needsLayout = false;
 
     final textSpan = TextSpan(style: defaultTextStyle.style, children: [wt.text]);
-    switch (renderer.painter.text!.compareTo(textSpan)) {
+    switch (renderer._painter.text!.compareTo(textSpan)) {
       case RenderComparison.identical:
       case RenderComparison.metadata:
         break;
       case RenderComparison.paint:
-        renderer.painter.text = textSpan;
+        renderer._painter.text = textSpan;
         renderer.clearPlaceholderSpans();
         needsPaint = true;
         break;
       case RenderComparison.layout:
-        renderer.painter.text = textSpan;
+        renderer._painter.text = textSpan;
         renderer.clearPlaceholderSpans();
         needsLayout = true;
         break;
     }
 
     final textAlign = wt.textAlign ?? defaultTextStyle.textAlign ?? TextAlign.start;
-    if (renderer.painter.textAlign != textAlign) {
-      renderer.painter.textAlign = textAlign;
+    if (renderer._painter.textAlign != textAlign) {
+      renderer._painter.textAlign = textAlign;
       needsLayout = true;
     }
 
     final textDirection = wt.textDirection ?? defaultTextDirection;
-    if (renderer.painter.textDirection != textDirection) {
-      renderer.painter.textDirection = textDirection;
+    if (renderer._painter.textDirection != textDirection) {
+      renderer._painter.textDirection = textDirection;
       needsLayout = true;
     }
 
     final textScaleFactor = wt.textScaleFactor ?? defaultTextScaleFactor;
-    if (renderer.painter.textScaleFactor != textScaleFactor) {
-      renderer.painter.textScaleFactor = textScaleFactor;
+    if (renderer._painter.textScaleFactor != textScaleFactor) {
+      renderer._painter.textScaleFactor = textScaleFactor;
       needsLayout = true;
     }
 
-    if (renderer.painter.locale != wt.locale) {
-      renderer.painter.locale = wt.locale;
+    if (renderer._painter.locale != wt.locale) {
+      renderer._painter.locale = wt.locale;
       needsLayout = true;
     }
 
-    if (renderer.painter.strutStyle != wt.strutStyle) {
-      renderer.painter.strutStyle = wt.strutStyle;
+    if (renderer._painter.strutStyle != wt.strutStyle) {
+      renderer._painter.strutStyle = wt.strutStyle;
       needsLayout = true;
     }
 
-    if (renderer.painter.textHeightBehavior != wt.textHeightBehavior) {
-      renderer.painter.textHeightBehavior = wt.textHeightBehavior;
+    if (renderer._painter.textHeightBehavior != wt.textHeightBehavior) {
+      renderer._painter.textHeightBehavior = wt.textHeightBehavior;
       needsLayout = true;
     }
 
@@ -132,20 +133,20 @@ class WrappableTextRenderer {
 ///
 /// TextRenderer
 ///
-class TextRenderer {
-  TextRenderer(this.painter, this.startingPlaceholderIndex) : assert(painter.text != null);
+class TextRenderer with RenderTextMixin {
+  TextRenderer(this._painter, this._startingPlaceholderIndex) : assert(_painter.text != null);
 
-  final TextPainter painter;
-  final int startingPlaceholderIndex;
+  final TextPainter _painter;
+  final int _startingPlaceholderIndex;
   List<PlaceholderSpan>? _placeholderSpans;
   Offset? offset;
 
-  int get nextPlaceholderIndex => startingPlaceholderIndex + placeholderSpans.length;
+  int get nextPlaceholderIndex => _startingPlaceholderIndex + placeholderSpans.length;
 
   List<PlaceholderSpan> get placeholderSpans {
     if (_placeholderSpans == null) {
       _placeholderSpans = <PlaceholderSpan>[];
-      painter.text!.visitChildren((span) {
+      _painter.text!.visitChildren((span) {
         if (span is PlaceholderSpan) _placeholderSpans!.add(span);
         return true;
       });
@@ -158,38 +159,38 @@ class TextRenderer {
   /// Computes the visual position of the glyphs for painting the text and the
   /// position of the inline widget children.
   void layout(BoxConstraints constraints) {
-    painter.layout(minWidth: constraints.minWidth, maxWidth: constraints.maxWidth);
+    _painter.layout(minWidth: constraints.minWidth, maxWidth: constraints.maxWidth);
   }
 
   TextRenderer copyWith(
     InlineSpan text,
-    int startingPlaceholderIndex,
+    int _startingPlaceholderIndex,
   ) =>
       TextRenderer(
           TextPainter(
               text: text,
-              textAlign: painter.textAlign,
-              textDirection: painter.textDirection,
-              textScaleFactor: painter.textScaleFactor,
-              locale: painter.locale,
-              strutStyle: painter.strutStyle,
-              textHeightBehavior: painter.textHeightBehavior),
-          startingPlaceholderIndex);
+              textAlign: _painter.textAlign,
+              textDirection: _painter.textDirection,
+              textScaleFactor: _painter.textScaleFactor,
+              locale: _painter.locale,
+              strutStyle: _painter.strutStyle,
+              textHeightBehavior: _painter.textHeightBehavior),
+          _startingPlaceholderIndex);
 
   TextBox placeholderBoxForWidgetIndex(int index) {
-    final i = index - startingPlaceholderIndex;
-    if ((painter.inlinePlaceholderBoxes?.length ?? 0) > i) {
-      return painter.inlinePlaceholderBoxes![i];
+    final i = index - _startingPlaceholderIndex;
+    if ((_painter.inlinePlaceholderBoxes?.length ?? 0) > i) {
+      return _painter.inlinePlaceholderBoxes![i];
     } else {
       assert(false);
-      return TextBox.fromLTRBD(0, 0, 0, 0, painter.textDirection!);
+      return TextBox.fromLTRBD(0, 0, 0, 0, _painter.textDirection!);
     }
   }
 
   double placeholderScaleForWidgetIndex(int index) {
-    final i = index - startingPlaceholderIndex;
-    if ((painter.inlinePlaceholderScales?.length ?? 0) > i) {
-      return painter.inlinePlaceholderScales![i];
+    final i = index - _startingPlaceholderIndex;
+    if ((_painter.inlinePlaceholderScales?.length ?? 0) > i) {
+      return _painter.inlinePlaceholderScales![i];
     } else {
       assert(false);
       return 1.0;
@@ -199,14 +200,14 @@ class TextRenderer {
   /// Returns an estimate of the initial line height based on the initial font size,
   /// initial line height scale, and the text scale factor.
   double initialLineHeight() {
-    final fontSize = painter.text!.initialFontSize() ?? 14.0;
-    final lineHeightScale = painter.text!.initialLineHeightScale() ?? 1.12;
-    return fontSize * lineHeightScale * painter.textScaleFactor;
+    final fontSize = _painter.text!.initialFontSize() ?? 14.0;
+    final lineHeightScale = _painter.text!.initialLineHeightScale() ?? 1.12;
+    return fontSize * lineHeightScale * _painter.textScaleFactor;
   }
 
   double initialScaledFontSize() {
-    final fontSize = painter.text!.initialFontSize() ?? 14.0;
-    return fontSize * painter.textScaleFactor;
+    final fontSize = _painter.text!.initialFontSize() ?? 14.0;
+    return fontSize * _painter.textScaleFactor;
   }
 
   /// Sets the placeholder dimensions for this paragraph's inline widget children, if any.
@@ -231,7 +232,7 @@ class TextRenderer {
     while (child != null && child.tag.index == paragraphIndex) {
       final childParentData = child.parentData! as FloatColumnParentData;
 
-      final i = child.tag.placeholderIndex - startingPlaceholderIndex;
+      final i = child.tag.placeholderIndex - _startingPlaceholderIndex;
       if (i >= 0 && i < placeholderSpans.length) {
         placeholderDimensions[i] = _layoutChild(child, i, childConstraints);
       }
@@ -239,7 +240,7 @@ class TextRenderer {
       child = childParentData.nextSibling;
     }
 
-    painter.setPlaceholderDimensions(placeholderDimensions);
+    _painter.setPlaceholderDimensions(placeholderDimensions);
   }
 
   /// Layout the [child] inline widget at the given [childIndex].
@@ -279,6 +280,69 @@ class TextRenderer {
       baselineOffset: baselineOffset,
     );
   }
+
+  //
+  // RenderTextAdapter overrides:
+  //
+
+  @override
+  List<TextBox> getBoxesForSelection(TextSelection selection) =>
+      _painter.getBoxesForSelection(selection);
+
+  @override
+  double? getFullHeightForCaret(TextPosition position) =>
+      _painter.getFullHeightForCaret(position, Rect.zero);
+
+  @override
+  Offset getOffsetForCaret(TextPosition position, Rect caretPrototype) =>
+      _painter.getOffsetForCaret(position, caretPrototype);
+
+  @override
+  TextPosition getPositionForOffset(Offset offset) => _painter.getPositionForOffset(offset);
+
+  @override
+  TextRange getWordBoundary(TextPosition position) => _painter.getWordBoundary(position);
+
+  @override
+  double get height => _painter.height;
+
+  @override
+  Locale? get locale => _painter.locale;
+
+  @override
+  int? get maxLines => _painter.maxLines;
+
+  @override
+  StrutStyle? get strutStyle => _painter.strutStyle;
+
+  @override
+  InlineSpan get text => _painter.text!;
+
+  @override
+  TextAlign get textAlign => _painter.textAlign;
+
+  @override
+  TextDirection get textDirection => _painter.textDirection!;
+
+  @override
+  TextHeightBehavior? get textHeightBehavior => _painter.textHeightBehavior;
+
+  @override
+  double get textScaleFactor => _painter.textScaleFactor;
+
+  @override
+  Size get textSize => _painter.size;
+
+  @override
+  TextWidthBasis get textWidthBasis => _painter.textWidthBasis;
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    _painter.paint(context.canvas, this.offset! + offset);
+  }
+
+  @override
+  double get width => _painter.width;
 }
 
 extension on RenderBox {

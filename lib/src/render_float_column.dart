@@ -9,6 +9,7 @@ import 'package:flutter/rendering.dart';
 
 import 'float_tag.dart';
 import 'inline_span_ext.dart';
+import 'render_object_ext.dart';
 import 'render_text.dart';
 import 'shared.dart';
 import 'util.dart';
@@ -55,7 +56,8 @@ class RenderFloatColumn extends RenderBox
     with
         ContainerRenderObjectMixin<RenderBox, FloatColumnParentData>,
         RenderBoxContainerDefaultsMixin<RenderBox, FloatColumnParentData>,
-        DebugOverflowIndicatorMixin {
+        DebugOverflowIndicatorMixin,
+        VisitChildrenOfAnyTypeMixin {
   /// Creates a FloatColumn render object.
   ///
   /// By default, the children are aligned to the start of the cross axis.
@@ -99,7 +101,7 @@ class RenderFloatColumn extends RenderBox
       var el = _internalTextAndWidgets[i];
       if (el is WrappableText) {
         // The key MUST be unique, so if it is not, make it so...
-        if (keys.contains(el.key)) {
+        if (keys.contains(el.defaultKey)) {
           var k = -i;
           var newKey = ValueKey(k);
           while (keys.contains(newKey)) {
@@ -115,10 +117,10 @@ class RenderFloatColumn extends RenderBox
           _internalTextAndWidgets[i] = el;
         }
 
-        keys.add(el.key);
-        final prh = _cache[el.key];
+        keys.add(el.defaultKey);
+        final prh = _cache[el.defaultKey];
         if (prh == null) {
-          _cache[el.key] =
+          _cache[el.defaultKey] =
               WrappableTextRenderer(el, textDirection, defaultTextStyle, defaultTextScaleFactor);
         } else {
           prh.updateWith(el, this, textDirection, defaultTextStyle, defaultTextScaleFactor);
@@ -365,7 +367,7 @@ class RenderFloatColumn extends RenderBox
 
       // Else, if it is a WrappableText...
       else if (el is WrappableText) {
-        final wtr = _cache[el.key]!;
+        final wtr = _cache[el.defaultKey]!;
         assert(wtr.renderer.placeholderSpans.isEmpty || (child != null && child.tag.index == i));
 
         // Resolve the margin and update `yPosNext` and `prevBottomMargin`.
@@ -616,8 +618,8 @@ class RenderFloatColumn extends RenderBox
 
         // If the text extends past `nextChangeY`, we need to split the text, and layout
         // each part individually...
-        if (rect.top + wtr[subIndex].painter.height > nextChangeY) {
-          final span = wtr[subIndex].painter.text;
+        if (rect.top + wtr[subIndex].height > nextChangeY) {
+          final span = wtr[subIndex].text;
           if (span is TextSpan) {
             //
             // Calculate the approximate x, y to split the text at, which depends on
@@ -641,12 +643,12 @@ class RenderFloatColumn extends RenderBox
             //  ├────────⦿ give ,riches despise |
             //  │...asks that one every to alms |
             //
-            final dir = wtr[subIndex].painter.textDirection!;
+            final dir = wtr[subIndex].textDirection;
             final x = dir == TextDirection.ltr ? rect.width : 0.0;
             final y = math.min(nextChangeY, nextFloatTop - estLineHeight) - rect.top;
 
             // Get the position in the text from the point offset.
-            final textPos = wtr[subIndex].painter.getPositionForOffset(Offset(x, y));
+            final textPos = wtr[subIndex].getPositionForOffset(Offset(x, y));
             if (textPos.offset > 0) {
               // if (kDebugMode) {
               //   final text = span.toPlainText(includeSemanticsLabels: false);
@@ -685,11 +687,11 @@ class RenderFloatColumn extends RenderBox
       }
 
       // Calculate `xPos` based on alignment and available space.
-      final xPos = xPosForChildWithWidth(
-          wtr[subIndex].painter.width, crossAxisAlignment, rect.left, rect.right);
+      final xPos =
+          xPosForChildWithWidth(wtr[subIndex].width, crossAxisAlignment, rect.left, rect.right);
 
       wtr[subIndex].offset = Offset(xPos, rect.top);
-      yPosNext = rect.top + wtr[subIndex].painter.height;
+      yPosNext = rect.top + wtr[subIndex].height;
 
       subIndex++;
     }
@@ -745,10 +747,10 @@ class RenderFloatColumn extends RenderBox
       // Else, if it is a WrappableText
       //
       else if (el is WrappableText) {
-        final wtr = _cache[el.key]!;
+        final wtr = _cache[el.defaultKey]!;
 
         for (final textRenderer in wtr.renderers) {
-          textRenderer.painter.paint(context.canvas, textRenderer.offset! + offset);
+          textRenderer.paint(context, offset);
         }
 
         // dmPrint('painted $i, text at ${wtr.offset! + offset}');
@@ -845,6 +847,33 @@ class RenderFloatColumn extends RenderBox
       ..add(EnumProperty<CrossAxisAlignment>('crossAxisAlignment', crossAxisAlignment))
       ..add(EnumProperty<TextDirection>('textDirection', textDirection, defaultValue: null));
   }
+
+  @override
+  bool visitChildrenOfAnyType(CancelableObjectVisitor visitor) {
+    var child = firstChild;
+    var i = 0;
+
+    for (final el in _internalTextAndWidgets) {
+      if (el is Widget) {
+        // Visit the child widget's render object.
+        if (!visitor(child!)) return false; //------------------------------>
+        child = childAfter(child);
+      } else if (el is WrappableText) {
+        // Visit all the text renderers.
+        final wtr = _cache[el.defaultKey]!;
+        for (final textRenderer in wtr.renderers) {
+          if (!visitor(textRenderer)) return false; //---------------------->
+        }
+
+        // Visit all the child render objects embedded in the text.
+        while (child != null && child.tag.index == i) {
+          if (!visitor(child)) return false; //----------------------------->
+        }
+      }
+      i++;
+    }
+    return true;
+  }
 }
 
 extension on RenderBox {
@@ -854,4 +883,8 @@ extension on RenderBox {
 extension on RenderFloatColumn {
   bool get isLTR => textDirection == TextDirection.ltr;
   bool get isRTL => textDirection == TextDirection.rtl;
+}
+
+extension on WrappableText {
+  Key get defaultKey => key ?? ValueKey(this);
 }

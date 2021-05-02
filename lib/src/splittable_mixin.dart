@@ -4,7 +4,7 @@
 ///
 /// Mix this in with a class that can be split at an integer index.
 ///
-mixin Splittable<T> {
+mixin SplittableMixin<T> {
   ///
   /// Splits this object at the given [index] and returns a list of one or two objects.
   /// If [index] is zero, or if [index] is greater than the number of items in this object,
@@ -42,9 +42,9 @@ class SplitAtIndex {
 }
 
 ///
-/// An example of a class that adopts the Splittable mixin -- a splittable string.
+/// An example of a class that adopts the SplittableMixin -- a splittable string.
 ///
-class SplittableString with Splittable<SplittableString> {
+class SplittableString with SplittableMixin<SplittableString> {
   final String value;
 
   SplittableString(this.value);

@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [0.1.2] - May 2, 2021
+
+* Added support for visiting the children (render objects and text renderers) of a RenderFloatColumn, via the `visitChildrenOfAnyType` function.
+* Added support for getting detailed info about each text renderer child (via the `RenderTextMixin`), similar to RenderParagraph.
+* Fixed a bug relating to WrappableText and unique keys.
+
 ## [0.1.1] - May 1, 2021
 
 * Added support for margins and padding to WrappableText and Floatable.
