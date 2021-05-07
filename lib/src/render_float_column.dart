@@ -689,9 +689,25 @@ class RenderFloatColumn extends RenderBox
         }
       }
 
+      CrossAxisAlignment alignment() {
+        switch (wtr[subIndex].textAlign) {
+          case TextAlign.left:
+            return isLTR ? CrossAxisAlignment.start : CrossAxisAlignment.end;
+          case TextAlign.right:
+            return isRTL ? CrossAxisAlignment.start : CrossAxisAlignment.end;
+          case TextAlign.center:
+            return CrossAxisAlignment.center;
+          case TextAlign.justify:
+            return CrossAxisAlignment.stretch;
+          case TextAlign.start:
+            return CrossAxisAlignment.start;
+          case TextAlign.end:
+            return CrossAxisAlignment.end;
+        }
+      }
+
       // Calculate `xPos` based on alignment and available space.
-      final xPos =
-          xPosForChildWithWidth(wtr[subIndex].width, crossAxisAlignment, rect.left, rect.right);
+      final xPos = xPosForChildWithWidth(wtr[subIndex].width, alignment(), rect.left, rect.right);
 
       wtr[subIndex].offset = Offset(xPos, rect.top);
       yPosNext = rect.top + wtr[subIndex].height;

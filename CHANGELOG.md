@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [0.1.5] - May 7, 2021
+
+* Updated so the `textAlign` parameter of WrappableText works correctly.
+
 ## [0.1.4] - May 7, 2021
 
 * Updated so negative indent values work correctly.

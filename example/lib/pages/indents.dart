@@ -7,12 +7,12 @@ class Indents extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // const TextAlign? textAlign = null;
-    // const textAlign = TextAlign.center;
-    const textAlign = TextAlign.start;
+    const TextAlign? textAlign = null;
+    // const textAlign = TextAlign.start;
     // const textAlign = TextAlign.end;
     // const textAlign = TextAlign.left;
     // const textAlign = TextAlign.right;
+    // const textAlign = TextAlign.center;
     // const textAlign = TextAlign.justify;
 
     // const crossAxisAlignment = CrossAxisAlignment.center;
