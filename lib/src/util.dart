@@ -73,7 +73,7 @@ Rect findSpaceFor({
   // TextDirection? textDir,
 }) {
   assert(startY < double.infinity);
-  assert(width >= 0.0 && width < double.infinity);
+  assert(width < double.infinity);
   assert(height >= 0.0 && height < double.infinity);
   assert(minX < double.infinity);
   assert(maxX < double.infinity && maxX - minX >= width);

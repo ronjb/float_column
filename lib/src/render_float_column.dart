@@ -548,12 +548,7 @@ class RenderFloatColumn extends RenderBox
       final estScaledFontSize = wtr[subIndex].initialScaledFontSize();
 
       // Adjust the left padding based on indent value.
-      final paddingLeft = padding.left +
-          (subIndex <= 0 && el.indent > 0.0
-              ? el.indent
-              : subIndex > 0 && el.indent < 0.0
-                  ? -el.indent
-                  : 0.0);
+      final paddingLeft = padding.left + (subIndex <= 0 ? el.indent : 0.0);
 
       final lineMinWidth = estScaledFontSize * 4.0 + paddingLeft + padding.right;
       final lineMinX = margin.left;
@@ -572,10 +567,12 @@ class RenderFloatColumn extends RenderBox
           floatR: floatR);
 
       // Adjust rect for padding.
-      if (paddingLeft > 0.0 || padding.right > 0.0) {
-        rect = Rect.fromLTRB(
-            rect.left + paddingLeft, rect.top, rect.right - padding.right, rect.bottom);
-      }
+      rect = Rect.fromLTRB(
+        rect.left + paddingLeft,
+        rect.top,
+        rect.right - padding.right,
+        rect.bottom,
+      );
 
       // dmPrint('findSpaceFor $yPosNext, estLineHeight $estLineHeight: $rect');
 
@@ -647,33 +644,39 @@ class RenderFloatColumn extends RenderBox
             final x = dir == TextDirection.ltr ? rect.width : 0.0;
             final y = math.min(nextChangeY, nextFloatTop - estLineHeight) - rect.top;
 
-            // Get the position in the text from the point offset.
-            final textPos = wtr[subIndex].getPositionForOffset(Offset(x, y));
-            if (textPos.offset > 0) {
-              // if (kDebugMode) {
-              //   final text = span.toPlainText(includeSemanticsLabels: false);
-              //   final sub = text.substring(0, textPos.offset);
-              //   dmPrint('Splitting text at ${Offset(x, y)} after "$sub"');
-              // }
-
-              // Split the TextSpan...
-              final split = span.splitAtCharacterIndex(textPos.offset);
-
-              // If it was split into two parts...
-              if (split.length == 2) {
-                final textRenderer = wtr[subIndex];
-                if (subIndex == -1) {
-                  subIndex = 0;
-                } else {
-                  wtr.subs.removeLast();
+            // Get the character index in the text from the point offset.
+            var charIndex = wtr[subIndex].getPositionForOffset(Offset(x, y)).offset;
+            if (charIndex > 0) {
+              final text = span.toPlainText(includeSemanticsLabels: false);
+              if (charIndex < text.length - 1) {
+                // Skip trailing spaces.
+                final codeUnits = text.codeUnits;
+                while (charIndex < codeUnits.length - 1 && codeUnits[charIndex] == 0x0020) {
+                  charIndex++;
                 }
-                wtr.subs
-                  ..add(textRenderer.copyWith(
-                      split.first, subIndex == 0 ? 0 : wtr.subs[subIndex - 1].nextPlaceholderIndex))
-                  ..add(textRenderer.copyWith(split.last, wtr.subs[subIndex].nextPlaceholderIndex));
 
-                // Re-run the loop, keeping the index the same.
-                continue;
+                // dmPrint('Splitting at ${Offset(x, y)} after "${text.substring(0, charIndex)}"');
+
+                // Split the TextSpan...
+                final split = span.splitAtCharacterIndex(charIndex);
+
+                // If it was split into two parts...
+                if (split.length == 2) {
+                  final textRenderer = wtr[subIndex];
+                  if (subIndex == -1) {
+                    subIndex = 0;
+                  } else {
+                    wtr.subs.removeLast();
+                  }
+                  wtr.subs
+                    ..add(textRenderer.copyWith(split.first,
+                        subIndex == 0 ? 0 : wtr.subs[subIndex - 1].nextPlaceholderIndex))
+                    ..add(
+                        textRenderer.copyWith(split.last, wtr.subs[subIndex].nextPlaceholderIndex));
+
+                  // Re-run the loop, keeping the index the same.
+                  continue;
+                }
               }
             }
           }

@@ -114,7 +114,7 @@ extension FCInlineSpanExt on InlineSpan {
 
 extension FCListOfInlineSpanExt on List<InlineSpan> {
   ///
-  /// Splits this span at the given character [index] and returns a list of one or two lists.
+  /// Splits this list of spans at the given character [index] and returns one or two lists.
   /// If [index] is zero, or if [index] is greater than the number of characters in these spans,
   /// a list containing just this list is returned. If this list was split, an array of two lists
   /// is returned, containing the two new lists.

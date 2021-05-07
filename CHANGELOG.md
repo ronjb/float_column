@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [0.1.4] - May 7, 2021
+
+* Updated so negative indent values work correctly.
+
 ## [0.1.3] - May 2, 2021
 
 * Added `RenderBox get renderBox` and `Offset get offset` to RenderTextMixin.

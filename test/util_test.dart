@@ -6,11 +6,6 @@ import 'package:float_column/src/util.dart';
 void main() {
   test('findSpaceFor basic', () {
     expect(
-      () => findSpaceFor(startY: 0, width: -1, height: 0, maxX: 0, floatL: [], floatR: []),
-      throwsAssertionError,
-    );
-
-    expect(
       findSpaceFor(startY: 0, width: 100, height: 100, maxX: 200, floatL: [], floatR: []),
       const Rect.fromLTRB(0, 0, 200, double.infinity),
     );
