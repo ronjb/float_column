@@ -51,19 +51,16 @@ class Indents extends StatelessWidget {
                       Floatable(
                           float: FCFloat.start,
                           clear: FCClear.both,
-                          // clearMinSpacing: 40,
                           maxWidthPercentage: 0.333,
                           child: Container(
-                            height: 200,
-                            color: Colors.blue,
-                            margin: Directionality.of(context) == TextDirection.ltr
-                                ? const EdgeInsets.only(right: 8)
-                                : const EdgeInsets.only(left: 8),
-                          )),
+                              height: 200,
+                              color: Colors.blue,
+                              margin: const EdgeInsetsDirectional.only(end: 8))),
                       const WrappableText(
                         text: _text,
                         indent: -40,
                         textAlign: textAlign,
+                        padding: EdgeInsets.only(left: 40),
                       ),
                       Floatable(
                           float: FCFloat.end,

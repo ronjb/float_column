@@ -2,7 +2,7 @@
 
 [![Pub](https://img.shields.io/pub/v/flutter_widget_from_html_core.svg)](https://pub.dev/packages/float_column)
 
-A Flutter package for building a vertical column of widgets and text with the ability to "float" child widgets to the left or right, allowing the text to wrap around them — similar to the functionality of the CSS `float` and `clear` properties.
+Flutter FloatColumn widget for building a vertical column of widgets and text where the text wraps around floated widgets, similar to how CSS float works.
 
 ## Example
 
@@ -33,10 +33,24 @@ Then you have to import the package with:
 import 'package:float_column/float_column.dart';
 ```
 
-And use `FloatColumn` where appropriate:
+And use `FloatColumn` where appropriate. For example:
 
 ```dart
 FloatColumn(
-    // See the example app code for a detailed example.
+  children: const [
+    Floatable(
+      float: FCFloat.start,
+      padding: EdgeInsets.only(right: 8),
+      child: _Box(Text('Box 1')),
+    ),
+    Floatable(
+      float: FCFloat.end,
+      clear: FCClear.both,
+      clearMinSpacing: 20,
+      padding: EdgeInsets.only(left: 8),
+      child: _Box(Text('Box 2')),
+    ),
+    WrappableText(text: 'This text will wrap around the floated widgets...'),
+  ],
 ),
 ```

@@ -51,12 +51,9 @@ class MultipleParagraphs extends StatelessWidget {
                           // clearMinSpacing: 40,
                           maxWidthPercentage: 0.333,
                           child: Container(
-                            height: 200,
-                            color: Colors.blue,
-                            margin: Directionality.of(context) == TextDirection.ltr
-                                ? const EdgeInsets.only(right: 8)
-                                : const EdgeInsets.only(left: 8),
-                          )),
+                              height: 200,
+                              color: Colors.blue,
+                              margin: const EdgeInsetsDirectional.only(end: 8))),
                       const WrappableText(text: _text, textAlign: textAlign),
                       Floatable(
                           float: FCFloat.end,
