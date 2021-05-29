@@ -38,6 +38,7 @@ class Indents extends StatelessWidget {
                   FloatColumn(
                     crossAxisAlignment: crossAxisAlignment,
                     children: [
+                      const Heading(title: 'Indent'),
                       Floatable(
                           float: FCFloat.end,
                           clear: FCClear.both,
@@ -48,6 +49,8 @@ class Indents extends StatelessWidget {
                         indent: 40,
                         textAlign: textAlign,
                       ),
+                      const SizedBox(height: 8),
+                      const Heading(title: 'Hanging Indent'),
                       Floatable(
                           float: FCFloat.start,
                           clear: FCClear.both,
@@ -62,6 +65,8 @@ class Indents extends StatelessWidget {
                         textAlign: textAlign,
                         padding: EdgeInsets.only(left: 40),
                       ),
+                      const SizedBox(height: 8),
+                      const Heading(title: 'No Indent'),
                       Floatable(
                           float: FCFloat.end,
                           clear: FCClear.end,
@@ -78,6 +83,28 @@ class Indents extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class Heading extends StatelessWidget {
+  final String title;
+
+  const Heading({Key? key, required this.title}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Container(
+        width: double.infinity,
+        color: Colors.grey,
+        child: Text(
+          title,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
       ),
     );

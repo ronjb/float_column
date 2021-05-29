@@ -20,7 +20,6 @@ class Nested extends StatelessWidget {
     // const crossAxisAlignment = CrossAxisAlignment.end;
     // const crossAxisAlignment = CrossAxisAlignment.stretch;
 
-
     return DefaultTextStyle(
       style: const TextStyle(fontSize: 18, color: Colors.black, height: 1.5),
       textAlign: textAlign,
@@ -37,9 +36,6 @@ class Nested extends StatelessWidget {
                   FloatColumn(
                     crossAxisAlignment: crossAxisAlignment,
                     children: [
-                      const Floatable(
-                          child: Text('nested',
-                              style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold))),
                       const Floatable(
                         float: FCFloat.start,
                         clear: FCClear.both,
@@ -106,11 +102,7 @@ class Nested extends StatelessWidget {
                         padding: EdgeInsets.only(left: 8),
                         child: _Box(Text('a2')),
                       ),
-                      const WrappableText(
-                        text: _t2,
-                        textAlign: textAlign,
-                        margin: EdgeInsets.symmetric(vertical: 8),
-                      ),
+                      const WrappableText(text: _t2, textAlign: textAlign),
                     ],
                   ),
                 ],

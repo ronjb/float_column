@@ -4,8 +4,6 @@ import 'pages/basic_ltr.dart';
 import 'pages/basic_rtl.dart';
 import 'pages/indents.dart';
 import 'pages/margins_and_padding.dart';
-import 'pages/margins_and_padding2.dart';
-import 'pages/multiple_paragraphs.dart';
 import 'pages/nested.dart';
 
 void main() {
@@ -34,10 +32,8 @@ class MyHomePage extends StatelessWidget {
       BasicLtr(),
       BasicRtl(),
       Nested(),
-      MultipleParagraphs(),
-      MarginsAndPadding(),
-      MarginsAndPadding2(),
       Indents(),
+      MarginsAndPadding(),
     ];
 
     final tabs = tabViews.map((e) => Tab(text: e.runtimeType.toString())).toList();

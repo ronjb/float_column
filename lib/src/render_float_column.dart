@@ -510,7 +510,7 @@ class RenderFloatColumn extends RenderBox
   /// Lays out the given WrappableText object, and returns the y position for the next child.
   ///
   double _layoutWrappableText(
-    WrappableText el,
+    WrappableText wt,
     WrappableTextRenderer wtr,
     RenderBox? child,
     BoxConstraints childConstraints,
@@ -519,13 +519,13 @@ class RenderFloatColumn extends RenderBox
     List<Rect> floatL,
     List<Rect> floatR,
   ) {
-    final margin = el.margin.resolve(wtr.textDirection);
-    final padding = el.padding.resolve(wtr.textDirection);
+    final margin = wt.margin.resolve(wtr.textDirection);
+    final padding = wt.padding.resolve(wtr.textDirection);
 
     var yPosNext = yPos + padding.top;
 
     // Check for `clear` and adjust `yPosNext` accordingly.
-    final clear = resolveClear(el.clear, withDir: wtr.textDirection);
+    final clear = resolveClear(wt.clear, withDir: wtr.textDirection);
     if (clear == FCClear.left || clear == FCClear.both) yPosNext = floatL.maxYBelow(yPosNext);
     if (clear == FCClear.right || clear == FCClear.both) yPosNext = floatR.maxYBelow(yPosNext);
 
@@ -548,7 +548,7 @@ class RenderFloatColumn extends RenderBox
       final estScaledFontSize = wtr[subIndex].initialScaledFontSize();
 
       // Adjust the left padding based on indent value.
-      final paddingLeft = padding.left + (subIndex <= 0 ? el.indent : 0.0);
+      final paddingLeft = padding.left + (subIndex <= 0 ? wt.indent : 0.0);
 
       final lineMinWidth = estScaledFontSize * 4.0 + paddingLeft + padding.right;
       final lineMinX = margin.left;
@@ -585,7 +585,7 @@ class RenderFloatColumn extends RenderBox
       if (wtr[subIndex].placeholderSpans.isNotEmpty) {
         assert(child != null);
         wtr[subIndex].setPlaceholderDimensions(
-            child, subConstraints, el.textScaleFactor ?? defaultTextScaleFactor);
+            child, subConstraints, wt.textScaleFactor ?? defaultTextScaleFactor);
       }
 
       // Layout the text and inline widget children.
@@ -604,7 +604,7 @@ class RenderFloatColumn extends RenderBox
         // the second line has a different left padding, so it needs to be laid out
         // separately, so set the `bottom` value accordingly.
         final bottom = math.min(rect.bottom,
-            subIndex > 0 || el.indent == 0.0 ? rect.bottom : rect.top + estLineHeight / 2.0);
+            subIndex > 0 || wt.indent == 0.0 ? rect.bottom : rect.top + estLineHeight / 2.0);
 
         // `findSpaceFor` just checked for space for the first line of text. Now that
         // the text has been laid out, we need to see if the available space extends
