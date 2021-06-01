@@ -1,3 +1,6 @@
+// Copyright 2021 Ron Booth. All rights reserved.
+// Use of this source code is governed by a license that can be found in the LICENSE file.
+
 import 'package:flutter/rendering.dart';
 
 /// Signature for a function that takes an [Object] and returns `true` to continue,
