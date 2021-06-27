@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.0.0] - June 27, 2021
+
+* Updated README.md and released 1.0.0 version.
+
 ## [0.1.5] - May 7, 2021
 
 * Updated so the `textAlign` parameter of WrappableText works correctly.
