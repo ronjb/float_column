@@ -52,7 +52,7 @@ class BasicLtr extends StatelessWidget {
   }
 }
 
-String _name(String name) => kIsWeb ? name : 'assets/$name';
+String _name(String name) => kIsWeb && kDebugMode ? name : 'assets/$name';
 
 class Img extends StatelessWidget {
   final String assetName;
