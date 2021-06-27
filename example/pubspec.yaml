@@ -12,6 +12,7 @@ dependencies:
     path: ../
   flutter:
     sdk: flutter
+  google_fonts: ^2.1.0
 
 dev_dependencies:
   flutter_test:
@@ -19,3 +20,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/jeremy-bishop-EwKXn5CapA4-unsplash.jpg
+    - assets/walt_whitman.jpg

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:float_column/float_column.dart';
 
-import '../shared/chapter_number.dart';
+import '../shared/drop_cap.dart';
 
 class MarginsAndPadding extends StatelessWidget {
   const MarginsAndPadding({Key? key}) : super(key: key);
@@ -40,7 +40,7 @@ class MarginsAndPadding extends StatelessWidget {
                   FloatColumn(
                     crossAxisAlignment: crossAxisAlignment,
                     children: [
-                      const Floatable(float: FCFloat.start, child: ChapterNumber(123)),
+                      Floatable(float: FCFloat.start, child: DropCap(123.toString())),
                       Floatable(
                           float: FCFloat.end,
                           clear: FCClear.both,

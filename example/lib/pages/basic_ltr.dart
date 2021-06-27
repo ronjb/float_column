@@ -1,72 +1,49 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:float_column/float_column.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-import '../shared/chapter_number.dart';
+import '../shared/drop_cap.dart';
 
 class BasicLtr extends StatelessWidget {
   const BasicLtr({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    const TextAlign? textAlign = null;
-    // const textAlign = TextAlign.start;
-    // const textAlign = TextAlign.end;
-    // const textAlign = TextAlign.left;
-    // const textAlign = TextAlign.right;
-    // const textAlign = TextAlign.center;
-    // const textAlign = TextAlign.justify;
-
-    // const crossAxisAlignment = CrossAxisAlignment.center;
-    const crossAxisAlignment = CrossAxisAlignment.start;
-    // const crossAxisAlignment = CrossAxisAlignment.end;
-    // const crossAxisAlignment = CrossAxisAlignment.stretch;
-
-    const boxHeight = 40.0;
-
     return DefaultTextStyle(
       style: const TextStyle(fontSize: 18, color: Colors.black, height: 1.5),
-      textAlign: textAlign,
-      child: Directionality(
-        textDirection: TextDirection.ltr,
-        child: Builder(
-          builder: (context) => SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: crossAxisAlignment,
-                children: [
-                  FloatColumn(
-                    crossAxisAlignment: crossAxisAlignment,
-                    children: [
-                      const Floatable(float: FCFloat.start, child: ChapterNumber(123)),
-                      Floatable(
-                          float: FCFloat.end,
-                          clear: FCClear.both,
-                          clearMinSpacing: 20,
-                          maxWidthPercentage: 0.333,
-                          child: Container(height: boxHeight, color: Colors.orange)),
-                      Floatable(
-                          float: FCFloat.start,
-                          clear: FCClear.both,
-                          clearMinSpacing: 40,
-                          maxWidthPercentage: 0.333,
-                          child: Container(
-                              height: 200,
-                              color: Colors.blue,
-                              margin: const EdgeInsetsDirectional.only(end: 8))),
-                      Floatable(
-                          float: FCFloat.end,
-                          clear: FCClear.end,
-                          clearMinSpacing: 100,
-                          maxWidthPercentage: 0.333,
-                          child: Container(height: boxHeight, color: Colors.green)),
-                      const WrappableText(text: _text, textAlign: textAlign),
-                    ],
+      child: Scrollbar(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: FloatColumn(
+              children: [
+                const Floatable(float: FCFloat.start, child: DropCap('“T', size: 3)),
+                Floatable(
+                  float: FCFloat.end,
+                  clear: FCClear.start,
+                  clearMinSpacing: 12,
+                  maxWidthPercentage: 0.333,
+                  padding: EdgeInsetsDirectional.only(start: 8),
+                  child: Img(
+                    assetName: _name('jeremy-bishop-EwKXn5CapA4-unsplash.jpg'),
+                    title: 'Photo by Jeremy Bishop on Unsplash',
                   ),
-                ],
-              ),
+                ),
+                Floatable(
+                  float: FCFloat.start,
+                  clear: FCClear.start,
+                  clearMinSpacing: 175,
+                  maxWidthPercentage: 0.25,
+                  padding: EdgeInsetsDirectional.only(end: 12),
+                  child: Img(
+                    assetName: _name('walt_whitman.jpg'),
+                    title: 'Walt Whitman',
+                  ),
+                ),
+                WrappableText(text: _text),
+              ],
             ),
           ),
         ),
@@ -75,7 +52,88 @@ class BasicLtr extends StatelessWidget {
   }
 }
 
-// cspell: disable
-const _text = TextSpan(
-    text:
-        '“This is what you shall do; Love the earth and sun and the animals, despise riches, give alms to every one that asks, stand up for the stupid and crazy, devote your income and labor to others, hate tyrants, argue not concerning God, have patience and indulgence toward the people, take off your hat to nothing known or unknown or to any man or number of men, go freely with powerful uneducated persons and with the young and with the mothers of families, read these leaves in the open air every season of every year of your life, re-examine all you have been told at school or church or in any book, dismiss whatever insults your own soul, and your very flesh shall be a great poem and have the richest fluency not only in its words but in the silent lines of its lips and face and between the lashes of your eyes and in every motion and joint of your body.” – Walt Whitman, Song of Myself');
+String _name(String name) => kIsWeb ? name : 'assets/$name';
+
+class Img extends StatelessWidget {
+  final String assetName;
+  final String? title;
+
+  const Img({Key? key, required this.assetName, this.title}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          color: Colors.black,
+          padding: const EdgeInsets.all(4),
+          child: Image(image: AssetImage(assetName)),
+        ),
+        if (title?.isNotEmpty ?? false)
+          Text(
+            title!,
+            style: const TextStyle(fontSize: 9),
+          ),
+      ],
+    );
+  }
+}
+
+// ignore_for_file: prefer_const_constructors, cspell: disable
+
+final _text = TextSpan(
+  children: [
+    TextSpan(
+      text: 'his is what you shall do; ',
+    ),
+    TextSpan(
+      text: 'Love',
+      style:
+          GoogleFonts.getFont('Sevillana', fontWeight: FontWeight.bold, color: Colors.deepPurple),
+    ),
+    TextSpan(
+      text:
+          ' the earth and sun and the animals, despise riches, give alms to every one that asks, ',
+    ),
+    TextSpan(
+      text: 'stand up for the stupid and crazy',
+      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
+    ),
+    TextSpan(
+      text:
+          ', devote your income and labor to others, hate tyrants, argue not concerning God, have patience and indulgence toward the people, ',
+    ),
+    TextSpan(
+      text: 'take off your hat to nothing known or unknown or to any man or number of men',
+      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
+    ),
+    TextSpan(
+      text:
+          ', go freely with powerful uneducated persons and with the young and with the mothers of families, read these leaves in the open air every season of every year of your life, ',
+    ),
+    TextSpan(
+      text: 're-examine all you have been told',
+      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
+    ),
+    TextSpan(
+      text: ' at school or church or in any book, ',
+    ),
+    TextSpan(
+      text: 'dismiss whatever insults your own soul',
+      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
+    ),
+    TextSpan(
+      text:
+          ', and your very flesh shall be a great poem and have the richest fluency not only in its words but in the silent lines of its lips and face and between the lashes of your eyes and in every motion and joint of your body.” – ',
+    ),
+    TextSpan(
+      text: 'Walt Whitman, ',
+      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
+    ),
+    TextSpan(
+      text: 'Song of Myself',
+      style: TextStyle(
+          fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, color: Colors.deepPurple),
+    ),
+  ],
+);
