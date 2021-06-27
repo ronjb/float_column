@@ -4,7 +4,7 @@
 
 Flutter FloatColumn widget for building a vertical column of widgets and text where the text wraps around floated widgets, similar to how CSS float works.
 
-Try it out at: ![https://ronjb.github.io/float_column/#/](https://ronjb.github.io/float_column/#/)
+Try it out at: [https://ronjb.github.io/float_column/#/](https://ronjb.github.io/float_column/#/)
 
 ## Example
 
