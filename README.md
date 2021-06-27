@@ -8,6 +8,8 @@ Try it out at: [https://ronjb.github.io/float_column](https://ronjb.github.io/fl
 
 ## Example
 
+You can use it for drop caps and so much more:
+
 ![Example with left-to-right text](https://raw.githubusercontent.com/ronjb/float_column/main/example/example_ltr.png)
 
 ## Example with right-to-left text
