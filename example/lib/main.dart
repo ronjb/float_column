@@ -28,21 +28,22 @@ class MyHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const tabViews = <Widget>[
-      BasicLtr(),
-      BasicRtl(),
-      Nested(),
-      Indents(),
-      MarginsAndPadding(),
-    ];
+    const tabs = <String, Widget>{
+      'Basic LTR': BasicLtr(),
+      'Basic RTL': BasicRtl(),
+      'Nested': Nested(),
+      'Indents': Indents(),
+      'Margins & Padding': MarginsAndPadding(),
+    };
 
-    final tabs = tabViews.map((e) => Tab(text: e.runtimeType.toString())).toList();
+    final tabsTitles = tabs.entries.map((e) => Tab(text: e.key)).toList();
+    final tabViews = tabs.entries.map((e) => e.value).toList();
 
     return DefaultTabController(
       length: tabs.length,
       child: Scaffold(
-        appBar: AppBar(title: TabBar(tabs: tabs, isScrollable: true)),
-        body: const TabBarView(children: tabViews),
+        appBar: AppBar(title: TabBar(tabs: tabsTitles, isScrollable: true)),
+        body: TabBarView(children: tabViews),
       ),
     );
   }
