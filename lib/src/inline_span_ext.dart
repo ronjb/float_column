@@ -7,44 +7,57 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:collection/collection.dart';
-
 import 'splittable_mixin.dart';
 
 extension FCInlineSpanExt on InlineSpan {
   ///
-  /// Returns the `style?.fontSize` of the first `TextSpan` with text, or `null` if none.
+  /// Returns the font size of the first non-empty text in the span, or [defaultValue] if none.
   ///
-  double? initialFontSize() {
-    final span = this;
-    if (span is TextSpan) {
-      double? fontSize;
-      if (span.text?.isNotEmpty ?? false) {
-        return span.style?.fontSize;
-      } else {
-        fontSize = span.children?.firstWhereOrNull((s) => s is TextSpan)?.initialFontSize();
-      }
-      return fontSize ?? span.style?.fontSize;
-    }
-    return null; // ignore: avoid_returning_null
+  double initialFontSize(double defaultValue) {
+    return valueOfFirstDescendantOf(
+          this,
+          where: (s) => s is TextSpan && (s.text?.isNotEmpty ?? false),
+          defaultValue: defaultValue,
+          getValue: (s) => s is TextSpan ? s.style?.fontSize : null,
+          childrenOf: (s) => s is TextSpan ? s.children : null,
+        ) ??
+        defaultValue;
   }
 
   ///
-  /// Returns the `style?.height` of the first `TextSpan` with text, or `null` if none.
+  /// Returns the line height of the first non-empty text in the span, or [defaultValue] if none.
   ///
-  double? initialLineHeightScale() {
-    final span = this;
-    if (span is TextSpan) {
-      double? lineHeight;
-      if (span.text?.isNotEmpty ?? false) {
-        return span.style?.height;
-      } else {
-        lineHeight =
-            span.children?.firstWhereOrNull((s) => s is TextSpan)?.initialLineHeightScale();
-      }
-      return lineHeight ?? span.style?.height;
-    }
-    return null; // ignore: avoid_returning_null
+  double initialLineHeightScale(double defaultValue) {
+    return valueOfFirstDescendantOf(
+          this,
+          where: (s) => s is TextSpan && (s.text?.isNotEmpty ?? false),
+          defaultValue: defaultValue,
+          getValue: (s) => s is TextSpan ? s.style?.height : null,
+          childrenOf: (s) => s is TextSpan ? s.children : null,
+        ) ??
+        defaultValue;
+  }
+
+  ///
+  /// Returns the first non-empty text in the span, or the empty string if none.
+  ///
+  /// Note, a WidgetSpan is represented as '\uFFFC', the standard object
+  /// replacement character.
+  ///
+  String initialText() {
+    return valueOfFirstDescendantOf(
+          this,
+          where: (s) => s is WidgetSpan || (s is TextSpan && (s.text?.isNotEmpty ?? false)),
+          defaultValue: '',
+          getValue: (s) => s is WidgetSpan
+              ? '\uFFFC'
+              : s is TextSpan && (s.text?.isNotEmpty ?? false)
+                  ? s.text
+                  : '',
+          childrenOf: (s) => s is TextSpan ? s.children : null,
+          isValueInherited: false,
+        ) ??
+        '';
   }
 
   ///
@@ -169,4 +182,47 @@ extension FCTextSpanExt on TextSpan {
         recognizer: recognizer ?? this.recognizer,
         semanticsLabel: semanticsLabel ?? this.semanticsLabel,
       );
+}
+
+/// Walks the given [node] and its descendants in pre-order and returns the
+/// value (using [getValue]) of the first node (including the initial node)
+/// where the [where] function returns `true`. If no matching node is found,
+/// `null` is returned.
+///
+/// If the value of the matching node is `null`, and [isValueInherited] is
+/// `true`, the default, the value of the matching node's parent is returned,
+/// or its parent, if it is also `null`, and so on, all the way up the tree.
+/// If all the values are `null`, the [defaultValue] is returned.
+///
+/// If the value of the matching node is `null` and [isValueInherited] is
+/// set to `false`, the [defaultValue] is returned.
+///
+V? valueOfFirstDescendantOf<T, V>(
+  T node, {
+  required bool Function(T) where,
+  required V defaultValue,
+  required V? Function(T) getValue,
+  required Iterable<T>? Function(T) childrenOf,
+  bool isValueInherited = true,
+}) {
+  if (where(node)) {
+    return getValue(node) ?? defaultValue;
+  } else {
+    // Walk its descendants in pre-order, looking for the first match.
+    final children = childrenOf(node);
+    if (children != null) {
+      final value = (isValueInherited ? getValue(node) : null) ?? defaultValue;
+      for (final child in children) {
+        final childValue = valueOfFirstDescendantOf(child,
+            where: where,
+            defaultValue: value,
+            getValue: getValue,
+            childrenOf: childrenOf,
+            isValueInherited: isValueInherited);
+        if (childValue != null) return childValue;
+      }
+    }
+  }
+
+  return null; // ignore: avoid_returning_null
 }

@@ -170,7 +170,7 @@ class TextRenderer with RenderTextMixin {
 
   TextRenderer copyWith(
     InlineSpan text,
-    int _startingPlaceholderIndex,
+    int startingPlaceholderIndex,
   ) =>
       TextRenderer(
           _parent,
@@ -182,7 +182,7 @@ class TextRenderer with RenderTextMixin {
               locale: _painter.locale,
               strutStyle: _painter.strutStyle,
               textHeightBehavior: _painter.textHeightBehavior),
-          _startingPlaceholderIndex);
+          startingPlaceholderIndex);
 
   TextBox placeholderBoxForWidgetIndex(int index) {
     final i = index - _startingPlaceholderIndex;
@@ -207,13 +207,13 @@ class TextRenderer with RenderTextMixin {
   /// Returns an estimate of the initial line height based on the initial font size,
   /// initial line height scale, and the text scale factor.
   double initialLineHeight() {
-    final fontSize = _painter.text!.initialFontSize() ?? 14.0;
-    final lineHeightScale = _painter.text!.initialLineHeightScale() ?? 1.12;
+    final fontSize = _painter.text!.initialFontSize(14.0);
+    final lineHeightScale = _painter.text!.initialLineHeightScale(1.12);
     return fontSize * lineHeightScale * _painter.textScaleFactor;
   }
 
   double initialScaledFontSize() {
-    final fontSize = _painter.text!.initialFontSize() ?? 14.0;
+    final fontSize = _painter.text!.initialFontSize(14.0);
     return fontSize * _painter.textScaleFactor;
   }
 

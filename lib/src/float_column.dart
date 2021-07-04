@@ -7,11 +7,10 @@ import 'package:flutter/widgets.dart';
 import 'float_tag.dart';
 import 'floatable.dart';
 import 'render_float_column.dart';
-import 'shared.dart';
 import 'wrappable_text.dart';
 
-/// A vertical column of widgets and text with the ability to "float" child 
-/// widgets to the left or right, allowing the text to wrap around them — 
+/// A vertical column of widgets and text with the ability to "float" child
+/// widgets to the left or right, allowing the text to wrap around them —
 /// similar to the functionality of the CSS `float` and `clear` properties.
 class FloatColumn extends MultiChildRenderObjectWidget {
   /// Creates and returns a new FloatColumn.
@@ -44,18 +43,7 @@ class FloatColumn extends MultiChildRenderObjectWidget {
     final result = <Widget>[];
     for (final child in list) {
       if (child is Widget) {
-        result.add(MetaData(
-            metaData: FloatTag(
-              index,
-              0,
-              child is Floatable ? child.float : FCFloat.none,
-              child is Floatable ? child.clear : FCClear.none,
-              clearMinSpacing: child is Floatable ? child.clearMinSpacing : 0.0,
-              margin: child is Floatable ? child.margin : EdgeInsets.zero,
-              padding: child is Floatable ? child.padding : EdgeInsets.zero,
-              maxWidthPercentage: child is Floatable ? child.maxWidthPercentage : 1.0,
-            ),
-            child: child));
+        result.add(MetaData(metaData: FloatTag.fromChild(index, 0, child), child: child));
       } else if (child is WrappableText) {
         // Traverses the paragraph's InlineSpan tree and depth-first collects the list of
         // child widgets that are created in WidgetSpans.
@@ -63,16 +51,7 @@ class FloatColumn extends MultiChildRenderObjectWidget {
         child.text.visitChildren((span) {
           if (span is WidgetSpan) {
             final child = span.child;
-            final tag = FloatTag(
-              index,
-              placeholderIndex++,
-              child is Floatable ? child.float : FCFloat.none,
-              child is Floatable ? child.clear : FCClear.none,
-              clearMinSpacing: child is Floatable ? child.clearMinSpacing : 0.0,
-              margin: child is Floatable ? child.margin : EdgeInsets.zero,
-              padding: child is Floatable ? child.padding : EdgeInsets.zero,
-              maxWidthPercentage: child is Floatable ? child.maxWidthPercentage : 1.0,
-            );
+            final tag = FloatTag.fromChild(index, placeholderIndex++, child);
             result.add(MetaData(
               metaData: tag,
               child: Semantics(tagForChildren: tag, child: child),

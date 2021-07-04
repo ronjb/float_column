@@ -31,7 +31,8 @@ class FloatColumnParentData extends ContainerBoxParentData<RenderBox> {
   }
 }
 
-/// A render object that displays a vertical list of widgets and paragraphs of text.
+/// A render object that displays a vertical list of widgets and paragraphs of
+/// text.
 ///
 /// ## Layout algorithm
 ///
@@ -45,12 +46,12 @@ class FloatColumnParentData extends ContainerBoxParentData<RenderBox> {
 ///    [CrossAxisAlignment.stretch], instead use tight cross axis constraints
 ///    that match the incoming max extent in the cross axis.
 ///
-/// 2. The cross axis extent of the [RenderFloatColumn] is the maximum cross axis
-///    extent of the children (which will always satisfy the incoming
+/// 2. The cross axis extent of the [RenderFloatColumn] is the maximum cross
+///    axis extent of the children (which will always satisfy the incoming
 ///    constraints).
 ///
-/// 3. The main axis extent of the [RenderFloatColumn] is the sum of the main axis
-///    extents of the children (subject to the incoming constraints).
+/// 3. The main axis extent of the [RenderFloatColumn] is the sum of the main
+///    axis extents of the children (subject to the incoming constraints).
 ///
 class RenderFloatColumn extends RenderBox
     with
@@ -69,8 +70,11 @@ class RenderFloatColumn extends RenderBox
     required double defaultTextScaleFactor,
     Clip clipBehavior = Clip.none,
     List<RenderBox>? widgets,
-  })  : assert(crossAxisAlignment != null), // ignore: unnecessary_null_comparison
-        assert(clipBehavior != null), // ignore: unnecessary_null_comparison
+  })  :
+        // ignore: unnecessary_null_comparison
+        assert(crossAxisAlignment != null),
+        // ignore: unnecessary_null_comparison
+        assert(clipBehavior != null),
         _internalTextAndWidgets = _textAndWidgets,
         _crossAxisAlignment = crossAxisAlignment,
         _textDirection = textDirection,
@@ -109,7 +113,8 @@ class RenderFloatColumn extends RenderBox
           }
           el = el.copyWith(key: newKey);
 
-          // Before we make a change to `_internalTextAndWidgets`, make sure it is a copy.
+          // Before we make a change to `_internalTextAndWidgets`, make sure it
+          // is a copy.
           if (identical(_internalTextAndWidgets, _textAndWidgets)) {
             _internalTextAndWidgets = List<Object>.of(_textAndWidgets);
           }
@@ -230,8 +235,10 @@ class RenderFloatColumn extends RenderBox
   /*
   double _getIntrinsicSize({
     required Axis sizingDirection,
-    required double extent, // the extent in the direction that isn't the sizing direction
-    required _ChildSizingFunction childSize, // a method to find the size in the sizing direction
+    // the extent in the direction that isn't the sizing direction
+    required double extent,
+     // a method to find the size in the sizing direction
+    required _ChildSizingFunction childSize,
   }) {
     if (sizingDirection == Axis.vertical) {
       // INTRINSIC MAIN SIZE
@@ -329,7 +336,8 @@ class RenderFloatColumn extends RenderBox
       childConstraints = BoxConstraints(maxWidth: maxWidth);
     }
 
-    // These will hold the rectangles of widgets that are floated to the left or right.
+    // These will hold the rectangles of widgets that are floated to the left
+    // or right.
     final floatL = <Rect>[];
     final floatR = <Rect>[];
 
@@ -348,7 +356,8 @@ class RenderFloatColumn extends RenderBox
         final tag = child!.tag;
         assert(tag.index == i && tag.placeholderIndex == 0);
 
-        // If not floated, resolve the margin and update `yPosNext` and `prevBottomMargin`.
+        // If not floated, resolve the margin and update `yPosNext` and
+        // `prevBottomMargin`.
         if (tag.float == FCFloat.none) {
           final margin = tag.margin.resolve(textDirection);
           final topMargin = math.max(prevBottomMargin, margin.top);
@@ -379,7 +388,8 @@ class RenderFloatColumn extends RenderBox
         yPosNext = _layoutWrappableText(
             el, wtr, child, childConstraints, yPosNext, maxWidth, floatL, floatR);
 
-        // If this paragraph has inline widget children, set the `offset` and `scale` for each.
+        // If this paragraph has inline widget children, set the `offset` and
+        // `scale` for each.
         if (child != null && child.tag.index == i) {
           var widgetIndex = 0;
           while (child != null && child.tag.index == i) {
@@ -408,7 +418,8 @@ class RenderFloatColumn extends RenderBox
   }
 
   ///
-  /// Lays out the given [child] widget, and returns the y position for the next child.
+  /// Lays out the given [child] widget, and returns the y position for the
+  /// next child.
   ///
   double _layoutWidget(
     RenderBox child,
@@ -498,7 +509,8 @@ class RenderFloatColumn extends RenderBox
         xPos + child.size.width + padding.right,
         rect.top + child.size.height + padding.bottom,
       ));
-      yPosNext = yPos; // This widget was floated, so set `yPosNext` back to `yPos`.
+      // This widget was floated, so set `yPosNext` back to `yPos`.
+      yPosNext = yPos;
     } else {
       yPosNext = rect.top + child.size.height + padding.bottom;
     }
@@ -507,7 +519,8 @@ class RenderFloatColumn extends RenderBox
   }
 
   ///
-  /// Lays out the given WrappableText object, and returns the y position for the next child.
+  /// Lays out the given WrappableText object, and returns the y position for
+  /// the next child.
   ///
   double _layoutWrappableText(
     WrappableText wt,
@@ -533,18 +546,42 @@ class RenderFloatColumn extends RenderBox
     wtr.subs.clear();
 
     //
-    // Loop over this WrappableText's renderers. It starts out with the default text
-    // renderer which includes all the text, but if the text needs to be split because
-    // the available width and/or x position changes (because of floated widgets), the
-    // the text is split into two new renderers that replace the current renderer,
-    // and the loop is run again. This continues until all the text is laid out,
-    // using as many renderers as necessary to wrap around floated widget positions.
+    // Loop over this WrappableText's renderers. It starts out with the default
+    // text renderer which includes all the text, but if the text needs to be
+    // split because the available width and/or x position changes (because of
+    // floated widgets), the the text is split into two new renderers that
+    // replace the current renderer, and the loop is run again. This continues
+    // until all the text is laid out, using as many renderers as necessary to
+    // wrap around floated widget positions.
     //
     var subIndex = -1;
     while (subIndex < wtr.subs.length) {
-      // Get the estimated line height for the first line. We want to find space for at
-      // least the first line of text.
+      // Get the estimated line height for the first line. We want to find
+      // space for at least the first line of text.
       final estLineHeight = wtr[subIndex].initialLineHeight();
+
+      // If the text starts with a line feed...
+      final initialText = wtr[subIndex].text.initialText();
+      if (initialText.isNotEmpty && initialText.codeUnitAt(0) == 0x0a) {
+        final textRenderer = wtr[subIndex];
+        final split = textRenderer.text.splitAtCharacterIndex(1);
+        if (split.length == 2) {
+          if (subIndex == -1) {
+            subIndex = 0;
+          } else {
+            wtr.subs.removeAt(subIndex);
+          }
+
+          wtr.subs.add(textRenderer.copyWith(
+              split.last, subIndex == 0 ? 0 : wtr.subs[subIndex - 1].nextPlaceholderIndex));
+
+          yPosNext += estLineHeight;
+
+          // Re-run the loop, keeping the index the same.
+          continue;
+        }
+      }
+
       final estScaledFontSize = wtr[subIndex].initialScaledFontSize();
 
       // Adjust the left padding based on indent value.
@@ -554,9 +591,10 @@ class RenderFloatColumn extends RenderBox
       final lineMinX = margin.left;
       final lineMaxX = math.max(lineMinX + lineMinWidth, maxWidth - margin.right);
 
-      // Find space for a width of at least `estLineHeight * 4.0`. This may need to be
-      // tweaked, or it could be an option passed in, or we could layout the text and
-      // find the actual width of the first word, and that could be the minimum width?
+      // Find space for a width of at least `estLineHeight * 4.0`. This may
+      // need to be tweaked, or it could be an option passed in, or we could
+      // layout the text and find the actual width of the first word, and that
+      // could be the minimum width?
       var rect = findSpaceFor(
           startY: yPosNext,
           width: lineMinWidth,
@@ -581,7 +619,8 @@ class RenderFloatColumn extends RenderBox
         minWidth: math.min(childConstraints.minWidth, rect.width),
       );
 
-      // If sub-renderer has inline widget children, set placeholder dimensions.
+      // If sub-renderer has inline widget children, set placeholder
+      // dimensions.
       if (wtr[subIndex].placeholderSpans.isNotEmpty) {
         assert(child != null);
         wtr[subIndex].setPlaceholderDimensions(
@@ -591,36 +630,40 @@ class RenderFloatColumn extends RenderBox
       // Layout the text and inline widget children.
       wtr[subIndex].layout(subConstraints);
 
-      // If this is the default (-1) or last renderer, check to see if it needs to be
-      // split.
+      // If this is the default (-1) or last renderer, check to see if it needs
+      // to be split.
       if (subIndex == -1 || subIndex == wtr.subs.length - 1) {
-        // TODO(ron): It is possible that the estimated line height is less than the
-        // actual first line height, which could cause the text in the line to overlap
-        // floated widgets below it. This could be fixed by using
-        // `painter.computeLineMetrics` to check, and then call `findSpaceFor` again,
-        // if necessary, with the actual first line height.
+        // TODO(ron): It is possible that the estimated line height is less
+        // than the actual first line height, which could cause the text in the
+        // line to overlap floated widgets below it. This could be fixed by
+        // using `painter.computeLineMetrics` to check, and then call
+        // `findSpaceFor` again, if necessary, with the actual first line
+        // height.
 
-        // If this is the first line of the paragraph, and the indent value is not zero,
-        // the second line has a different left padding, so it needs to be laid out
-        // separately, so set the `bottom` value accordingly.
+        // If this is the first line of the paragraph, and the indent value is
+        // not zero, the second line has a different left padding, so it needs
+        // to be laid out separately, so set the `bottom` value accordingly.
         final bottom = math.min(rect.bottom,
             subIndex > 0 || wt.indent == 0.0 ? rect.bottom : rect.top + estLineHeight / 2.0);
 
-        // `findSpaceFor` just checked for space for the first line of text. Now that
-        // the text has been laid out, we need to see if the available space extends
-        // the full height of the text.
+        // `findSpaceFor` just checked for space for the first line of text.
+        // Now that the text has been laid out, we need to see if the available
+        // space extends the full height of the text.
         final startY = rect.top + estLineHeight;
-        final nextFloatTop = math.min(floatL.minYBelow(startY), floatR.minYBelow(startY));
+        final nextFloatTop = math.min(
+          floatL.topOfTopMostRectAtOrBelow(startY),
+          floatR.topOfTopMostRectAtOrBelow(startY),
+        );
         final nextChangeY = math.min(bottom, nextFloatTop);
 
-        // If the text extends past `nextChangeY`, we need to split the text, and layout
-        // each part individually...
+        // If the text extends past `nextChangeY`, we need to split the text,
+        // and layout each part individually...
         if (rect.top + wtr[subIndex].height > nextChangeY) {
           final span = wtr[subIndex].text;
           if (span is TextSpan) {
             //
-            // Calculate the approximate x, y to split the text at, which depends on
-            // the text direction.
+            // Calculate the approximate x, y to split the text at, which
+            // depends on the text direction.
             //
             // ⦿ Shows the x, y offsets the text should be split at:
             //
@@ -655,13 +698,32 @@ class RenderFloatColumn extends RenderBox
                   charIndex++;
                 }
 
-                // dmPrint('Splitting at ${Offset(x, y)} after "${text.substring(0, charIndex)}"');
+                final str1 = text.substring(0, charIndex);
+                dmPrint('Splitting at ${Offset(x, y)} after "$str1"');
 
-                // Split the TextSpan...
+                if (str1.startsWith('Go')) {
+                  dmPrint('zzz');
+                }
+
+                // Split the TextSpan at `charIndex`.
                 final split = span.splitAtCharacterIndex(charIndex);
 
-                // If it was split into two parts...
+                // If it was split into two spans...
                 if (split.length == 2) {
+                  //
+                  // This fixes a bug where, if a span is split right before a
+                  // line feed, and we don't remove the line feed, it is
+                  // rendered like two line feeds.
+                  //
+                  // If the second span starts with a '\n' (line feed), remove the '\n'.
+                  if (text.codeUnitAt(charIndex) == 0x0a) {
+                    final s2 = split.last.splitAtCharacterIndex(1);
+                    if (s2.length == 2) {
+                      assert(s2.first.toPlainText(includeSemanticsLabels: false) == '\n');
+                      split[1] = s2.last;
+                    }
+                  }
+
                   final textRenderer = wtr[subIndex];
                   if (subIndex == -1) {
                     subIndex = 0;
@@ -719,8 +781,8 @@ class RenderFloatColumn extends RenderBox
   }
 
   ///
-  /// Given a child's [width] and [alignment], and the [minX] and [maxX], returns the
-  /// x position for the child.
+  /// Given a child's [width] and [alignment], and the [minX] and [maxX],
+  /// returns the x position for the child.
   ///
   double xPosForChildWithWidth(
       double width, CrossAxisAlignment alignment, double minX, double maxX) {

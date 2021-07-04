@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.0.1] - July 4, 2021
+
+* Fixed bug where the layout was incorrect in some cases if line-feed characters were in the text.
+
 ## [1.0.0] - June 27, 2021
 
 * Updated README.md and released 1.0.0 version.

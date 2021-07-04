@@ -45,11 +45,11 @@ extension FloatColumnExtOnListOfRect on List<Rect> {
 
   ///
   /// Returns the `top` of the top-most rectangle in this list that is greater than
-  /// [startY], or `double.infinity` if there is none.
+  /// or equal to [startY], or `double.infinity` if there is none.
   ///
-  double minYBelow(double startY) =>
+  double topOfTopMostRectAtOrBelow(double startY) =>
       fold<double?>(
-          null, (min, r) => r.top > startY && (min == null || r.top < min) ? r.top : min) ??
+          null, (min, r) => r.top >= startY && (min == null || r.top < min) ? r.top : min) ??
       double.infinity;
 }
 
