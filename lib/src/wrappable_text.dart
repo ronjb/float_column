@@ -37,7 +37,7 @@ class WrappableText {
     this.indent = 0.0,
     this.margin = EdgeInsets.zero,
     this.padding = EdgeInsets.zero,
-  })  : assert(
+  }) : assert(
           text != null, // ignore: unnecessary_null_comparison
           'A non-null TextSpan must be provided to a WrappableText.',
         );
@@ -94,8 +94,8 @@ class WrappableText {
   /// example, if the [text] is an English phrase followed by a Hebrew phrase,
   /// in a [TextDirection.ltr] context the English phrase will be on the left
   /// and the Hebrew phrase to its right, while in a [TextDirection.rtl]
-  /// context, the English phrase will be on the right and the Hebrew phrase on
-  /// its left.
+  /// context, the English phrase will be on the right and the Hebrew phrase
+  /// on its left.
   ///
   /// Defaults to the ambient `Directionality`, if any. If there is no ambient
   /// `Directionality`, then this must not be null.
@@ -115,7 +115,7 @@ class WrappableText {
   /// differently, depending on the locale.
   ///
   /// It's rarely necessary to set this property. By default its value
-  /// is inherited from the enclosing app with `Localizations.localeOf(context)`.
+  /// is inherited from the enclosing app with Localizations.localeOf(context).
   ///
   /// See [RenderParagraph.locale] for more information.
   final Locale? locale;

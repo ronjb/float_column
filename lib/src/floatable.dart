@@ -28,9 +28,9 @@ class Floatable extends StatelessWidget {
   /// (`left`, `right`, `start`, or `end`) or `both`? The default is `none`.
   final FCClear clear;
 
-  /// Minimum vertical spacing below a cleared sibling. Defaults to 0.0. Only used
-  /// if `clear` is set to `left`, `right`, `start`, or `end`, and it is below a
-  /// floated sibling.
+  /// Minimum vertical spacing below a cleared sibling. Defaults to 0.0. Only
+  /// used if `clear` is set to `left`, `right`, `start`, or `end`, and it is
+  /// below a floated sibling.
   final double clearMinSpacing;
 
   /// Empty space to surround the child. Similar to CSS, the top overlaps
@@ -41,7 +41,8 @@ class Floatable extends StatelessWidget {
   /// Empty space to surround the child that does not overlap siblings.
   final EdgeInsetsGeometry padding;
 
-  /// Maximum width as percentage of the parent FloatColumn's width. Defaults to 100%.
+  /// Maximum width as percentage of the parent FloatColumn's width. Defaults
+  /// to 100%.
   final double maxWidthPercentage;
 
   /// The child widget.

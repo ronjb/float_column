@@ -4,7 +4,8 @@
 import 'package:flutter/rendering.dart';
 
 ///
-/// Mix this into classes that should mirror the functionality of RenderParagraph.
+/// Mix this into classes that should mirror the functionality of
+/// RenderParagraph.
 ///
 mixin RenderTextMixin {
   /// The render box containing this text.
@@ -36,8 +37,8 @@ mixin RenderTextMixin {
 
   /// The number of font pixels for each logical pixel.
   ///
-  /// For example, if the text scale factor is 1.5, text will be 50% larger than
-  /// the specified font size.
+  /// For example, if the text scale factor is 1.5, text will be 50% larger
+  /// than the specified font size.
   double get textScaleFactor;
 
   /// An optional maximum number of lines for the text to span, wrapping if
@@ -76,8 +77,8 @@ mixin RenderTextMixin {
   /// Returns a list of rects that bound the given selection.
   ///
   /// A given selection might have more than one rect if this text painter
-  /// contains bidirectional text because logically contiguous text might not be
-  /// visually contiguous.
+  /// contains bidirectional text because logically contiguous text might not
+  /// be visually contiguous.
   ///
   /// Valid only after `layout`.
   List<TextBox> getBoxesForSelection(TextSelection selection);
@@ -88,9 +89,9 @@ mixin RenderTextMixin {
   TextPosition getPositionForOffset(Offset offset);
 
   /// Returns the text range of the word at the given offset. Characters not
-  /// part of a word, such as spaces, symbols, and punctuation, have word breaks
-  /// on both sides. In such cases, this method will return a text range that
-  /// contains the given text position.
+  /// part of a word, such as spaces, symbols, and punctuation, have word
+  /// breaks on both sides. In such cases, this method will return a text range
+  /// that contains the given text position.
   ///
   /// Word boundaries are defined more precisely in Unicode Standard Annex #29
   /// <http://www.unicode.org/reports/tr29/#Word_Boundaries>.
@@ -100,7 +101,7 @@ mixin RenderTextMixin {
 
   /// Returns the size of the text as laid out.
   ///
-  /// This can differ from `size` if the text overflowed or if the `constraints`
+  /// This can differ from `size` if the text overflowed or if the constraints
   /// provided by the parent [RenderObject] forced the layout to be bigger than
   /// necessary for the given [text].
   ///

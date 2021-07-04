@@ -197,7 +197,8 @@ class RenderFloatColumn extends RenderBox
   }
 
   // Set during layout if overflow occurred on the main axis.
-  double _overflow = 0;
+  double _overflow = 0.0;
+
   // Check whether any meaningful overflow is present. Values below an epsilon
   // are treated as not overflowing.
   bool get _hasOverflow => _overflow > precisionErrorTolerance;
@@ -219,7 +220,7 @@ class RenderFloatColumn extends RenderBox
   @override
   void markNeedsLayout() {
     super.markNeedsLayout();
-    _overflow = 0;
+    _overflow = 0.0;
   }
 
   @override
@@ -231,85 +232,6 @@ class RenderFloatColumn extends RenderBox
   bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
     return defaultHitTestChildren(result, position: position);
   }
-
-  /*
-  double _getIntrinsicSize({
-    required Axis sizingDirection,
-    // the extent in the direction that isn't the sizing direction
-    required double extent,
-     // a method to find the size in the sizing direction
-    required _ChildSizingFunction childSize,
-  }) {
-    if (sizingDirection == Axis.vertical) {
-      // INTRINSIC MAIN SIZE
-      // Intrinsic main size is the smallest size the container can take
-      // while maintaining the min/max-content contributions of its items.
-
-      var totalSize = 0.0;
-      var child = firstChild;
-      while (child != null) {
-        totalSize += childSize(child, extent);
-        final childParentData = child.parentData! as FloatColumnParentData;
-        child = childParentData.nextSibling;
-      }
-      return totalSize;
-    } else {
-      // INTRINSIC CROSS SIZE
-      // Intrinsic cross size is the max of the intrinsic cross sizes of the
-      // children, after the children are fit into the available space,
-      // with the children sized using their max intrinsic dimensions.
-
-      var maxCrossSize = 0.0;
-      var child = firstChild;
-      while (child != null) {
-        late final double mainSize;
-        late final double crossSize;
-        mainSize = child.getMaxIntrinsicHeight(double.infinity);
-        crossSize = childSize(child, mainSize);
-        maxCrossSize = math.max(maxCrossSize, crossSize);
-        final childParentData = child.parentData! as FloatColumnParentData;
-        child = childParentData.nextSibling;
-      }
-      return maxCrossSize;
-    }
-  }
-
-  @override
-  double computeMinIntrinsicWidth(double height) {
-    return _getIntrinsicSize(
-      sizingDirection: Axis.horizontal,
-      extent: height,
-      childSize: (child, extent) => child.getMinIntrinsicWidth(extent),
-    );
-  }
-
-  @override
-  double computeMaxIntrinsicWidth(double height) {
-    return _getIntrinsicSize(
-      sizingDirection: Axis.horizontal,
-      extent: height,
-      childSize: (child, extent) => child.getMaxIntrinsicWidth(extent),
-    );
-  }
-
-  @override
-  double computeMinIntrinsicHeight(double width) {
-    return _getIntrinsicSize(
-      sizingDirection: Axis.vertical,
-      extent: width,
-      childSize: (child, extent) => child.getMinIntrinsicHeight(extent),
-    );
-  }
-
-  @override
-  double computeMaxIntrinsicHeight(double width) {
-    return _getIntrinsicSize(
-      sizingDirection: Axis.vertical,
-      extent: width,
-      childSize: (child, extent) => child.getMaxIntrinsicHeight(extent),
-    );
-  }
-  */
 
   @override
   double? computeDistanceToActualBaseline(TextBaseline baseline) {
@@ -414,6 +336,7 @@ class RenderFloatColumn extends RenderBox
 
     yPosNext += prevBottomMargin;
     final totalHeight = math.max(floatL.maxYBelow(yPosNext), floatR.maxYBelow(yPosNext));
+    _overflow = totalHeight > constraints.maxHeight ? totalHeight - constraints.maxHeight : 0.0;
     size = constraints.constrain(Size(maxWidth, totalHeight));
   }
 
@@ -715,7 +638,8 @@ class RenderFloatColumn extends RenderBox
                   // line feed, and we don't remove the line feed, it is
                   // rendered like two line feeds.
                   //
-                  // If the second span starts with a '\n' (line feed), remove the '\n'.
+                  // If the second span starts with a '\n' (line feed), remove
+                  // the '\n'.
                   if (text.codeUnitAt(charIndex) == 0x0a) {
                     final s2 = split.last.splitAtCharacterIndex(1);
                     if (s2.length == 2) {
@@ -742,12 +666,6 @@ class RenderFloatColumn extends RenderBox
               }
             }
           }
-
-          // final selection = TextSelection(baseOffset: 0, extentOffset: text.length);
-          // final boxes = wtr.painter.getBoxesForSelection(selection);
-          // for (final box in boxes) {
-          //   dmPrint(box);
-          // }
         }
       }
 
@@ -805,8 +723,7 @@ class RenderFloatColumn extends RenderBox
     return childCrossPosition;
   }
 
-  @override
-  void paint(PaintingContext context, Offset offset) {
+  void _paintFloatColumn(PaintingContext context, Offset offset) {
     var child = firstChild;
     var i = 0;
     for (final el in _internalTextAndWidgets) {
@@ -864,10 +781,12 @@ class RenderFloatColumn extends RenderBox
 
       i++;
     }
+  }
 
-    /*
+  @override
+  void paint(PaintingContext context, Offset offset) {
     if (!_hasOverflow) {
-      defaultPaint(context, offset);
+      _paintFloatColumn(context, offset);
       return;
     }
 
@@ -876,39 +795,45 @@ class RenderFloatColumn extends RenderBox
 
     if (clipBehavior == Clip.none) {
       _clipRectLayer = null;
-      defaultPaint(context, offset);
+      _paintFloatColumn(context, offset);
     } else {
       // We have overflow and the clipBehavior isn't none. Clip it.
       _clipRectLayer = context.pushClipRect(
-          needsCompositing, offset, Offset.zero & size, defaultPaint,
-          clipBehavior: clipBehavior, oldLayer: _clipRectLayer);
+        needsCompositing,
+        offset,
+        Offset.zero & size,
+        _paintFloatColumn,
+        clipBehavior: clipBehavior,
+        oldLayer: _clipRectLayer,
+      );
     }
 
     assert(() {
-      // Only set this if it's null to save work.
       final debugOverflowHints = <DiagnosticsNode>[
-        ErrorDescription('The edge of the $runtimeType that is overflowing has been '
-            'marked in the rendering with a yellow and black striped pattern. This is '
-            'usually caused by the contents being too big for the constraints.'),
-        ErrorHint('This is considered an error condition because it indicates that there '
-            'is content that cannot be seen. If the content is legitimately bigger than '
-            'the available space, consider placing the $runtimeType in a scrollable '
-            'container, like a ListView.'),
+        ErrorDescription(
+          'The edge of the $runtimeType that is overflowing has been marked '
+          'in the rendering with a yellow and black striped pattern. This is '
+          'usually caused by the contents being too big for the constraints.',
+        ),
+        ErrorHint(
+          'This is considered an error condition because it indicates that there '
+          'is content that cannot be seen. If the content is legitimately bigger '
+          'than the available space, consider clipping it with a ClipRect widget '
+          'before putting it in the FloatColumn.',
+        ),
       ];
 
       // Simulate a child rect that overflows by the right amount. This child
       // rect is never used for drawing, just for determining the overflow
       // location and amount.
-      final Rect overflowChildRect;
-      overflowChildRect = Rect.fromLTWH(0.0, 0.0, 0.0, size.height + _overflow);
+      final overflowChildRect = Rect.fromLTWH(0.0, 0.0, 0.0, size.height + _overflow);
       paintOverflowIndicator(context, offset, Offset.zero & size, overflowChildRect,
           overflowHints: debugOverflowHints);
       return true;
     }());
-    */
   }
 
-  // ClipRectLayer? _clipRectLayer;
+  ClipRectLayer? _clipRectLayer;
 
   @override
   Rect? describeApproximatePaintClip(RenderObject child) =>

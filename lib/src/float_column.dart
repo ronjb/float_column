@@ -15,13 +15,15 @@ import 'wrappable_text.dart';
 class FloatColumn extends MultiChildRenderObjectWidget {
   /// Creates and returns a new FloatColumn.
   ///
-  /// The [children] argument must only contain [Widget] and [WrappableText] children.
+  /// The [children] argument must only contain [Widget] and [WrappableText]
+  /// children.
   ///
   /// For child widgets that should "float", wrap them in a [Floatable] widget,
   /// indicating, via the `float` parameter, which side they should float on.
   ///
   /// The [textDirection] argument defaults to the ambient [Directionality], if
-  /// any. If there is no ambient directionality, [textDirection] must not be null.
+  /// any. If there is no ambient directionality, [textDirection] must not be
+  /// null.
   FloatColumn({
     Key? key,
     this.crossAxisAlignment = CrossAxisAlignment.start,
@@ -45,8 +47,8 @@ class FloatColumn extends MultiChildRenderObjectWidget {
       if (child is Widget) {
         result.add(MetaData(metaData: FloatTag.fromChild(index, 0, child), child: child));
       } else if (child is WrappableText) {
-        // Traverses the paragraph's InlineSpan tree and depth-first collects the list of
-        // child widgets that are created in WidgetSpans.
+        // Traverses the paragraph's InlineSpan tree and depth-first collects
+        // the list of child widgets that are created in WidgetSpans.
         var placeholderIndex = 0;
         child.text.visitChildren((span) {
           if (span is WidgetSpan) {

@@ -204,8 +204,8 @@ class TextRenderer with RenderTextMixin {
     }
   }
 
-  /// Returns an estimate of the initial line height based on the initial font size,
-  /// initial line height scale, and the text scale factor.
+  /// Returns an estimate of the initial line height based on the initial font
+  /// size, initial line height scale, and the text scale factor.
   double initialLineHeight() {
     final fontSize = _painter.text!.initialFontSize(14.0);
     final lineHeightScale = _painter.text!.initialLineHeightScale(1.12);
@@ -217,7 +217,8 @@ class TextRenderer with RenderTextMixin {
     return fontSize * _painter.textScaleFactor;
   }
 
-  /// Sets the placeholder dimensions for this paragraph's inline widget children, if any.
+  /// Sets the placeholder dimensions for this paragraph's inline widget
+  /// children, if any.
   void setPlaceholderDimensions(
     RenderBox? firstChild,
     BoxConstraints constraints,
@@ -227,8 +228,8 @@ class TextRenderer with RenderTextMixin {
 
     final paragraphIndex = firstChild.tag.index;
 
-    // The children will be scaled by textScaleFactor during the painting phase,
-    // so the constraints are divided by textScaleFactor.
+    // The children will be scaled by textScaleFactor during the painting
+    // phase, so the constraints are divided by textScaleFactor.
     final childConstraints = BoxConstraints(maxWidth: constraints.maxWidth) / textScaleFactor;
 
     final placeholderDimensions = List<PlaceholderDimensions>.filled(

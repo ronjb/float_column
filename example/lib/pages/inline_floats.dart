@@ -29,30 +29,33 @@ class InlineFloats extends StatelessWidget {
           builder: (context) => SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(8),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: crossAxisAlignment,
-                children: [
-                  FloatColumn(
-                    crossAxisAlignment: crossAxisAlignment,
-                    children: [
-                      _floatable('f1     \n', FCFloat.start, FCClear.none),
-                      _floatable('f2     \n', FCFloat.end, FCClear.both),
-                      _floatable('f3     \n', FCFloat.start, FCClear.both),
-                      _floatable('f4     \n', FCFloat.end, FCClear.both),
-                      _floatable('f5     \n', FCFloat.start, FCClear.both),
-                      _floatable('f6     \n', FCFloat.end, FCClear.both),
-                      const WrappableText(
-                        text: _t0,
-                        // margin: EdgeInsetsDirectional.only(start: 45),
-                        textAlign: textAlign,
-                      ),
-                      // const WrappableText(text: _t1, textAlign: textAlign),
-                      // const WrappableText(text: _t2, textAlign: textAlign),
-                      // const WrappableText(text: _t3, textAlign: textAlign),
-                    ],
-                  ),
-                ],
+              child: SizedBox(
+                // height: 400,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: crossAxisAlignment,
+                  children: [
+                    FloatColumn(
+                      crossAxisAlignment: crossAxisAlignment,
+                      children: [
+                        _floatable('f1     \n', FCFloat.start, FCClear.none),
+                        _floatable('f2     \n', FCFloat.end, FCClear.both),
+                        _floatable('f3     \n', FCFloat.start, FCClear.both),
+                        _floatable('f4     \n', FCFloat.end, FCClear.both),
+                        _floatable('f5     \n', FCFloat.start, FCClear.both),
+                        _floatable('f6     \n', FCFloat.end, FCClear.both),
+                        const WrappableText(
+                          text: _t0,
+                          // margin: EdgeInsetsDirectional.only(start: 45),
+                          textAlign: textAlign,
+                        ),
+                        // const WrappableText(text: _t1, textAlign: textAlign),
+                        // const WrappableText(text: _t2, textAlign: textAlign),
+                        // const WrappableText(text: _t3, textAlign: textAlign),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

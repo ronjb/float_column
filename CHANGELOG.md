@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.0.2] - July 4, 2021
+
+* Added code that shows overflow area and size in case of height overflow.
+
 ## [1.0.1] - July 4, 2021
 
 * Fixed bug where the layout was incorrect in some cases if line-feed characters were in the text.

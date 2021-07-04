@@ -11,7 +11,8 @@ import 'splittable_mixin.dart';
 
 extension FCInlineSpanExt on InlineSpan {
   ///
-  /// Returns the font size of the first non-empty text in the span, or [defaultValue] if none.
+  /// Returns the font size of the first non-empty text in the span, or
+  /// [defaultValue] if none.
   ///
   double initialFontSize(double defaultValue) {
     return valueOfFirstDescendantOf(
@@ -25,7 +26,8 @@ extension FCInlineSpanExt on InlineSpan {
   }
 
   ///
-  /// Returns the line height of the first non-empty text in the span, or [defaultValue] if none.
+  /// Returns the line height of the first non-empty text in the span, or
+  /// [defaultValue] if none.
   ///
   double initialLineHeightScale(double defaultValue) {
     return valueOfFirstDescendantOf(
@@ -39,7 +41,8 @@ extension FCInlineSpanExt on InlineSpan {
   }
 
   ///
-  /// Returns the first non-empty text in the span, or the empty string if none.
+  /// Returns the first non-empty text in the span, or the empty string if
+  /// none.
   ///
   /// Note, a WidgetSpan is represented as '\uFFFC', the standard object
   /// replacement character.
@@ -61,10 +64,11 @@ extension FCInlineSpanExt on InlineSpan {
   }
 
   ///
-  /// Splits this span at the given character [index] and returns a list of one or two spans.
-  /// If [index] is zero, or if [index] is greater than the number of characters in this span,
-  /// a list containing just this span is returned. If this span was split, a list of two spans
-  /// is returned, containing the two new spans.
+  /// Splits this span at the given character [index] and returns a list of one
+  /// or two spans. If [index] is zero, or if [index] is greater than the
+  /// number of characters in this span, a list containing just this span is
+  /// returned. If this span was split, a list of two spans is returned,
+  /// containing the two new spans.
   ///
   List<InlineSpan> splitAtCharacterIndex(int index) => this is SplittableMixin<InlineSpan>
       ? (this as SplittableMixin<InlineSpan>).splitAt(index)
@@ -108,7 +112,8 @@ extension FCInlineSpanExt on InlineSpan {
               span.copyWith(noText: true, children: result.last),
             ];
           } else if (result.length == 1) {
-            // Only true if the number of characters in all the children was equal to index.value.
+            // Only true if the number of characters in all the children was
+            // equal to index.value.
             assert(listEquals<InlineSpan>(result.first, children));
           } else {
             assert(false);
@@ -127,10 +132,11 @@ extension FCInlineSpanExt on InlineSpan {
 
 extension FCListOfInlineSpanExt on List<InlineSpan> {
   ///
-  /// Splits this list of spans at the given character [index] and returns one or two lists.
-  /// If [index] is zero, or if [index] is greater than the number of characters in these spans,
-  /// a list containing just this list is returned. If this list was split, an array of two lists
-  /// is returned, containing the two new lists.
+  /// Splits this list of spans at the given character [index] and returns one
+  /// or two lists. If [index] is zero, or if [index] is greater than the
+  /// number of characters in these spans, a list containing just this list is
+  /// returned. If this list was split, an array of two lists is returned,
+  /// containing the two new lists.
   ///
   List<List<InlineSpan>> splitAtCharacterIndex(SplitAtIndex index) {
     if (index.value == 0) return [this];

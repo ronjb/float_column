@@ -6,27 +6,30 @@
 ///
 mixin SplittableMixin<T> {
   ///
-  /// Splits this object at the given [index] and returns a list of one or two objects.
-  /// If [index] is zero, or if [index] is greater than the number of items in this object,
-  /// a list containing just this object is returned. If this object was split, a list of two
-  /// objects is returned, containing the two new split objects.
+  /// Splits this object at the given [index] and returns a list of one or two
+  /// objects. If [index] is zero, or if [index] is greater than the number of
+  /// items in this object, a list containing just this object is returned. If
+  /// this object was split, a list of two objects is returned, containing the
+  /// two new split objects.
   ///
   /// Classes the adopt this mixin should not implement this method.
   ///
   List<T> splitAt(int index) => splitAtIndex(SplitAtIndex(index));
 
   ///
-  /// Splits this object at the given [index] and returns a list of one or two objects.
-  /// If [index] is zero, or if [index] is greater than the number of items in this object,
-  /// a list containing just this object is returned. If this object was split, a list of two
-  /// objects is returned, containing the two new split objects.
+  /// Splits this object at the given [index] and returns a list of one or two
+  /// objects. If [index] is zero, or if [index] is greater than the number of
+  /// items in this object, a list containing just this object is returned. If
+  /// this object was split, a list of two objects is returned, containing the
+  /// two new split objects.
   ///
   /// IMPORTANT: When implementing this method, `index.value` must be either:
-  ///   1. Reduced by the total number of items in this object, if `index.value` is greater
-  ///      than or equal to the total number of items in this object.
-  ///   2. Or, set to zero if `index.value` is less than the total number of items in this
-  ///      object -- in which case this object should be split at `index.value`, and the
-  ///      two new split objects should be returned.
+  ///   1. Reduced by the total number of items in this object, if
+  ///      `index.value` is greater than or equal to the total number of items
+  ///      in this object.
+  ///   2. Or, set to zero if `index.value` is less than the total number of
+  ///      items in this object -- in which case this object should be split at
+  ///      `index.value`, and the two new split objects should be returned.
   ///
   /// Classes that adopt this mixin MUST implement this method.
   ///
@@ -42,7 +45,8 @@ class SplitAtIndex {
 }
 
 ///
-/// An example of a class that adopts the SplittableMixin -- a splittable string.
+/// An example of a class that adopts the SplittableMixin -- a splittable
+/// string.
 ///
 class SplittableString with SplittableMixin<SplittableString> {
   final String value;
@@ -61,8 +65,8 @@ class SplittableString with SplittableMixin<SplittableString> {
       return [this];
     }
 
-    // Otherwise, split the string at `index.value`, update `index.value` to zero,
-    // and return the two split strings.
+    // Otherwise, split the string at `index.value`, update `index.value` to
+    // zero, and return the two split strings.
     final result = [
       SplittableString(value.substring(0, index.value)),
       SplittableString(value.substring(index.value))
