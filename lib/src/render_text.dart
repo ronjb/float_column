@@ -10,6 +10,7 @@ import 'float_tag.dart';
 import 'inline_span_ext.dart';
 import 'render_float_column.dart';
 import 'render_text_mixin.dart';
+import 'shared.dart';
 import 'wrappable_text.dart';
 
 ///
@@ -136,18 +137,18 @@ class WrappableTextRenderer {
 /// TextRenderer
 ///
 class TextRenderer with RenderTextMixin {
-  TextRenderer(this._parent, this._painter, this._startingPlaceholderIndex)
+  TextRenderer(this._parent, this._painter, this.startingPlaceholderIndex)
       : assert(_painter.text != null);
 
   final RenderBox _parent;
   final TextPainter _painter;
-  final int _startingPlaceholderIndex;
+  final int startingPlaceholderIndex;
   List<PlaceholderSpan>? _placeholderSpans;
 
   Offset? _offset;
   set offset(Offset value) => _offset = value;
 
-  int get nextPlaceholderIndex => _startingPlaceholderIndex + placeholderSpans.length;
+  int get nextPlaceholderIndex => startingPlaceholderIndex + placeholderSpans.length;
 
   List<PlaceholderSpan> get placeholderSpans {
     if (_placeholderSpans == null) {
@@ -185,7 +186,7 @@ class TextRenderer with RenderTextMixin {
           startingPlaceholderIndex);
 
   TextBox placeholderBoxForWidgetIndex(int index) {
-    final i = index - _startingPlaceholderIndex;
+    final i = index - startingPlaceholderIndex;
     if ((_painter.inlinePlaceholderBoxes?.length ?? 0) > i) {
       return _painter.inlinePlaceholderBoxes![i];
     } else {
@@ -195,7 +196,7 @@ class TextRenderer with RenderTextMixin {
   }
 
   double placeholderScaleForWidgetIndex(int index) {
-    final i = index - _startingPlaceholderIndex;
+    final i = index - startingPlaceholderIndex;
     if ((_painter.inlinePlaceholderScales?.length ?? 0) > i) {
       return _painter.inlinePlaceholderScales![i];
     } else {
@@ -218,13 +219,13 @@ class TextRenderer with RenderTextMixin {
   }
 
   /// Sets the placeholder dimensions for this paragraph's inline widget
-  /// children, if any.
-  void setPlaceholderDimensions(
+  /// children, if any. Returns true iff any of the children are floated.
+  bool setPlaceholderDimensions(
     RenderBox? firstChild,
     BoxConstraints constraints,
     double textScaleFactor,
   ) {
-    if (firstChild == null) return;
+    if (firstChild == null) return false;
 
     final paragraphIndex = firstChild.tag.index;
 
@@ -236,19 +237,29 @@ class TextRenderer with RenderTextMixin {
         placeholderSpans.length, PlaceholderDimensions.empty,
         growable: false);
 
+    var hasFloatedChildren = false;
     RenderBox? child = firstChild;
     while (child != null && child.tag.index == paragraphIndex) {
       final childParentData = child.parentData! as FloatColumnParentData;
 
-      final i = child.tag.placeholderIndex - _startingPlaceholderIndex;
+      final i = child.tag.placeholderIndex - startingPlaceholderIndex;
       if (i >= 0 && i < placeholderSpans.length) {
-        placeholderDimensions[i] = _layoutChild(child, i, childConstraints);
+        if (child.tag.float != FCFloat.none) {
+          hasFloatedChildren = true;
+          if (!child.hasSize) {
+            _layoutChild(child, i, BoxConstraints.tight(Size.zero));
+          }
+        } else {
+          placeholderDimensions[i] = _layoutChild(child, i, childConstraints);
+        }
       }
 
       child = childParentData.nextSibling;
     }
 
     _painter.setPlaceholderDimensions(placeholderDimensions);
+
+    return hasFloatedChildren;
   }
 
   /// Layout the [child] inline widget at the given [childIndex].
@@ -263,10 +274,13 @@ class TextRenderer with RenderTextMixin {
     double? baselineOffset;
     final Size childSize;
     if (!dry) {
-      child.layout(
-        constraints,
-        parentUsesSize: true,
-      );
+      if (!child.hasSize) {
+        // TODO(ron): Maybe need to call this every time in case constraints change?
+        child.layout(
+          constraints,
+          parentUsesSize: true,
+        );
+      }
       childSize = child.size;
       switch (placeholderSpans[childIndex].alignment) {
         case ui.PlaceholderAlignment.baseline:

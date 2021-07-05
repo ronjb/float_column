@@ -316,13 +316,14 @@ class RenderFloatColumn extends RenderBox
           var widgetIndex = 0;
           while (child != null && child.tag.index == i) {
             assert(child.tag.placeholderIndex == widgetIndex);
-
-            final renderer = wtr.rendererWithPlaceholder(widgetIndex);
-            final box = renderer.placeholderBoxForWidgetIndex(widgetIndex);
-            final childParentData = child.parentData! as FloatColumnParentData
-              ..offset = Offset(box.left + renderer.offset.dx, box.top + renderer.offset.dy)
-              ..scale = renderer.placeholderScaleForWidgetIndex(widgetIndex);
-
+            final childParentData = child.parentData! as FloatColumnParentData;
+            if (child.tag.float == FCFloat.none) {
+              final renderer = wtr.rendererWithPlaceholder(widgetIndex);
+              final box = renderer.placeholderBoxForWidgetIndex(widgetIndex);
+              childParentData
+                ..offset = Offset(box.left + renderer.offset.dx, box.top + renderer.offset.dy)
+                ..scale = renderer.placeholderScaleForWidgetIndex(widgetIndex);
+            }
             child = childParentData.nextSibling;
             widgetIndex++;
           }
@@ -468,6 +469,12 @@ class RenderFloatColumn extends RenderBox
     // Clear the sub-paragraph renderers for wrapping text.
     wtr.subs.clear();
 
+    // Keep track of the indices of the floated inline widget children that
+    // have already been laid out, because they can only be laid out once.
+    final laidOutFloaterIndices = <int>{};
+
+    TextRenderer? rendererBeforeSplit;
+
     //
     // Loop over this WrappableText's renderers. It starts out with the default
     // text renderer which includes all the text, but if the text needs to be
@@ -483,7 +490,8 @@ class RenderFloatColumn extends RenderBox
       // space for at least the first line of text.
       final estLineHeight = wtr[subIndex].initialLineHeight();
 
-      // If the text starts with a line feed...
+      // If the text starts with a line feed, remove the line feed, add the
+      // line height to `yPosNext`, and re-run the loop.
       final initialText = wtr[subIndex].text.initialText();
       if (initialText.isNotEmpty && initialText.codeUnitAt(0) == 0x0a) {
         final textRenderer = wtr[subIndex];
@@ -501,7 +509,7 @@ class RenderFloatColumn extends RenderBox
           yPosNext += estLineHeight;
 
           // Re-run the loop, keeping the index the same.
-          continue;
+          continue; //-------------------------------------------->
         }
       }
 
@@ -542,11 +550,14 @@ class RenderFloatColumn extends RenderBox
         minWidth: math.min(childConstraints.minWidth, rect.width),
       );
 
-      // If sub-renderer has inline widget children, set placeholder
-      // dimensions.
+      var hasFloatedChildren = false;
+
+      // If the sub-renderer has inline widget children, set placeholder
+      // dimensions, which MUST be done before `wtr[subIndex].layout` is
+      // called.
       if (wtr[subIndex].placeholderSpans.isNotEmpty) {
         assert(child != null);
-        wtr[subIndex].setPlaceholderDimensions(
+        hasFloatedChildren = wtr[subIndex].setPlaceholderDimensions(
             child, subConstraints, wt.textScaleFactor ?? defaultTextScaleFactor);
       }
 
@@ -621,12 +632,8 @@ class RenderFloatColumn extends RenderBox
                   charIndex++;
                 }
 
-                final str1 = text.substring(0, charIndex);
-                dmPrint('Splitting at ${Offset(x, y)} after "$str1"');
-
-                if (str1.startsWith('Go')) {
-                  dmPrint('zzz');
-                }
+                // final str1 = text.substring(0, charIndex);
+                // dmPrint('Splitting at ${Offset(x, y)} after "$str1"');
 
                 // Split the TextSpan at `charIndex`.
                 final split = span.splitAtCharacterIndex(charIndex);
@@ -649,6 +656,7 @@ class RenderFloatColumn extends RenderBox
                   }
 
                   final textRenderer = wtr[subIndex];
+                  rendererBeforeSplit = textRenderer;
                   if (subIndex == -1) {
                     subIndex = 0;
                   } else {
@@ -661,13 +669,66 @@ class RenderFloatColumn extends RenderBox
                         textRenderer.copyWith(split.last, wtr.subs[subIndex].nextPlaceholderIndex));
 
                   // Re-run the loop, keeping the index the same.
-                  continue;
+                  continue; //------------------------------------>
                 }
               }
             }
           }
         }
       }
+
+      // At this point renderer wtr[subIndex] has gone through its final
+      // layout, so we can now layout its floated widget children, if any.
+
+      if (hasFloatedChildren) {
+        /// Local func that lays out the first floated child that has not
+        /// already been laid out, if any, and returns true iff a child was
+        /// laid out.
+        ///
+        /// The floated children need to be laid out one at a time because
+        /// each time one is laid out the positions of subsequent floated
+        /// children will likely be affected.
+        bool _layoutFloatedChildren(TextRenderer renderer, RenderBox? firstChild) {
+          if (firstChild == null) return false;
+          RenderBox? child = firstChild;
+          final paragraphIndex = firstChild.tag.index;
+          while (child != null && child.tag.index == paragraphIndex) {
+            final childParentData = child.parentData! as FloatColumnParentData;
+            final i = child.tag.placeholderIndex - renderer.startingPlaceholderIndex;
+            if (i >= 0 && i < renderer.placeholderSpans.length) {
+              final ctpIndex = child.tag.placeholderIndex;
+              // If this child is floated...
+              if (child.tag.float != FCFloat.none && !laidOutFloaterIndices.contains(ctpIndex)) {
+                laidOutFloaterIndices.add(ctpIndex);
+                final boxTop = renderer.placeholderBoxForWidgetIndex(ctpIndex).top;
+                _layoutWidget(child, childParentData, childConstraints,
+                    boxTop + rect.top - estLineHeight, maxWidth, child.tag, floatL, floatR);
+                return true;
+              }
+            }
+            child = childParentData.nextSibling;
+          }
+          return false;
+        }
+
+        final rerunLoop = _layoutFloatedChildren(wtr[subIndex], child);
+        if (rerunLoop) {
+          // If the original renderer was split, undo the split because it
+          // will likely need to be re-split differently.
+          if (rendererBeforeSplit != null) {
+            assert(wtr.subs.length == subIndex + 2);
+            wtr.subs..removeLast()..removeLast();
+            wtr.subs.add(rendererBeforeSplit);
+            rendererBeforeSplit = null;
+          }
+
+          // Re-run the loop, keeping the index the same.
+          continue; //------------------------------------>
+        }
+      }
+
+      // Clear this before the next loop.
+      rendererBeforeSplit = null;
 
       CrossAxisAlignment alignment() {
         switch (wtr[subIndex].textAlign) {
@@ -693,7 +754,7 @@ class RenderFloatColumn extends RenderBox
       yPosNext = rect.top + wtr[subIndex].height;
 
       subIndex++;
-    }
+    } // while (subIndex < wtr.subs.length)
 
     return yPosNext + padding.bottom;
   }
@@ -760,16 +821,22 @@ class RenderFloatColumn extends RenderBox
             assert(child.tag.placeholderIndex == widgetIndex);
             final childParentData = child.parentData! as FloatColumnParentData;
 
-            final scale = childParentData.scale!;
-            context.pushTransform(
-              needsCompositing,
-              offset + childParentData.offset,
-              Matrix4.diagonal3Values(scale, scale, scale),
-              (context, offset) {
-                context.paintChild(child!, offset);
-                // dmPrint('painted $i:$widgetIndex, a widget in text at $offset');
-              },
-            );
+            if (child.tag.float != FCFloat.none) {
+              // Floated inline widget children are rendered like normal children.
+              context.paintChild(child, childParentData.offset + offset);
+            } else {
+              // Non-floated inline widget children are scaled with the text.
+              final scale = childParentData.scale!;
+              context.pushTransform(
+                needsCompositing,
+                offset + childParentData.offset,
+                Matrix4.diagonal3Values(scale, scale, scale),
+                (context, offset) {
+                  context.paintChild(child!, offset);
+                  // dmPrint('painted $i:$widgetIndex, a widget in text at $offset');
+                },
+              );
+            }
 
             child = childParentData.nextSibling;
             widgetIndex++;
