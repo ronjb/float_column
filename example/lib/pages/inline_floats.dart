@@ -7,57 +7,18 @@ class InlineFloats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const TextAlign? textAlign = null;
-    // const textAlign = TextAlign.start;
-    // const textAlign = TextAlign.end;
-    // const textAlign = TextAlign.left;
-    // const textAlign = TextAlign.right;
-    // const textAlign = TextAlign.center;
-    // const textAlign = TextAlign.justify;
-
-    // const crossAxisAlignment = CrossAxisAlignment.center;
-    const crossAxisAlignment = CrossAxisAlignment.start;
-    // const crossAxisAlignment = CrossAxisAlignment.end;
-    // const crossAxisAlignment = CrossAxisAlignment.stretch;
-
     return DefaultTextStyle(
       style: const TextStyle(fontSize: 18, color: Colors.black, height: 1.5),
-      textAlign: textAlign,
-      child: Directionality(
-        textDirection: TextDirection.ltr,
-        child: Builder(
-          builder: (context) => SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: SizedBox(
-                // height: 400,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: crossAxisAlignment,
-                  children: [
-                    FloatColumn(
-                      crossAxisAlignment: crossAxisAlignment,
-                      children: [
-                        _floatable('f1     \n', FCFloat.start, FCClear.none),
-                        _floatable('f2     \n', FCFloat.end, FCClear.both),
-                        _floatable('f3     \n', FCFloat.start, FCClear.both),
-                        _floatable('f4     \n', FCFloat.end, FCClear.both),
-                        _floatable('f5     \n', FCFloat.start, FCClear.both),
-                        _floatable('f6     \n', FCFloat.end, FCClear.both),
-                        const WrappableText(
-                          text: _t0,
-                          // margin: EdgeInsetsDirectional.only(start: 45),
-                          textAlign: textAlign,
-                        ),
-                        // const WrappableText(text: _t1, textAlign: textAlign),
-                        // const WrappableText(text: _t2, textAlign: textAlign),
-                        // const WrappableText(text: _t3, textAlign: textAlign),
-                      ],
-                    ),
-                  ],
-                ),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: FloatColumn(
+            children: [
+              WrappableText(
+                text: _process(_str),
+                margin: const EdgeInsetsDirectional.only(start: 60),
               ),
-            ),
+            ],
           ),
         ),
       ),
@@ -65,71 +26,39 @@ class InlineFloats extends StatelessWidget {
   }
 }
 
-// cspell: disable
-
-const _t0 = TextSpan(
-  children: [
-    WidgetSpan(
-      baseline: TextBaseline.alphabetic,
-      alignment: PlaceholderAlignment.baseline,
-      child: Floatable(
-        float: FCFloat.start,
-        clear: FCClear.none,
-        padding: EdgeInsetsDirectional.only(end: 8),
-        child: _Box(Text('i1')),
-      ),
-    ),
-    _t1,
-    WidgetSpan(
-      baseline: TextBaseline.alphabetic,
-      alignment: PlaceholderAlignment.baseline,
-      child: Floatable(
-        float: FCFloat.start,
-        clear: FCClear.none,
-        padding: EdgeInsetsDirectional.only(end: 8),
-        child: _Box(Text('i2')),
-      ),
-    ),
-    _t2,
-    _t3,
-  ],
-);
-
-const _t1 = TextSpan(
-    style: TextStyle(backgroundColor: Color(0xffddddff)),
-    text:
-        '“You have brains in your head. You have feet in your shoes. You can steer yourself any direction you choose. You’re on your own. And you know what you know. And YOU are the one who’ll decide where to go…” – Dr. Seuss, Oh, the Places You’ll Go!\n\n');
-
-const _t2 = TextSpan(
-    style: TextStyle(backgroundColor: Color(0xffccffcc)),
-    text:
-        '“We are the music-makers, And we are the dreamers of dreams, Wandering by lone sea-breakers, And sitting by desolate streams. \n\nWorld-losers and world-forsakers, Upon whom the pale moon gleams; Yet we are the movers and shakers, Of the world forever, it seems.” – Arthur O’Shaughnessy\n\n');
-
-const _t3 = TextSpan(
-    style: TextStyle(backgroundColor: Color(0xffffcccc)),
-    text:
-        '“Stuff your eyes with wonder, he said, live as if you’d drop dead in ten seconds. See the world. It’s more fantastic than any dream made or paid for in factories.” – Ray Bradbury, Fahrenheit 451');
-
-Floatable _floatable(String text, [FCFloat float = FCFloat.start, FCClear clear = FCClear.none]) =>
-    Floatable(
-      float: float,
-      clear: clear,
-      clearMinSpacing: 36,
-      padding: float == FCFloat.start
-          ? const EdgeInsetsDirectional.only(end: 8)
-          : const EdgeInsetsDirectional.only(start: 8),
-      child: _Box(Text(text, style: const TextStyle(fontSize: 16))),
-    );
-
-class _Box extends StatelessWidget {
-  final Widget child;
-  final Color? color;
-
-  const _Box(this.child, {Key? key, this.color = const Color(0xffe0e0e0)}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) => Container(
-        decoration: BoxDecoration(border: Border.all(), color: color),
-        child: Padding(padding: const EdgeInsets.fromLTRB(8, 0, 8, 0), child: child),
-      );
+TextSpan _process(String str) {
+  return TextSpan(
+    children: str.split(' *').expand(
+      (str) {
+        final s = str.split('* ');
+        if (s.length == 2) {
+          final cit = s.first;
+          return [
+            TextSpan(text: ' (${cit.substring(cit.length - 1)})'),
+            WidgetSpan(
+              child: Floatable(float: FCFloat.left, clear: FCClear.both, child: Text(cit)),
+            ),
+            TextSpan(text: ' ${s.last}'),
+          ];
+        } else {
+          return [TextSpan(text: str)];
+        }
+      },
+    ).toList(),
+  );
 }
+
+// cspell: disable
+const _str = '''
+Lorem ipsum dolor sit amet, consectetur *132a* adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Id aliquet risus feugiat in ante metus dictum at. Duis tristique sollicitudin nibh sit amet commodo. Ut aliquam *133b* purus sit amet luctus. Ullamcorper velit sed ullamcorper morbi tincidunt. Amet commodo nulla facilisi nullam vehicula ipsum. Faucibus interdum posuere lorem ipsum dolor sit amet consectetur. Nunc congue nisi vitae suscipit tellus. Dis parturient montes nascetur ridiculus. Sit amet venenatis *134c* urna cursus eget nunc scelerisque viverra mauris. Scelerisque mauris pellentesque pulvinar pellentesque habitant morbi tristique. Tellus integer feugiat scelerisque varius morbi enim. Ut consequat *135d* semper viverra nam libero justo. Egestas integer eget aliquet nibh praesent tristique magna sit. Scelerisque fermentum dui faucibus in ornare quam viverra. Amet massa vitae tortor condimentum *136e* lacinia quis vel eros. Placerat vestibulum lectus mauris ultrices eros in. Facilisi cras fermentum odio eu feugiat pretium. Purus sit amet luctus venenatis lectus. Molestie nunc non blandit *137f* massa enim nec dui nunc.
+
+Adipiscing vitae proin sagittis nisl rhoncus mattis rhoncus urna neque. Tellus orci ac auctor augue mauris augue neque gravida. Nisi lacus sed *138g* viverra tellus in. Dui accumsan sit amet nulla facilisi morbi tempus iaculis urna. Viverra suspendisse potenti nullam ac tortor vitae purus. Pretium vulputate sapien nec sagittis. Purus viverra accumsan in nisl nisi scelerisque eu. Scelerisque fermentum dui faucibus in ornare. Tellus *139h* pellentesque eu tincidunt tortor aliquam nulla. Lacinia quis vel eros donec ac odio tempor orci. Eget lorem dolor sed viverra ipsum nunc. Placerat orci nulla pellentesque dignissim enim sit amet venenatis urna. Arcu odio ut sem nulla pharetra diam sit. Sagittis nisl rhoncus mattis *140i* rhoncus urna neque viverra. Tortor aliquam nulla facilisi cras fermentum odio eu feugiat pretium. Amet porttitor eget dolor morbi non arcu risus quis varius.
+''';
+
+/*
+Proin fermentum leo vel orci porta. Pellentesque nec nam aliquam sem et tortor. Non quam lacus suspendisse faucibus interdum. In ornare quam viverra orci sagittis eu volutpat. Ultrices gravida dictum fusce ut placerat. Mattis aliquam faucibus purus in massa tempor nec. Et molestie ac feugiat sed lectus. Morbi tristique senectus et netus et malesuada fames ac turpis. Nec dui nunc mattis enim ut tellus elementum. Id volutpat lacus laoreet non curabitur. Elementum nibh tellus molestie nunc non. Vestibulum rhoncus est pellentesque elit.
+
+Lorem dolor sed viverra ipsum nunc aliquet bibendum enim facilisis. Sagittis purus sit amet volutpat consequat mauris. Dolor sit amet consectetur adipiscing elit ut. Id leo in vitae turpis massa sed elementum. Habitant morbi tristique senectus et netus et. Sollicitudin nibh sit amet commodo nulla facilisi. Quis imperdiet massa tincidunt nunc. Eleifend donec pretium vulputate sapien nec sagittis aliquam malesuada. Sed vulputate mi sit amet mauris commodo quis imperdiet massa. Vitae aliquet nec ullamcorper sit amet risus nullam eget felis. Facilisi nullam vehicula ipsum a arcu cursus vitae. Facilisis mauris sit amet massa vitae tortor condimentum. Tortor at auctor urna nunc id cursus metus aliquam. Erat imperdiet sed euismod nisi. Morbi tristique senectus et netus. Lacus luctus accumsan tortor posuere ac ut consequat semper viverra.
+
+At tellus at urna condimentum mattis. Nisl condimentum id venenatis a condimentum vitae. Tellus in metus vulputate eu scelerisque felis imperdiet. Nec tincidunt praesent semper feugiat. Eu sem integer vitae justo eget. Augue interdum velit euismod in. Eget mauris pharetra et ultrices neque ornare. Lectus arcu bibendum at varius vel pharetra vel turpis. Magna sit amet purus gravida quis. Ut enim blandit volutpat maecenas volutpat blandit. Arcu felis bibendum ut tristique. Habitant morbi tristique senectus et netus et malesuada fames ac.
+*/

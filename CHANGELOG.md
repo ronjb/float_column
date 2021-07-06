@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.1.0] - July 5, 2021
+
+* Added support for floated inline widgets using WidgetSpan with Floatable child.
+
 ## [1.0.2] - July 4, 2021
 
 * Added code that shows overflow area and size in case of height overflow.

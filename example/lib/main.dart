@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'pages/basic_ltr.dart';
 import 'pages/basic_rtl.dart';
 import 'pages/indents.dart';
-// import 'pages/inline_floats.dart';
+import 'pages/inline_floats.dart';
 import 'pages/margins_and_padding.dart';
 import 'pages/nested.dart';
 
@@ -30,9 +30,9 @@ class MyHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const tabs = <String, Widget>{
-      // 'Inline': InlineFloats(),
       'Basic LTR': BasicLtr(),
       'Basic RTL': BasicRtl(),
+      'Inline': InlineFloats(),
       'Nested': Nested(),
       'Indents': Indents(),
       'Margins & Padding': MarginsAndPadding(),
