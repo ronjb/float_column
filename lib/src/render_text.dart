@@ -26,8 +26,11 @@ class WrappableTextRenderer {
   ) : renderer = TextRenderer(
             parent,
             TextPainter(
-                text: TextSpan(style: defaultTextStyle.style, children: [wt.text]),
-                textAlign: wt.textAlign ?? defaultTextStyle.textAlign ?? TextAlign.start,
+                text: TextSpan(
+                    style: defaultTextStyle.style, children: [wt.text]),
+                textAlign: wt.textAlign ??
+                    defaultTextStyle.textAlign ??
+                    TextAlign.start,
                 textDirection: wt.textDirection ?? defaultTextDirection,
                 textScaleFactor: wt.textScaleFactor ?? defaultTextScaleFactor,
                 locale: wt.locale,
@@ -73,7 +76,8 @@ class WrappableTextRenderer {
     var needsPaint = false;
     var needsLayout = false;
 
-    final textSpan = TextSpan(style: defaultTextStyle.style, children: [wt.text]);
+    final textSpan =
+        TextSpan(style: defaultTextStyle.style, children: [wt.text]);
     switch (renderer._painter.text!.compareTo(textSpan)) {
       case RenderComparison.identical:
       case RenderComparison.metadata:
@@ -90,7 +94,8 @@ class WrappableTextRenderer {
         break;
     }
 
-    final textAlign = wt.textAlign ?? defaultTextStyle.textAlign ?? TextAlign.start;
+    final textAlign =
+        wt.textAlign ?? defaultTextStyle.textAlign ?? TextAlign.start;
     if (renderer._painter.textAlign != textAlign) {
       renderer._painter.textAlign = textAlign;
       needsLayout = true;
@@ -148,7 +153,8 @@ class TextRenderer with RenderTextMixin {
   Offset? _offset;
   set offset(Offset value) => _offset = value;
 
-  int get nextPlaceholderIndex => startingPlaceholderIndex + placeholderSpans.length;
+  int get nextPlaceholderIndex =>
+      startingPlaceholderIndex + placeholderSpans.length;
 
   List<PlaceholderSpan> get placeholderSpans {
     if (_placeholderSpans == null) {
@@ -166,7 +172,8 @@ class TextRenderer with RenderTextMixin {
   /// Computes the visual position of the glyphs for painting the text and the
   /// position of the inline widget children.
   void layout(BoxConstraints constraints) {
-    _painter.layout(minWidth: constraints.minWidth, maxWidth: constraints.maxWidth);
+    _painter.layout(
+        minWidth: constraints.minWidth, maxWidth: constraints.maxWidth);
   }
 
   TextRenderer copyWith(
@@ -231,7 +238,8 @@ class TextRenderer with RenderTextMixin {
 
     // The children will be scaled by textScaleFactor during the painting
     // phase, so the constraints are divided by textScaleFactor.
-    final childConstraints = BoxConstraints(maxWidth: constraints.maxWidth) / textScaleFactor;
+    final childConstraints =
+        BoxConstraints(maxWidth: constraints.maxWidth) / textScaleFactor;
 
     final placeholderDimensions = List<PlaceholderDimensions>.filled(
         placeholderSpans.length, PlaceholderDimensions.empty,
@@ -284,14 +292,16 @@ class TextRenderer with RenderTextMixin {
       childSize = child.size;
       switch (placeholderSpans[childIndex].alignment) {
         case ui.PlaceholderAlignment.baseline:
-          baselineOffset = child.getDistanceToBaseline(placeholderSpans[childIndex].baseline!);
+          baselineOffset = child
+              .getDistanceToBaseline(placeholderSpans[childIndex].baseline!);
           break;
         default:
           baselineOffset = null;
           break;
       }
     } else {
-      assert(placeholderSpans[childIndex].alignment != ui.PlaceholderAlignment.baseline);
+      assert(placeholderSpans[childIndex].alignment !=
+          ui.PlaceholderAlignment.baseline);
       childSize = child.getDryLayout(constraints);
     }
 
@@ -320,10 +330,12 @@ class TextRenderer with RenderTextMixin {
       _painter.getOffsetForCaret(position, caretPrototype);
 
   @override
-  TextPosition getPositionForOffset(Offset offset) => _painter.getPositionForOffset(offset);
+  TextPosition getPositionForOffset(Offset offset) =>
+      _painter.getPositionForOffset(offset);
 
   @override
-  TextRange getWordBoundary(TextPosition position) => _painter.getWordBoundary(position);
+  TextRange getWordBoundary(TextPosition position) =>
+      _painter.getWordBoundary(position);
 
   @override
   double get height => _painter.height;

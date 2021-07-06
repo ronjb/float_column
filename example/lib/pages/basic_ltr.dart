@@ -23,7 +23,9 @@ class BasicLtr extends StatelessWidget {
                   float: FCFloat.end,
                   maxWidthPercentage: 0.25,
                   padding: EdgeInsetsDirectional.only(start: 8),
-                  child: Img(assetName: _name('walt_whitman.jpg'), title: 'Walt Whitman'),
+                  child: Img(
+                      assetName: _name('walt_whitman.jpg'),
+                      title: 'Walt Whitman'),
                 ),
                 Floatable(
                   float: FCFloat.start,
@@ -77,7 +79,9 @@ class Img extends StatelessWidget {
 
 TextSpan _text() => TextSpan(
       children: [
-        WidgetSpan(child: Floatable(float: FCFloat.start, child: DropCap('“T', size: 3))),
+        WidgetSpan(
+            child:
+                Floatable(float: FCFloat.start, child: DropCap('“T', size: 3))),
         TextSpan(
           text: 'his is what you shall do; ',
         ),
@@ -92,15 +96,18 @@ TextSpan _text() => TextSpan(
         ),
         TextSpan(
           text: 'stand up for the stupid and crazy',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
+          style:
+              TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
         ),
         TextSpan(
           text:
               ', devote your income and labor to others, hate tyrants, argue not concerning God, have patience and indulgence toward the people, ',
         ),
         TextSpan(
-          text: 'take off your hat to nothing known or unknown or to any man or number of men',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
+          text:
+              'take off your hat to nothing known or unknown or to any man or number of men',
+          style:
+              TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
         ),
         TextSpan(
           text:
@@ -108,14 +115,16 @@ TextSpan _text() => TextSpan(
         ),
         TextSpan(
           text: 're-examine all you have been told',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
+          style:
+              TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
         ),
         TextSpan(
           text: ' at school or church or in any book, ',
         ),
         TextSpan(
           text: 'dismiss whatever insults your own soul',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
+          style:
+              TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
         ),
         TextSpan(
           text:
@@ -123,12 +132,15 @@ TextSpan _text() => TextSpan(
         ),
         TextSpan(
           text: 'Walt Whitman, ',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
+          style:
+              TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
         ),
         TextSpan(
           text: 'Song of Myself',
           style: TextStyle(
-              fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, color: Colors.deepPurple),
+              fontWeight: FontWeight.bold,
+              fontStyle: FontStyle.italic,
+              color: Colors.deepPurple),
         ),
       ],
     );

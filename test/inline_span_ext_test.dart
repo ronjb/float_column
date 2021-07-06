@@ -22,7 +22,8 @@ void main() {
     // Split in text.
     const c = TextSpan(text: '12');
     expect(c.splitAtCharacterIndex(0), [c]);
-    expect(c.splitAtCharacterIndex(1), [const TextSpan(text: '1'), const TextSpan(text: '2')]);
+    expect(c.splitAtCharacterIndex(1),
+        [const TextSpan(text: '1'), const TextSpan(text: '2')]);
     expect(c.splitAtCharacterIndex(2), [c]);
     expect(c.splitAtCharacterIndex(3), [c]);
 
@@ -40,7 +41,8 @@ void main() {
     expect(e.splitAtCharacterIndex(0), [e]);
     expect(e.splitAtCharacterIndex(1),
         [const TextSpan(text: '1'), const TextSpan(text: '2', children: ec)]);
-    expect(e.splitAtCharacterIndex(2), [const TextSpan(text: '12'), const TextSpan(children: ec)]);
+    expect(e.splitAtCharacterIndex(2),
+        [const TextSpan(text: '12'), const TextSpan(children: ec)]);
     expect(e.splitAtCharacterIndex(3), [e]);
 
     // Split between text, between text in children, and between children.
@@ -49,7 +51,8 @@ void main() {
     expect(f.splitAtCharacterIndex(0), [f]);
     expect(f.splitAtCharacterIndex(1),
         [const TextSpan(text: '1'), const TextSpan(text: '2', children: fc)]);
-    expect(f.splitAtCharacterIndex(2), [const TextSpan(text: '12'), const TextSpan(children: fc)]);
+    expect(f.splitAtCharacterIndex(2),
+        [const TextSpan(text: '12'), const TextSpan(children: fc)]);
     expect(f.splitAtCharacterIndex(3), [
       const TextSpan(text: '12', children: [TextSpan(text: '3')]),
       const TextSpan(children: [TextSpan(text: '4'), TextSpan(text: '56')]),
@@ -59,7 +62,8 @@ void main() {
       const TextSpan(children: [TextSpan(text: '56')]),
     ]);
     expect(f.splitAtCharacterIndex(5), [
-      const TextSpan(text: '12', children: [TextSpan(text: '34'), TextSpan(text: '5')]),
+      const TextSpan(
+          text: '12', children: [TextSpan(text: '34'), TextSpan(text: '5')]),
       const TextSpan(children: [TextSpan(text: '6')]),
     ]);
     expect(f.splitAtCharacterIndex(6), [f]);

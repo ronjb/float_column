@@ -30,7 +30,8 @@ class FloatColumn extends MultiChildRenderObjectWidget {
     this.textDirection,
     this.clipBehavior = Clip.none,
     List<Object> children = const <Object>[],
-  })  : assert(crossAxisAlignment != null), // ignore: unnecessary_null_comparison
+  })  : assert(
+            crossAxisAlignment != null), // ignore: unnecessary_null_comparison
         assert(crossAxisAlignment != CrossAxisAlignment.baseline),
         assert(clipBehavior != null), // ignore: unnecessary_null_comparison
         assert(children != null), // ignore: unnecessary_null_comparison
@@ -45,7 +46,8 @@ class FloatColumn extends MultiChildRenderObjectWidget {
     final result = <Widget>[];
     for (final child in list) {
       if (child is Widget) {
-        result.add(MetaData(metaData: FloatTag.fromChild(index, 0, child), child: child));
+        result.add(MetaData(
+            metaData: FloatTag.fromChild(index, 0, child), child: child));
       } else if (child is WrappableText) {
         // Traverses the paragraph's InlineSpan tree and depth-first collects
         // the list of child widgets that are created in WidgetSpans.
@@ -62,7 +64,8 @@ class FloatColumn extends MultiChildRenderObjectWidget {
           return true;
         });
       } else {
-        assert(false, 'FloatColumn only supports Widget and WrappableText children.');
+        assert(false,
+            'FloatColumn only supports Widget and WrappableText children.');
       }
       index++;
     }
@@ -113,7 +116,8 @@ class FloatColumn extends MultiChildRenderObjectWidget {
   }
 
   @override
-  void updateRenderObject(BuildContext context, covariant RenderFloatColumn renderObject) {
+  void updateRenderObject(
+      BuildContext context, covariant RenderFloatColumn renderObject) {
     renderObject
       ..textAndWidgets = _textAndWidgets
       ..crossAxisAlignment = crossAxisAlignment
@@ -127,7 +131,9 @@ class FloatColumn extends MultiChildRenderObjectWidget {
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
-      ..add(EnumProperty<CrossAxisAlignment>('crossAxisAlignment', crossAxisAlignment))
-      ..add(EnumProperty<TextDirection>('textDirection', textDirection, defaultValue: null));
+      ..add(EnumProperty<CrossAxisAlignment>(
+          'crossAxisAlignment', crossAxisAlignment))
+      ..add(EnumProperty<TextDirection>('textDirection', textDirection,
+          defaultValue: null));
   }
 }

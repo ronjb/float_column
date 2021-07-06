@@ -158,6 +158,17 @@ class WrappableText {
   }
 
   @override
-  int get hashCode => hashValues(key, text, clear, textAlign, textDirection, textScaleFactor,
-      locale, strutStyle, textHeightBehavior, indent, margin, padding);
+  int get hashCode => hashValues(
+      key,
+      text,
+      clear,
+      textAlign,
+      textDirection,
+      textScaleFactor,
+      locale,
+      strutStyle,
+      textHeightBehavior,
+      indent,
+      margin,
+      padding);
 }

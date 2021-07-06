@@ -43,7 +43,8 @@ class Indents extends StatelessWidget {
                           float: FCFloat.end,
                           clear: FCClear.both,
                           maxWidthPercentage: 0.333,
-                          child: Container(height: boxHeight, color: Colors.orange)),
+                          child: Container(
+                              height: boxHeight, color: Colors.orange)),
                       const WrappableText(
                         text: _text,
                         indent: 40,
@@ -58,7 +59,8 @@ class Indents extends StatelessWidget {
                           child: Container(
                               height: 200,
                               color: Colors.blue,
-                              margin: const EdgeInsetsDirectional.only(end: 8))),
+                              margin:
+                                  const EdgeInsetsDirectional.only(end: 8))),
                       const WrappableText(
                         text: _text,
                         indent: -40,
@@ -72,7 +74,8 @@ class Indents extends StatelessWidget {
                           clear: FCClear.end,
                           // clearMinSpacing: 100,
                           maxWidthPercentage: 0.333,
-                          child: Container(height: boxHeight, color: Colors.green)),
+                          child: Container(
+                              height: boxHeight, color: Colors.green)),
                       const WrappableText(
                         text: _text,
                         textAlign: textAlign,
@@ -104,7 +107,8 @@ class Heading extends StatelessWidget {
         child: Text(
           title,
           textAlign: TextAlign.center,
-          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          style:
+              const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
       ),
     );

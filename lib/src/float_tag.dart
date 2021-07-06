@@ -32,7 +32,8 @@ class FloatTag extends SemanticsTag {
           clearMinSpacing: child is Floatable ? child.clearMinSpacing : 0.0,
           margin: child is Floatable ? child.margin : EdgeInsets.zero,
           padding: child is Floatable ? child.padding : EdgeInsets.zero,
-          maxWidthPercentage: child is Floatable ? child.maxWidthPercentage : 1.0,
+          maxWidthPercentage:
+              child is Floatable ? child.maxWidthPercentage : 1.0,
         );
 
   /// The index of the child.
@@ -82,6 +83,6 @@ class FloatTag extends SemanticsTag {
   }
 
   @override
-  int get hashCode => hashValues(FloatTag, index, placeholderIndex, float, clear, clearMinSpacing,
-      margin, padding, maxWidthPercentage);
+  int get hashCode => hashValues(FloatTag, index, placeholderIndex, float,
+      clear, clearMinSpacing, margin, padding, maxWidthPercentage);
 }

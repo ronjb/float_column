@@ -125,10 +125,11 @@ class RenderFloatColumn extends RenderBox
         keys.add(el.defaultKey);
         final prh = _cache[el.defaultKey];
         if (prh == null) {
-          _cache[el.defaultKey] = WrappableTextRenderer(
-              this, el, textDirection, defaultTextStyle, defaultTextScaleFactor);
+          _cache[el.defaultKey] = WrappableTextRenderer(this, el, textDirection,
+              defaultTextStyle, defaultTextScaleFactor);
         } else {
-          prh.updateWith(el, this, textDirection, defaultTextStyle, defaultTextScaleFactor);
+          prh.updateWith(el, this, textDirection, defaultTextStyle,
+              defaultTextScaleFactor);
         }
       }
     }
@@ -225,7 +226,9 @@ class RenderFloatColumn extends RenderBox
 
   @override
   void setupParentData(RenderBox child) {
-    if (child.parentData is! FloatColumnParentData) child.parentData = FloatColumnParentData();
+    if (child.parentData is! FloatColumnParentData) {
+      child.parentData = FloatColumnParentData();
+    }
   }
 
   @override
@@ -240,7 +243,8 @@ class RenderFloatColumn extends RenderBox
 
   @override
   Size computeDryLayout(BoxConstraints constraints) {
-    assert(debugCannotComputeDryLayout(reason: 'Dry layout cannot be efficiently computed.'));
+    assert(debugCannotComputeDryLayout(
+        reason: 'Dry layout cannot be efficiently computed.'));
     return Size.zero;
   }
 
@@ -289,8 +293,8 @@ class RenderFloatColumn extends RenderBox
 
         final childParentData = child.parentData! as FloatColumnParentData;
 
-        yPosNext = _layoutWidget(
-            child, childParentData, childConstraints, yPosNext, maxWidth, tag, floatL, floatR);
+        yPosNext = _layoutWidget(child, childParentData, childConstraints,
+            yPosNext, maxWidth, tag, floatL, floatR);
 
         assert(child.parentData == childParentData);
         child = childParentData.nextSibling;
@@ -299,7 +303,8 @@ class RenderFloatColumn extends RenderBox
       // Else, if it is a WrappableText...
       else if (el is WrappableText) {
         final wtr = _cache[el.defaultKey]!;
-        assert(wtr.renderer.placeholderSpans.isEmpty || (child != null && child.tag.index == i));
+        assert(wtr.renderer.placeholderSpans.isEmpty ||
+            (child != null && child.tag.index == i));
 
         // Resolve the margin and update `yPosNext` and `prevBottomMargin`.
         final margin = el.margin.resolve(wtr.textDirection);
@@ -307,8 +312,8 @@ class RenderFloatColumn extends RenderBox
         yPosNext += topMargin;
         prevBottomMargin = margin.bottom;
 
-        yPosNext = _layoutWrappableText(
-            el, wtr, child, childConstraints, yPosNext, maxWidth, floatL, floatR);
+        yPosNext = _layoutWrappableText(el, wtr, child, childConstraints,
+            yPosNext, maxWidth, floatL, floatR);
 
         // If this paragraph has inline widget children, set the `offset` and
         // `scale` for each.
@@ -321,7 +326,8 @@ class RenderFloatColumn extends RenderBox
               final renderer = wtr.rendererWithPlaceholder(widgetIndex);
               final box = renderer.placeholderBoxForWidgetIndex(widgetIndex);
               childParentData
-                ..offset = Offset(box.left + renderer.offset.dx, box.top + renderer.offset.dy)
+                ..offset = Offset(
+                    box.left + renderer.offset.dx, box.top + renderer.offset.dy)
                 ..scale = renderer.placeholderScaleForWidgetIndex(widgetIndex);
             }
             child = childParentData.nextSibling;
@@ -336,8 +342,11 @@ class RenderFloatColumn extends RenderBox
     }
 
     yPosNext += prevBottomMargin;
-    final totalHeight = math.max(floatL.maxYBelow(yPosNext), floatR.maxYBelow(yPosNext));
-    _overflow = totalHeight > constraints.maxHeight ? totalHeight - constraints.maxHeight : 0.0;
+    final totalHeight =
+        math.max(floatL.maxYBelow(yPosNext), floatR.maxYBelow(yPosNext));
+    _overflow = totalHeight > constraints.maxHeight
+        ? totalHeight - constraints.maxHeight
+        : 0.0;
     size = constraints.constrain(Size(maxWidth, totalHeight));
   }
 
@@ -358,9 +367,10 @@ class RenderFloatColumn extends RenderBox
     final margin = tag.margin.resolve(textDirection);
     final padding = tag.padding.resolve(textDirection);
 
-    final maxWidthMinusPadding =
-        math.max(0.0, maxWidth - margin.left - margin.right - padding.left - padding.right);
-    final childMaxWidth = math.min(maxWidthMinusPadding, maxWidth * tag.maxWidthPercentage);
+    final maxWidthMinusPadding = math.max(0.0,
+        maxWidth - margin.left - margin.right - padding.left - padding.right);
+    final childMaxWidth =
+        math.min(maxWidthMinusPadding, maxWidth * tag.maxWidthPercentage);
 
     var layoutConstraints = childConstraints;
     if (childMaxWidth != childConstraints.maxWidth) {
@@ -393,8 +403,12 @@ class RenderFloatColumn extends RenderBox
     // Check for `clear` and adjust `yPosNext` accordingly.
     final clear = resolveClear(tag.clear, withDir: textDirection);
     final spacing = tag.clearMinSpacing;
-    if (clear == FCClear.left || clear == FCClear.both) yPosNext = floatL.nextY(yPosNext, spacing);
-    if (clear == FCClear.right || clear == FCClear.both) yPosNext = floatR.nextY(yPosNext, spacing);
+    if (clear == FCClear.left || clear == FCClear.both) {
+      yPosNext = floatL.nextY(yPosNext, spacing);
+    }
+    if (clear == FCClear.right || clear == FCClear.both) {
+      yPosNext = floatR.nextY(yPosNext, spacing);
+    }
 
     final totalMinWidth = child.size.width + padding.left + padding.right;
     final minX = margin.left;
@@ -422,7 +436,8 @@ class RenderFloatColumn extends RenderBox
     }
 
     // Calculate `xPos` based on alignment and available space.
-    final xPos = xPosForChildWithWidth(child.size.width, alignment, rect.left, rect.right);
+    final xPos = xPosForChildWithWidth(
+        child.size.width, alignment, rect.left, rect.right);
     parentData.offset = Offset(xPos, rect.top);
 
     if (addToFloatRects != null) {
@@ -463,8 +478,12 @@ class RenderFloatColumn extends RenderBox
 
     // Check for `clear` and adjust `yPosNext` accordingly.
     final clear = resolveClear(wt.clear, withDir: wtr.textDirection);
-    if (clear == FCClear.left || clear == FCClear.both) yPosNext = floatL.maxYBelow(yPosNext);
-    if (clear == FCClear.right || clear == FCClear.both) yPosNext = floatR.maxYBelow(yPosNext);
+    if (clear == FCClear.left || clear == FCClear.both) {
+      yPosNext = floatL.maxYBelow(yPosNext);
+    }
+    if (clear == FCClear.right || clear == FCClear.both) {
+      yPosNext = floatR.maxYBelow(yPosNext);
+    }
 
     // Clear the sub-paragraph renderers for wrapping text.
     wtr.subs.clear();
@@ -503,8 +522,8 @@ class RenderFloatColumn extends RenderBox
             wtr.subs.removeAt(subIndex);
           }
 
-          wtr.subs.add(textRenderer.copyWith(
-              split.last, subIndex == 0 ? 0 : wtr.subs[subIndex - 1].nextPlaceholderIndex));
+          wtr.subs.add(textRenderer.copyWith(split.last,
+              subIndex == 0 ? 0 : wtr.subs[subIndex - 1].nextPlaceholderIndex));
 
           yPosNext += estLineHeight;
 
@@ -518,9 +537,11 @@ class RenderFloatColumn extends RenderBox
       // Adjust the left padding based on indent value.
       final paddingLeft = padding.left + (subIndex <= 0 ? wt.indent : 0.0);
 
-      final lineMinWidth = estScaledFontSize * 4.0 + paddingLeft + padding.right;
+      final lineMinWidth =
+          estScaledFontSize * 4.0 + paddingLeft + padding.right;
       final lineMinX = margin.left;
-      final lineMaxX = math.max(lineMinX + lineMinWidth, maxWidth - margin.right);
+      final lineMaxX =
+          math.max(lineMinX + lineMinWidth, maxWidth - margin.right);
 
       // Find space for a width of at least `estLineHeight * 4.0`. This may
       // need to be tweaked, or it could be an option passed in, or we could
@@ -557,8 +578,8 @@ class RenderFloatColumn extends RenderBox
       // called.
       if (wtr[subIndex].placeholderSpans.isNotEmpty) {
         assert(child != null);
-        hasFloatedChildren = wtr[subIndex].setPlaceholderDimensions(
-            child, subConstraints, wt.textScaleFactor ?? defaultTextScaleFactor);
+        hasFloatedChildren = wtr[subIndex].setPlaceholderDimensions(child,
+            subConstraints, wt.textScaleFactor ?? defaultTextScaleFactor);
       }
 
       // Layout the text and inline widget children.
@@ -577,8 +598,11 @@ class RenderFloatColumn extends RenderBox
         // If this is the first line of the paragraph, and the indent value is
         // not zero, the second line has a different left padding, so it needs
         // to be laid out separately, so set the `bottom` value accordingly.
-        final bottom = math.min(rect.bottom,
-            subIndex > 0 || wt.indent == 0.0 ? rect.bottom : rect.top + estLineHeight / 2.0);
+        final bottom = math.min(
+            rect.bottom,
+            subIndex > 0 || wt.indent == 0.0
+                ? rect.bottom
+                : rect.top + estLineHeight / 2.0);
 
         // `findSpaceFor` just checked for space for the first line of text.
         // Now that the text has been laid out, we need to see if the available
@@ -619,16 +643,19 @@ class RenderFloatColumn extends RenderBox
             //
             final dir = wtr[subIndex].textDirection;
             final x = dir == TextDirection.ltr ? rect.width : 0.0;
-            final y = math.min(nextChangeY, nextFloatTop - estLineHeight) - rect.top;
+            final y =
+                math.min(nextChangeY, nextFloatTop - estLineHeight) - rect.top;
 
             // Get the character index in the text from the point offset.
-            var charIndex = wtr[subIndex].getPositionForOffset(Offset(x, y)).offset;
+            var charIndex =
+                wtr[subIndex].getPositionForOffset(Offset(x, y)).offset;
             if (charIndex > 0) {
               final text = span.toPlainText(includeSemanticsLabels: false);
               if (charIndex < text.length - 1) {
                 // Skip trailing spaces.
                 final codeUnits = text.codeUnits;
-                while (charIndex < codeUnits.length - 1 && codeUnits[charIndex] == 0x0020) {
+                while (charIndex < codeUnits.length - 1 &&
+                    codeUnits[charIndex] == 0x0020) {
                   charIndex++;
                 }
 
@@ -650,7 +677,9 @@ class RenderFloatColumn extends RenderBox
                   if (text.codeUnitAt(charIndex) == 0x0a) {
                     final s2 = split.last.splitAtCharacterIndex(1);
                     if (s2.length == 2) {
-                      assert(s2.first.toPlainText(includeSemanticsLabels: false) == '\n');
+                      assert(
+                          s2.first.toPlainText(includeSemanticsLabels: false) ==
+                              '\n');
                       split[1] = s2.last;
                     }
                   }
@@ -663,10 +692,13 @@ class RenderFloatColumn extends RenderBox
                     wtr.subs.removeLast();
                   }
                   wtr.subs
-                    ..add(textRenderer.copyWith(split.first,
-                        subIndex == 0 ? 0 : wtr.subs[subIndex - 1].nextPlaceholderIndex))
-                    ..add(
-                        textRenderer.copyWith(split.last, wtr.subs[subIndex].nextPlaceholderIndex));
+                    ..add(textRenderer.copyWith(
+                        split.first,
+                        subIndex == 0
+                            ? 0
+                            : wtr.subs[subIndex - 1].nextPlaceholderIndex))
+                    ..add(textRenderer.copyWith(
+                        split.last, wtr.subs[subIndex].nextPlaceholderIndex));
 
                   // Re-run the loop, keeping the index the same.
                   continue; //------------------------------------>
@@ -688,21 +720,32 @@ class RenderFloatColumn extends RenderBox
         /// The floated children need to be laid out one at a time because
         /// each time one is laid out the positions of subsequent floated
         /// children will likely be affected.
-        bool _layoutFloatedChildren(TextRenderer renderer, RenderBox? firstChild) {
+        bool _layoutFloatedChildren(
+            TextRenderer renderer, RenderBox? firstChild) {
           if (firstChild == null) return false;
           RenderBox? child = firstChild;
           final paragraphIndex = firstChild.tag.index;
           while (child != null && child.tag.index == paragraphIndex) {
             final childParentData = child.parentData! as FloatColumnParentData;
-            final i = child.tag.placeholderIndex - renderer.startingPlaceholderIndex;
+            final i =
+                child.tag.placeholderIndex - renderer.startingPlaceholderIndex;
             if (i >= 0 && i < renderer.placeholderSpans.length) {
               final ctpIndex = child.tag.placeholderIndex;
               // If this child is floated...
-              if (child.tag.float != FCFloat.none && !laidOutFloaterIndices.contains(ctpIndex)) {
+              if (child.tag.float != FCFloat.none &&
+                  !laidOutFloaterIndices.contains(ctpIndex)) {
                 laidOutFloaterIndices.add(ctpIndex);
-                final boxTop = renderer.placeholderBoxForWidgetIndex(ctpIndex).top;
-                _layoutWidget(child, childParentData, childConstraints,
-                    boxTop + rect.top - estLineHeight, maxWidth, child.tag, floatL, floatR);
+                final boxTop =
+                    renderer.placeholderBoxForWidgetIndex(ctpIndex).top;
+                _layoutWidget(
+                    child,
+                    childParentData,
+                    childConstraints,
+                    boxTop + rect.top - estLineHeight,
+                    maxWidth,
+                    child.tag,
+                    floatL,
+                    floatR);
                 return true;
               }
             }
@@ -748,7 +791,8 @@ class RenderFloatColumn extends RenderBox
       }
 
       // Calculate `xPos` based on alignment and available space.
-      final xPos = xPosForChildWithWidth(wtr[subIndex].width, alignment(), rect.left, rect.right);
+      final xPos = xPosForChildWithWidth(
+          wtr[subIndex].width, alignment(), rect.left, rect.right);
 
       wtr[subIndex].offset = Offset(xPos, rect.top);
       yPosNext = rect.top + wtr[subIndex].height;
@@ -893,8 +937,10 @@ class RenderFloatColumn extends RenderBox
       // Simulate a child rect that overflows by the right amount. This child
       // rect is never used for drawing, just for determining the overflow
       // location and amount.
-      final overflowChildRect = Rect.fromLTWH(0.0, 0.0, 0.0, size.height + _overflow);
-      paintOverflowIndicator(context, offset, Offset.zero & size, overflowChildRect,
+      final overflowChildRect =
+          Rect.fromLTWH(0.0, 0.0, 0.0, size.height + _overflow);
+      paintOverflowIndicator(
+          context, offset, Offset.zero & size, overflowChildRect,
           overflowHints: debugOverflowHints);
       return true;
     }());
@@ -917,8 +963,10 @@ class RenderFloatColumn extends RenderBox
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties
-      ..add(EnumProperty<CrossAxisAlignment>('crossAxisAlignment', crossAxisAlignment))
-      ..add(EnumProperty<TextDirection>('textDirection', textDirection, defaultValue: null));
+      ..add(EnumProperty<CrossAxisAlignment>(
+          'crossAxisAlignment', crossAxisAlignment))
+      ..add(EnumProperty<TextDirection>('textDirection', textDirection,
+          defaultValue: null));
   }
 
   @override

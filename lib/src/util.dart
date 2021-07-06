@@ -19,16 +19,24 @@ void dmPrint(Object object) {
 /// If float is `start` or `end`, returns `left` or `right` depending on the
 /// text direction.
 FCFloat resolveFloat(FCFloat float, {required TextDirection withDir}) {
-  if (float == FCFloat.start) return _isLTR(withDir) ? FCFloat.left : FCFloat.right;
-  if (float == FCFloat.end) return _isLTR(withDir) ? FCFloat.right : FCFloat.left;
+  if (float == FCFloat.start) {
+    return _isLTR(withDir) ? FCFloat.left : FCFloat.right;
+  }
+  if (float == FCFloat.end) {
+    return _isLTR(withDir) ? FCFloat.right : FCFloat.left;
+  }
   return float;
 }
 
 /// If clear is `start` or `end`, returns `left` or `right` depending on the
 /// text direction.
 FCClear resolveClear(FCClear clear, {required TextDirection withDir}) {
-  if (clear == FCClear.start) return _isLTR(withDir) ? FCClear.left : FCClear.right;
-  if (clear == FCClear.end) return _isLTR(withDir) ? FCClear.right : FCClear.left;
+  if (clear == FCClear.start) {
+    return _isLTR(withDir) ? FCClear.left : FCClear.right;
+  }
+  if (clear == FCClear.end) {
+    return _isLTR(withDir) ? FCClear.right : FCClear.left;
+  }
   return clear;
 }
 
@@ -40,7 +48,8 @@ extension FloatColumnExtOnListOfRect on List<Rect> {
   /// Returns the `bottom` of the bottom-most rectangle in this list that is
   /// greater than [startY], or [startY] if there is none.
   ///
-  double maxYBelow(double startY) => fold<double>(startY, (max, r) => math.max(max, r.bottom));
+  double maxYBelow(double startY) =>
+      fold<double>(startY, (max, r) => math.max(max, r.bottom));
 
   double nextY(double startY, double clearMinSpacing) =>
       maxYBelow(startY - clearMinSpacing) + clearMinSpacing;
@@ -51,7 +60,9 @@ extension FloatColumnExtOnListOfRect on List<Rect> {
   ///
   double topOfTopMostRectAtOrBelow(double startY) =>
       fold<double?>(
-          null, (min, r) => r.top >= startY && (min == null || r.top < min) ? r.top : min) ??
+          null,
+          (min, r) =>
+              r.top >= startY && (min == null || r.top < min) ? r.top : min) ??
       double.infinity;
 }
 
@@ -121,15 +132,18 @@ Rect findSpaceFor({
     // `top` - `bottom`.
     rRect = floatR.fold<Rect?>(
         null,
-        (min, r) =>
-            r.top < bottom && r.bottom > top && r.left < maxX && (min == null || r.left < min.left)
-                ? r
-                : min);
+        (min, r) => r.top < bottom &&
+                r.bottom > top &&
+                r.left < maxX &&
+                (min == null || r.left < min.left)
+            ? r
+            : min);
 
     left = lRect?.right ?? minX;
     right = rRect?.left ?? maxX;
 
-    nextY = math.min(lRect?.bottom ?? double.infinity, rRect?.bottom ?? double.infinity);
+    nextY = math.min(
+        lRect?.bottom ?? double.infinity, rRect?.bottom ?? double.infinity);
   } while (width > right - left);
 
   return Rect.fromLTRB(left, top, right, nextY);

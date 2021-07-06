@@ -36,7 +36,8 @@ TextSpan _process(String str) {
           return [
             TextSpan(text: ' (${cit.substring(cit.length - 1)})'),
             WidgetSpan(
-              child: Floatable(float: FCFloat.left, clear: FCClear.both, child: Text(cit)),
+              child: Floatable(
+                  float: FCFloat.left, clear: FCClear.both, child: Text(cit)),
             ),
             TextSpan(text: ' ${s.last}'),
           ];

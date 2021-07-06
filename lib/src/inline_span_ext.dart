@@ -50,7 +50,9 @@ extension FCInlineSpanExt on InlineSpan {
   String initialText() {
     return valueOfFirstDescendantOf(
           this,
-          where: (s) => s is WidgetSpan || (s is TextSpan && (s.text?.isNotEmpty ?? false)),
+          where: (s) =>
+              s is WidgetSpan ||
+              (s is TextSpan && (s.text?.isNotEmpty ?? false)),
           defaultValue: '',
           getValue: (s) => s is WidgetSpan
               ? '\uFFFC'
@@ -70,9 +72,10 @@ extension FCInlineSpanExt on InlineSpan {
   /// returned. If this span was split, a list of two spans is returned,
   /// containing the two new spans.
   ///
-  List<InlineSpan> splitAtCharacterIndex(int index) => this is SplittableMixin<InlineSpan>
-      ? (this as SplittableMixin<InlineSpan>).splitAt(index)
-      : _splitAtIndex(SplitAtIndex(index));
+  List<InlineSpan> splitAtCharacterIndex(int index) =>
+      this is SplittableMixin<InlineSpan>
+          ? (this as SplittableMixin<InlineSpan>).splitAt(index)
+          : _splitAtIndex(SplitAtIndex(index));
 
   List<InlineSpan> _splitAtIndex(SplitAtIndex index) {
     if (index.value == 0) return [this];
@@ -85,7 +88,8 @@ extension FCInlineSpanExt on InlineSpan {
           index.value -= text.length;
         } else {
           final result = [
-            span.copyWith(text: text.substring(0, index.value), noChildren: true),
+            span.copyWith(
+                text: text.substring(0, index.value), noChildren: true),
             span.copyWith(text: text.substring(index.value)),
           ];
           index.value = 0;

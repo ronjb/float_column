@@ -27,7 +27,8 @@ extension FloatColumnExtOnRenderObject on RenderObject {
 
       if (ro is VisitChildrenOfAnyTypeMixin) {
         if (firstTime) firstTime = false;
-        canceled = !(ro as VisitChildrenOfAnyTypeMixin).visitChildrenOfAnyType(visitor);
+        canceled = !(ro as VisitChildrenOfAnyTypeMixin)
+            .visitChildrenOfAnyType(visitor);
       } else {
         if (firstTime) {
           firstTime = false;

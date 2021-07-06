@@ -21,7 +21,11 @@ class DropCap extends StatelessWidget {
         child: Text(
           text,
           style: GoogleFonts.getFont(_fonts[1],
-              fontSize: (style.fontSize ?? 16.0) * (style.height ?? 1.0) * size * 0.99, height: 1),
+              fontSize: (style.fontSize ?? 16.0) *
+                  (style.height ?? 1.0) *
+                  size *
+                  0.99,
+              height: 1),
         ),
       ),
     );

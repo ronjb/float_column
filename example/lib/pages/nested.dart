@@ -86,12 +86,14 @@ class Nested extends StatelessWidget {
                                         padding: EdgeInsets.only(left: 8),
                                         child: _Box(Text('c2')),
                                       ),
-                                      WrappableText(text: _t3, textAlign: textAlign),
+                                      WrappableText(
+                                          text: _t3, textAlign: textAlign),
                                     ],
                                   ),
                                 ),
                               ),
-                              const WrappableText(text: _t2, textAlign: textAlign),
+                              const WrappableText(
+                                  text: _t2, textAlign: textAlign),
                             ],
                           ),
                         ),
@@ -124,7 +126,8 @@ class _Box extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         decoration: BoxDecoration(border: Border.all()),
-        child: Padding(padding: const EdgeInsets.fromLTRB(8, 8, 8, 8), child: child),
+        child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 8, 8, 8), child: child),
       );
 }
 

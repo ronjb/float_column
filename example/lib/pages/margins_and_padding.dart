@@ -40,13 +40,15 @@ class MarginsAndPadding extends StatelessWidget {
                   FloatColumn(
                     crossAxisAlignment: crossAxisAlignment,
                     children: [
-                      Floatable(float: FCFloat.start, child: DropCap(123.toString())),
+                      Floatable(
+                          float: FCFloat.start, child: DropCap(123.toString())),
                       Floatable(
                           float: FCFloat.end,
                           clear: FCClear.both,
                           clearMinSpacing: 20,
                           maxWidthPercentage: 0.333,
-                          child: Container(height: boxHeight, color: Colors.orange)),
+                          child: Container(
+                              height: boxHeight, color: Colors.orange)),
                       Floatable(
                           float: FCFloat.start,
                           clear: FCClear.both,
@@ -55,13 +57,15 @@ class MarginsAndPadding extends StatelessWidget {
                           child: Container(
                               height: 200,
                               color: Colors.blue,
-                              margin: const EdgeInsetsDirectional.only(end: 8))),
+                              margin:
+                                  const EdgeInsetsDirectional.only(end: 8))),
                       Floatable(
                           float: FCFloat.end,
                           clear: FCClear.end,
                           clearMinSpacing: 100,
                           maxWidthPercentage: 0.333,
-                          child: Container(height: boxHeight, color: Colors.green)),
+                          child: Container(
+                              height: boxHeight, color: Colors.green)),
                       const WrappableText(
                         text: _text,
                         textAlign: textAlign,

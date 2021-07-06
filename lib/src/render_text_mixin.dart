@@ -133,20 +133,24 @@ class RenderParagraphAdapter with RenderTextMixin {
   final RenderParagraph rp;
 
   @override
-  List<TextBox> getBoxesForSelection(TextSelection selection) => rp.getBoxesForSelection(selection);
+  List<TextBox> getBoxesForSelection(TextSelection selection) =>
+      rp.getBoxesForSelection(selection);
 
   @override
-  double? getFullHeightForCaret(TextPosition position) => rp.getFullHeightForCaret(position);
+  double? getFullHeightForCaret(TextPosition position) =>
+      rp.getFullHeightForCaret(position);
 
   @override
   Offset getOffsetForCaret(TextPosition position, Rect caretPrototype) =>
       rp.getOffsetForCaret(position, caretPrototype);
 
   @override
-  TextPosition getPositionForOffset(Offset offset) => rp.getPositionForOffset(offset);
+  TextPosition getPositionForOffset(Offset offset) =>
+      rp.getPositionForOffset(offset);
 
   @override
-  TextRange getWordBoundary(TextPosition position) => rp.getWordBoundary(position);
+  TextRange getWordBoundary(TextPosition position) =>
+      rp.getWordBoundary(position);
 
   @override
   double get height => rp.size.height;
@@ -188,7 +192,8 @@ class RenderParagraphAdapter with RenderTextMixin {
   TextWidthBasis get textWidthBasis => rp.textWidthBasis;
 
   @override
-  void paint(PaintingContext context, Offset offset) => rp.paint(context, offset);
+  void paint(PaintingContext context, Offset offset) =>
+      rp.paint(context, offset);
 
   @override
   double get width => rp.size.width;
