@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.1.1] - September 9, 2021
+
+* Updated to use `flutter_lints_plus` package and fix Flutter 2.5 lint warnings.
+
 ## [1.1.0] - July 5, 2021
 
 * Added support for floated inline widgets using WidgetSpan with Floatable child.
