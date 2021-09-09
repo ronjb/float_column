@@ -1,6 +1,5 @@
-import 'package:flutter/material.dart';
-
 import 'package:float_column/float_column.dart';
+import 'package:flutter/material.dart';
 
 import '../shared/drop_cap.dart';
 

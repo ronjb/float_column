@@ -1,6 +1,5 @@
-import 'package:flutter/material.dart';
-
 import 'package:float_column/float_column.dart';
+import 'package:flutter/material.dart';
 
 class InlineFloats extends StatelessWidget {
   const InlineFloats({Key? key}) : super(key: key);

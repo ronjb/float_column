@@ -1,7 +1,6 @@
+import 'package:float_column/float_column.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-
-import 'package:float_column/float_column.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../shared/drop_cap.dart';

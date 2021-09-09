@@ -1,6 +1,5 @@
-import 'package:flutter/material.dart';
-
 import 'package:float_column/float_column.dart';
+import 'package:flutter/material.dart';
 
 class Nested extends StatelessWidget {
   const Nested({Key? key}) : super(key: key);

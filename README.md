@@ -1,6 +1,6 @@
 # float_column
 
-[![Pub](https://img.shields.io/pub/v/flutter_widget_from_html_core.svg)](https://pub.dev/packages/float_column)
+[![Pub](https://img.shields.io/pub/v/float_column.svg)](https://pub.dev/packages/float_column)
 
 Flutter FloatColumn widget for building a vertical column of widgets and text where the text wraps around floated widgets, similar to how CSS float works.
 
