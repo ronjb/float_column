@@ -1,5 +1,6 @@
-// Copyright 2021 Ron Booth. All rights reserved.
-// Use of this source code is governed by a license that can be found in the LICENSE file.
+// Copyright (c) 2021 Ron Booth. All rights reserved.
+// Use of this source code is governed by a license that can be found in the
+// LICENSE file.
 
 import 'dart:ui' as ui show PlaceholderAlignment;
 
@@ -283,7 +284,8 @@ class TextRenderer with RenderTextMixin {
     final Size childSize;
     if (!dry) {
       if (!child.hasSize) {
-        // TODO(ron): Maybe need to call this every time in case constraints change?
+        // TODO(ron): Maybe need to call this every time in case constraints
+        // change?
         child.layout(
           constraints,
           parentUsesSize: true,

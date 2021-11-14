@@ -1,5 +1,6 @@
-// Copyright 2021 Ron Booth. All rights reserved.
-// Use of this source code is governed by a license that can be found in the LICENSE file.
+// Copyright (c) 2021 Ron Booth. All rights reserved.
+// Use of this source code is governed by a license that can be found in the
+// LICENSE file.
 
 import 'dart:math' as math;
 
@@ -760,8 +761,10 @@ class RenderFloatColumn extends RenderBox
           // will likely need to be re-split differently.
           if (rendererBeforeSplit != null) {
             assert(wtr.subs.length == subIndex + 2);
-            wtr.subs..removeLast()..removeLast();
-            wtr.subs.add(rendererBeforeSplit);
+            wtr.subs
+              ..removeLast()
+              ..removeLast()
+              ..add(rendererBeforeSplit);
             rendererBeforeSplit = null;
           }
 
@@ -976,21 +979,34 @@ class RenderFloatColumn extends RenderBox
 
     for (final el in _internalTextAndWidgets) {
       if (el is Widget) {
+        final tag = child!.tag;
+        assert(tag.index == i && tag.placeholderIndex == 0);
+
         // Visit the child widget's render object.
-        if (!visitor(child!)) return false; //------------------------------>
+        if (!visitor(child)) return false; //------------------------------->
         child = childAfter(child);
       } else if (el is WrappableText) {
-        // Visit all the text renderers.
         final wtr = _cache[el.defaultKey]!;
+        assert(wtr.renderer.placeholderSpans.isEmpty ||
+            (child != null && child.tag.index == i));
+
+        // Visit all the text renderers.
         for (final textRenderer in wtr.renderers) {
           if (!visitor(textRenderer)) return false; //---------------------->
         }
 
         // Visit all the child render objects embedded in the text.
+        var widgetIndex = 0;
         while (child != null && child.tag.index == i) {
+          assert(child.tag.placeholderIndex == widgetIndex);
           if (!visitor(child)) return false; //----------------------------->
+          child = childAfter(child);
+          widgetIndex++;
         }
+      } else {
+        assert(false);
       }
+
       i++;
     }
     return true;

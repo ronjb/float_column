@@ -8,35 +8,25 @@ class BasicRtl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const TextAlign? textAlign = null;
-    // const textAlign = TextAlign.start;
-    // const textAlign = TextAlign.end;
-    // const textAlign = TextAlign.left;
-    // const textAlign = TextAlign.right;
-    // const textAlign = TextAlign.center;
-    // const textAlign = TextAlign.justify;
-
-    // const crossAxisAlignment = CrossAxisAlignment.center;
     const crossAxisAlignment = CrossAxisAlignment.start;
     // const crossAxisAlignment = CrossAxisAlignment.end;
     // const crossAxisAlignment = CrossAxisAlignment.stretch;
 
     const boxHeight = 40.0;
 
-    return DefaultTextStyle(
-      style: const TextStyle(fontSize: 18, color: Colors.black, height: 1.5),
-      textAlign: textAlign,
-      child: Directionality(
-        textDirection: TextDirection.rtl,
-        child: Builder(
-          builder: (context) => SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: crossAxisAlignment,
-                children: [
-                  FloatColumn(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final scale = (((constraints.maxWidth / 500.0) - 1.0) * 0.75) + 1.0;
+        return DefaultTextStyle(
+          style:
+              const TextStyle(fontSize: 18, color: Colors.black, height: 1.5),
+          child: Directionality(
+            textDirection: TextDirection.rtl,
+            child: Builder(
+              builder: (context) => SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: FloatColumn(
                     crossAxisAlignment: crossAxisAlignment,
                     children: [
                       const Floatable(
@@ -65,20 +55,31 @@ class BasicRtl extends StatelessWidget {
                           maxWidthPercentage: 0.333,
                           child: Container(
                               height: boxHeight, color: Colors.green)),
-                      const WrappableText(text: _text, textAlign: textAlign),
+                      WrappableText(text: _text, textScaleFactor: scale),
                     ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
 
 // cspell: disable
 const _text = TextSpan(
-    text:
-        '"هذا ما يجب أن تفعله ؛ أحبوا الأرض والشمس والحيوانات ، واحتقروا الثروات ، وأعطوا الصدقات لكل من يسأل ، وادافع عن الغباء والمجنون ، وخصص دخلكم وعملك للآخرين ، واكرهوا الطغاة ، ولا تجادلوا بشأن الله ، وتحلى بالصبر والتسامح تجاه أيها الناس ، خلع قبعتك إلى لا شيء معروف أو غير معروف أو لأي رجل أو عدد من الرجال ، اذهب بحرية مع الأشخاص الأقوياء غير المتعلمين ومع الشباب وأمهات العائلات ، اقرأ هذه الأوراق في الهواء الطلق في كل موسم من كل عام حياتك ، أعد فحص كل ما قيل لك في المدرسة أو الكنيسة أو في أي كتاب ، وتجاهل أي إهانة لروحك ، وسوف يكون جسدك قصيدة عظيمة ولديك طلاقة غنية ليس فقط في كلماتها ولكن في الصمت. خطوط شفتيها ووجهها وبين رموش عينيك وفي كل حركة ومفصل لجسمك ". – Walt Whitman, Song of Myself');
+    text: 'این کاری است که باید انجام دهید؛ زمين و خورشيد و حيوانات را'
+        ' دوست بدار، مال را تحقير نما، به هر كه خواست صدقه بده، براي احمق'
+        ' و ديوانه قيام كن، درآمد و كارت را وقف ديگران كن، از ظالمان'
+        ' متنفر باش، در مورد خدا مجادله نكن، در برابر خدا صبر و اغماض'
+        ' داشته باش. مردم، کلاه خود را برای هیچ چیز معلوم یا ناشناخته یا'
+        ' برای هر مرد یا تعدادی مرد بردارید، آزادانه با افراد قدرتمند بی'
+        ' سواد و با جوانان و با مادران خانواده ها بروید، این برگ ها را در'
+        ' هر فصل از هر سال در هوای آزاد بخوانید. زندگی خود را دوباره'
+        ' بررسی کنید، تمام آنچه را که در مدرسه یا کلیسا یا در هر کتابی به'
+        ' شما گفته شده است بررسی کنید، هر آنچه را که به روح شما توهین می'
+        ' کند را رد کنید، و جسم شما یک شعر عالی خواهد بود و نه تنها در'
+        ' کلام خود، بلکه در صامت غنی ترین تسلط را خواهد داشت. خطوط لب و'
+        ' صورتش و بین مژه های چشمانت و در هر حرکت و مفصل بدنت.');
