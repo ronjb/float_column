@@ -5,7 +5,8 @@
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
-import 'float_tag.dart';
+import 'float_column_semantics_tag.dart';
+import 'float_data.dart';
 import 'floatable.dart';
 import 'render_float_column.dart';
 import 'wrappable_text.dart';
@@ -47,20 +48,29 @@ class FloatColumn extends MultiChildRenderObjectWidget {
     final result = <Widget>[];
     for (final child in list) {
       if (child is Widget) {
-        result.add(MetaData(
-            metaData: FloatTag.fromChild(index, 0, child), child: child));
+        result.add(
+          MetaData(
+            metaData: FloatData(index, 0, child),
+            child: child,
+          ),
+        );
       } else if (child is WrappableText) {
-        // Traverses the paragraph's InlineSpan tree and depth-first collects
+        // Traverses the child's InlineSpan tree and depth-first collects
         // the list of child widgets that are created in WidgetSpans.
         var placeholderIndex = 0;
         child.text.visitChildren((span) {
           if (span is WidgetSpan) {
-            final child = span.child;
-            final tag = FloatTag.fromChild(index, placeholderIndex++, child);
-            result.add(MetaData(
-              metaData: tag,
-              child: Semantics(tagForChildren: tag, child: child),
-            ));
+            result.add(
+              MetaData(
+                metaData: FloatData(index, placeholderIndex, span.child),
+                child: Semantics(
+                  tagForChildren: FloatColumnPlaceholderSpanSemanticsTag(
+                      index, placeholderIndex),
+                  child: span.child,
+                ),
+              ),
+            );
+            placeholderIndex++;
           }
           return true;
         });

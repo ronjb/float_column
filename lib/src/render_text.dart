@@ -2,12 +2,16 @@
 // Use of this source code is governed by a license that can be found in the
 // LICENSE file.
 
+// import 'dart:collection';
+// import 'dart:math' as math;
 import 'dart:ui' as ui show PlaceholderAlignment;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
-import 'float_tag.dart';
+// import 'float_column_semantics_tag.dart';
+import 'float_data.dart';
 import 'inline_span_ext.dart';
 import 'render_float_column.dart';
 import 'render_text_mixin.dart';
@@ -67,7 +71,7 @@ class WrappableTextRenderer {
     }
   }
 
-  void updateWith(
+  RenderComparison updateWith(
     WrappableText wt,
     RenderBox parent,
     TextDirection defaultTextDirection,
@@ -79,17 +83,22 @@ class WrappableTextRenderer {
 
     final textSpan =
         TextSpan(style: defaultTextStyle.style, children: [wt.text]);
-    switch (renderer._painter.text!.compareTo(textSpan)) {
+    final comparison = renderer._painter.text!.compareTo(textSpan);
+    switch (comparison) {
       case RenderComparison.identical:
       case RenderComparison.metadata:
         break;
       case RenderComparison.paint:
         renderer._painter.text = textSpan;
+        // TODO(ron): ...
+        // renderer._cachedCombinedSemanticsInfos = null;
         renderer.clearPlaceholderSpans();
         needsPaint = true;
         break;
       case RenderComparison.layout:
         renderer._painter.text = textSpan;
+        // TODO(ron): ...
+        // renderer._cachedCombinedSemanticsInfos = null;
         renderer.clearPlaceholderSpans();
         needsLayout = true;
         break;
@@ -136,6 +145,8 @@ class WrappableTextRenderer {
         ..markNeedsPaint()
         ..markNeedsSemanticsUpdate();
     }
+
+    return comparison;
   }
 }
 
@@ -235,7 +246,7 @@ class TextRenderer with RenderTextMixin {
   ) {
     if (firstChild == null) return false;
 
-    final paragraphIndex = firstChild.tag.index;
+    final paragraphIndex = firstChild.floatData.index;
 
     // The children will be scaled by textScaleFactor during the painting
     // phase, so the constraints are divided by textScaleFactor.
@@ -248,12 +259,12 @@ class TextRenderer with RenderTextMixin {
 
     var hasFloatedChildren = false;
     RenderBox? child = firstChild;
-    while (child != null && child.tag.index == paragraphIndex) {
+    while (child != null && child.floatData.index == paragraphIndex) {
       final childParentData = child.parentData! as FloatColumnParentData;
 
-      final i = child.tag.placeholderIndex - startingPlaceholderIndex;
+      final i = child.floatData.placeholderIndex - startingPlaceholderIndex;
       if (i >= 0 && i < placeholderSpans.length) {
-        if (child.tag.float != FCFloat.none) {
+        if (child.floatData.float != FCFloat.none) {
           hasFloatedChildren = true;
           if (!child.hasSize) {
             _layoutChild(child, i, BoxConstraints.tight(Size.zero));
@@ -314,6 +325,168 @@ class TextRenderer with RenderTextMixin {
       baselineOffset: baselineOffset,
     );
   }
+
+  ///////////////////////////////////////////////////////////////////////////
+/*
+  //
+  // Semantics related:
+  //
+
+  /// Collected during `describeSemanticsConfiguration`, used by
+  /// `assembleSemanticsNode`.
+  List<InlineSpanSemanticsInformation>? _semanticsInfo;
+
+  void describeSemanticsConfiguration(
+    StringBuffer buffer,
+    List<StringAttribute> attributes,
+  ) {
+    _semanticsInfo = text.getSemanticsInformation();
+    var offset = 0;
+    for (final info in _semanticsInfo!) {
+      final label = info.semanticsLabel ?? info.text;
+      for (final infoAttribute in info.stringAttributes) {
+        final originalRange = infoAttribute.range;
+        attributes.add(
+          infoAttribute.copy(
+              range: TextRange(
+                  start: offset + originalRange.start,
+                  end: offset + originalRange.end)),
+        );
+      }
+      buffer.write(label);
+      offset += label.length;
+    }
+  }
+
+  List<InlineSpanSemanticsInformation>? _cachedCombinedSemanticsInfos;
+
+  // Caches [SemanticsNode]s created during [assembleSemanticsNode] so they
+  // can be re-used when [assembleSemanticsNode] is called again. This ensures
+  // stable ids for the [SemanticsNode]s of [TextSpan]s across
+  // [assembleSemanticsNode] invocations.
+  Queue<SemanticsNode>? _cachedChildNodes;
+
+  void assembleSemanticsNode(
+      //SemanticsNode node,
+      //SemanticsConfiguration config,
+      //Iterable<SemanticsNode> children,
+      ) {
+    assert(_semanticsInfo != null && _semanticsInfo!.isNotEmpty);
+    final newChildren = <SemanticsNode>[];
+    var currentDirection = textDirection;
+    Rect currentRect;
+    var ordinal = 0.0;
+    var start = 0;
+    var placeholderIndex = 0;
+    var childIndex = 0;
+    RenderBox? child = firstChild;
+    final newChildCache = Queue<SemanticsNode>();
+    _cachedCombinedSemanticsInfos ??= combineSemanticsInfo(_semanticsInfo!);
+    for (final info in _cachedCombinedSemanticsInfos!) {
+      final selection = TextSelection(
+        baseOffset: start,
+        extentOffset: start + info.text.length,
+      );
+      start += info.text.length;
+
+      if (info.isPlaceholder) {
+        // A placeholder span may have 0 to multiple semantics nodes, we need
+        // to annotate all of the semantics nodes that belong to this span.
+        while (children.length > childIndex &&
+            children.elementAt(childIndex).isTagged(
+                FloatColumnPlaceholderSpanSemanticsTag(placeholderIndex))) {
+          final childNode = children.elementAt(childIndex);
+          final parentData = child!.parentData! as TextParentData;
+          childNode.rect = Rect.fromLTWH(
+            childNode.rect.left,
+            childNode.rect.top,
+            childNode.rect.width * parentData.scale!,
+            childNode.rect.height * parentData.scale!,
+          );
+          newChildren.add(childNode);
+          childIndex += 1;
+        }
+        child = childAfter(child!);
+        placeholderIndex += 1;
+      } else {
+        final initialDirection = currentDirection;
+        final rects = getBoxesForSelection(selection);
+        if (rects.isEmpty) {
+          continue;
+        }
+        var rect = rects.first.toRect();
+        currentDirection = rects.first.direction;
+        for (final textBox in rects.skip(1)) {
+          rect = rect.expandToInclude(textBox.toRect());
+          currentDirection = textBox.direction;
+        }
+        // Any of the text boxes may have had infinite dimensions.
+        // We shouldn't pass infinite dimensions up to the bridges.
+        rect = Rect.fromLTWH(
+          math.max(0.0, rect.left),
+          math.max(0.0, rect.top),
+          math.min(rect.width, constraints.maxWidth),
+          math.min(rect.height, constraints.maxHeight),
+        );
+        // round the current rectangle to make this API testable and add some
+        // padding so that the accessibility rects do not overlap with the text.
+        currentRect = Rect.fromLTRB(
+          rect.left.floorToDouble() - 4.0,
+          rect.top.floorToDouble() - 4.0,
+          rect.right.ceilToDouble() + 4.0,
+          rect.bottom.ceilToDouble() + 4.0,
+        );
+        final configuration = SemanticsConfiguration()
+          ..sortKey = OrdinalSortKey(ordinal++)
+          ..textDirection = initialDirection
+          ..attributedLabel = AttributedString(info.semanticsLabel ?? info.text,
+              attributes: info.stringAttributes);
+        final recognizer = info.recognizer;
+        if (recognizer != null) {
+          if (recognizer is TapGestureRecognizer) {
+            if (recognizer.onTap != null) {
+              configuration
+                ..onTap = recognizer.onTap
+                ..isLink = true;
+            }
+          } else if (recognizer is DoubleTapGestureRecognizer) {
+            if (recognizer.onDoubleTap != null) {
+              configuration
+                ..onTap = recognizer.onDoubleTap
+                ..isLink = true;
+            }
+          } else if (recognizer is LongPressGestureRecognizer) {
+            if (recognizer.onLongPress != null) {
+              configuration.onLongPress = recognizer.onLongPress;
+            }
+          } else {
+            assert(false, '${recognizer.runtimeType} is not supported.');
+          }
+        }
+        final newChild = (_cachedChildNodes?.isNotEmpty == true)
+            ? _cachedChildNodes!.removeFirst()
+            : SemanticsNode();
+        // ignore: cascade_invocations
+        newChild
+          ..updateWith(config: configuration)
+          ..rect = currentRect;
+        newChildCache.addLast(newChild);
+        newChildren.add(newChild);
+      }
+    }
+    // Makes sure we annotated all of the semantics children.
+    assert(childIndex == children.length);
+    assert(child == null);
+
+    _cachedChildNodes = newChildCache;
+    node.updateWith(config: config, childrenInInversePaintOrder: newChildren);
+  }
+
+  void clearSemantics() {
+    _cachedChildNodes = null;
+  }
+*/
+  ///////////////////////////////////////////////////////////////////////////
 
   //
   // RenderTextAdapter overrides:
@@ -388,5 +561,5 @@ class TextRenderer with RenderTextMixin {
 }
 
 extension on RenderBox {
-  FloatTag get tag => ((this as RenderMetaData).metaData as FloatTag);
+  FloatData get floatData => ((this as RenderMetaData).metaData as FloatData);
 }

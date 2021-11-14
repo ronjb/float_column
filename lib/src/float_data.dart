@@ -2,40 +2,24 @@
 // Use of this source code is governed by a license that can be found in the
 // LICENSE file.
 
-import 'dart:ui';
+import 'dart:ui' as ui show hashValues;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart' show EdgeInsetsGeometry, EdgeInsets;
-import 'package:flutter/semantics.dart';
 
 import 'floatable.dart';
 import 'shared.dart';
 
 @immutable
-class FloatTag extends SemanticsTag {
-  const FloatTag(
-    this.index,
-    this.placeholderIndex,
-    this.float,
-    this.clear, {
-    this.clearMinSpacing = 0.0,
-    this.margin = EdgeInsets.zero,
-    this.padding = EdgeInsets.zero,
-    this.maxWidthPercentage = 1.0,
-  }) : super('FloatTag($index, $placeholderIndex)');
-
-  FloatTag.fromChild(int index, int placeholderIndex, Object child)
-      : this(
-          index,
-          placeholderIndex,
-          child is Floatable ? child.float : FCFloat.none,
-          child is Floatable ? child.clear : FCClear.none,
-          clearMinSpacing: child is Floatable ? child.clearMinSpacing : 0.0,
-          margin: child is Floatable ? child.margin : EdgeInsets.zero,
-          padding: child is Floatable ? child.padding : EdgeInsets.zero,
-          maxWidthPercentage:
-              child is Floatable ? child.maxWidthPercentage : 1.0,
-        );
+class FloatData {
+  FloatData(this.index, this.placeholderIndex, Object child)
+      : float = child is Floatable ? child.float : FCFloat.none,
+        clear = child is Floatable ? child.clear : FCClear.none,
+        clearMinSpacing = child is Floatable ? child.clearMinSpacing : 0.0,
+        margin = child is Floatable ? child.margin : EdgeInsets.zero,
+        padding = child is Floatable ? child.padding : EdgeInsets.zero,
+        maxWidthPercentage =
+            child is Floatable ? child.maxWidthPercentage : 1.0;
 
   /// The index of the child.
   final int index;
@@ -72,7 +56,7 @@ class FloatTag extends SemanticsTag {
 
   @override
   bool operator ==(Object other) {
-    return other is FloatTag &&
+    return other is FloatData &&
         other.index == index &&
         other.placeholderIndex == placeholderIndex &&
         other.float == float &&
@@ -84,6 +68,6 @@ class FloatTag extends SemanticsTag {
   }
 
   @override
-  int get hashCode => hashValues(FloatTag, index, placeholderIndex, float,
+  int get hashCode => ui.hashValues(FloatData, index, placeholderIndex, float,
       clear, clearMinSpacing, margin, padding, maxWidthPercentage);
 }

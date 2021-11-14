@@ -2,13 +2,17 @@
 // Use of this source code is governed by a license that can be found in the
 // LICENSE file.
 
+// import 'dart:collection';
 import 'dart:math' as math;
+// import 'dart:ui' as ui show TextBox;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
-import 'float_tag.dart';
+// import 'float_column_semantics_tag.dart';
+import 'float_data.dart';
 import 'inline_span_ext.dart';
 import 'render_object_ext.dart';
 import 'render_text.dart';
@@ -124,13 +128,22 @@ class RenderFloatColumn extends RenderBox
         }
 
         keys.add(el.defaultKey);
-        final prh = _cache[el.defaultKey];
-        if (prh == null) {
+        final wtr = _cache[el.defaultKey];
+        if (wtr == null) {
           _cache[el.defaultKey] = WrappableTextRenderer(this, el, textDirection,
               defaultTextStyle, defaultTextScaleFactor);
         } else {
-          prh.updateWith(el, this, textDirection, defaultTextStyle,
-              defaultTextScaleFactor);
+          final comparison = wtr.updateWith(el, this, textDirection,
+              defaultTextStyle, defaultTextScaleFactor);
+
+          // If any text renderers need to layout or paint, clear some
+          // semantic related caches.
+          if (comparison == RenderComparison.layout ||
+              comparison == RenderComparison.paint) {
+            // TODO(ron): ...
+            // _cachedAttributedLabel = null;
+            // _cachedCombinedSemanticsInfos = null;
+          }
         }
       }
     }
@@ -193,7 +206,8 @@ class RenderFloatColumn extends RenderBox
         crossAxisAlignment == CrossAxisAlignment.end) {
       assert(
           textDirection != null, // ignore: unnecessary_null_comparison
-          '$runtimeType has a null textDirection, so the alignment cannot be resolved.');
+          '$runtimeType has a null textDirection, so the alignment cannot be '
+          'resolved.');
     }
     return true;
   }
@@ -280,13 +294,13 @@ class RenderFloatColumn extends RenderBox
     for (final el in _internalTextAndWidgets) {
       // If it is a Widget...
       if (el is Widget) {
-        final tag = child!.tag;
-        assert(tag.index == i && tag.placeholderIndex == 0);
+        final floatData = child!.floatData;
+        assert(floatData.index == i && floatData.placeholderIndex == 0);
 
         // If not floated, resolve the margin and update `yPosNext` and
         // `prevBottomMargin`.
-        if (tag.float == FCFloat.none) {
-          final margin = tag.margin.resolve(textDirection);
+        if (floatData.float == FCFloat.none) {
+          final margin = floatData.margin.resolve(textDirection);
           final topMargin = math.max(prevBottomMargin, margin.top);
           yPosNext += topMargin;
           prevBottomMargin = margin.bottom;
@@ -295,7 +309,7 @@ class RenderFloatColumn extends RenderBox
         final childParentData = child.parentData! as FloatColumnParentData;
 
         yPosNext = _layoutWidget(child, childParentData, childConstraints,
-            yPosNext, maxWidth, tag, floatL, floatR);
+            yPosNext, maxWidth, floatData, floatL, floatR);
 
         assert(child.parentData == childParentData);
         child = childParentData.nextSibling;
@@ -305,7 +319,7 @@ class RenderFloatColumn extends RenderBox
       else if (el is WrappableText) {
         final wtr = _cache[el.defaultKey]!;
         assert(wtr.renderer.placeholderSpans.isEmpty ||
-            (child != null && child.tag.index == i));
+            (child != null && child.floatData.index == i));
 
         // Resolve the margin and update `yPosNext` and `prevBottomMargin`.
         final margin = el.margin.resolve(wtr.textDirection);
@@ -318,12 +332,12 @@ class RenderFloatColumn extends RenderBox
 
         // If this paragraph has inline widget children, set the `offset` and
         // `scale` for each.
-        if (child != null && child.tag.index == i) {
+        if (child != null && child.floatData.index == i) {
           var widgetIndex = 0;
-          while (child != null && child.tag.index == i) {
-            assert(child.tag.placeholderIndex == widgetIndex);
+          while (child != null && child.floatData.index == i) {
+            assert(child.floatData.placeholderIndex == widgetIndex);
             final childParentData = child.parentData! as FloatColumnParentData;
-            if (child.tag.float == FCFloat.none) {
+            if (child.floatData.float == FCFloat.none) {
               final renderer = wtr.rendererWithPlaceholder(widgetIndex);
               final box = renderer.placeholderBoxForWidgetIndex(widgetIndex);
               childParentData
@@ -361,17 +375,17 @@ class RenderFloatColumn extends RenderBox
     BoxConstraints childConstraints,
     double yPos,
     double maxWidth,
-    FloatTag tag,
+    FloatData floatData,
     List<Rect> floatL,
     List<Rect> floatR,
   ) {
-    final margin = tag.margin.resolve(textDirection);
-    final padding = tag.padding.resolve(textDirection);
+    final margin = floatData.margin.resolve(textDirection);
+    final padding = floatData.padding.resolve(textDirection);
 
     final maxWidthMinusPadding = math.max(0.0,
         maxWidth - margin.left - margin.right - padding.left - padding.right);
     final childMaxWidth =
-        math.min(maxWidthMinusPadding, maxWidth * tag.maxWidthPercentage);
+        math.min(maxWidthMinusPadding, maxWidth * floatData.maxWidthPercentage);
 
     var layoutConstraints = childConstraints;
     if (childMaxWidth != childConstraints.maxWidth) {
@@ -387,8 +401,8 @@ class RenderFloatColumn extends RenderBox
 
     // Should this child widget be floated to the left or right?
     List<Rect>? addToFloatRects;
-    if (tag.float != FCFloat.none) {
-      final float = resolveFloat(tag.float, withDir: textDirection);
+    if (floatData.float != FCFloat.none) {
+      final float = resolveFloat(floatData.float, withDir: textDirection);
       assert(float == FCFloat.left || float == FCFloat.right);
       if (float == FCFloat.left) {
         addToFloatRects = floatL;
@@ -402,8 +416,8 @@ class RenderFloatColumn extends RenderBox
     var yPosNext = yPos;
 
     // Check for `clear` and adjust `yPosNext` accordingly.
-    final clear = resolveClear(tag.clear, withDir: textDirection);
-    final spacing = tag.clearMinSpacing;
+    final clear = resolveClear(floatData.clear, withDir: textDirection);
+    final spacing = floatData.clearMinSpacing;
     if (clear == FCClear.left || clear == FCClear.both) {
       yPosNext = floatL.nextY(yPosNext, spacing);
     }
@@ -725,15 +739,15 @@ class RenderFloatColumn extends RenderBox
             TextRenderer renderer, RenderBox? firstChild) {
           if (firstChild == null) return false;
           RenderBox? child = firstChild;
-          final paragraphIndex = firstChild.tag.index;
-          while (child != null && child.tag.index == paragraphIndex) {
+          final paragraphIndex = firstChild.floatData.index;
+          while (child != null && child.floatData.index == paragraphIndex) {
             final childParentData = child.parentData! as FloatColumnParentData;
-            final i =
-                child.tag.placeholderIndex - renderer.startingPlaceholderIndex;
+            final i = child.floatData.placeholderIndex -
+                renderer.startingPlaceholderIndex;
             if (i >= 0 && i < renderer.placeholderSpans.length) {
-              final ctpIndex = child.tag.placeholderIndex;
+              final ctpIndex = child.floatData.placeholderIndex;
               // If this child is floated...
-              if (child.tag.float != FCFloat.none &&
+              if (child.floatData.float != FCFloat.none &&
                   !laidOutFloaterIndices.contains(ctpIndex)) {
                 laidOutFloaterIndices.add(ctpIndex);
                 final boxTop =
@@ -744,7 +758,7 @@ class RenderFloatColumn extends RenderBox
                     childConstraints,
                     boxTop + rect.top - estLineHeight,
                     maxWidth,
-                    child.tag,
+                    child.floatData,
                     floatL,
                     floatR);
                 return true;
@@ -769,7 +783,7 @@ class RenderFloatColumn extends RenderBox
           }
 
           // Re-run the loop, keeping the index the same.
-          continue; //------------------------------------>
+          continue; //-------------------------------------------->
         }
       }
 
@@ -839,14 +853,12 @@ class RenderFloatColumn extends RenderBox
       // If it is a Widget
       //
       if (el is Widget) {
-        final tag = child!.tag;
-        assert(tag.index == i && tag.placeholderIndex == 0);
+        final floatData = child!.floatData;
+        assert(floatData.index == i && floatData.placeholderIndex == 0);
 
         final childParentData = child.parentData! as FloatColumnParentData;
         context.paintChild(child, childParentData.offset + offset);
         child = childParentData.nextSibling;
-
-        // dmPrint('painted $i, a widget at ${childParentData.offset + offset}');
       }
 
       //---------------------------------------------------------------------
@@ -862,14 +874,15 @@ class RenderFloatColumn extends RenderBox
         // dmPrint('painted $i, text at ${wtr.offset! + offset}');
 
         // If this paragraph DOES have inline widget children...
-        if (child != null && child.tag.index == i) {
+        if (child != null && child.floatData.index == i) {
           var widgetIndex = 0;
-          while (child != null && child.tag.index == i) {
-            assert(child.tag.placeholderIndex == widgetIndex);
+          while (child != null && child.floatData.index == i) {
+            assert(child.floatData.placeholderIndex == widgetIndex);
             final childParentData = child.parentData! as FloatColumnParentData;
 
-            if (child.tag.float != FCFloat.none) {
-              // Floated inline widget children are rendered like normal children.
+            if (child.floatData.float != FCFloat.none) {
+              // Floated inline widget children are rendered like normal
+              // children.
               context.paintChild(child, childParentData.offset + offset);
             } else {
               // Non-floated inline widget children are scaled with the text.
@@ -878,10 +891,7 @@ class RenderFloatColumn extends RenderBox
                 needsCompositing,
                 offset + childParentData.offset,
                 Matrix4.diagonal3Values(scale, scale, scale),
-                (context, offset) {
-                  context.paintChild(child!, offset);
-                  // dmPrint('painted $i:$widgetIndex, a widget in text at $offset');
-                },
+                (context, offset) => context.paintChild(child!, offset),
               );
             }
 
@@ -930,10 +940,10 @@ class RenderFloatColumn extends RenderBox
           'usually caused by the contents being too big for the constraints.',
         ),
         ErrorHint(
-          'This is considered an error condition because it indicates that there '
-          'is content that cannot be seen. If the content is legitimately bigger '
-          'than the available space, consider clipping it with a ClipRect widget '
-          'before putting it in the FloatColumn.',
+          'This is considered an error condition because it indicates that '
+          'there  is content that cannot be seen. If the content is '
+          'legitimately bigger  than the available space, consider clipping '
+          'it with a ClipRect widget  before putting it in the FloatColumn.',
         ),
       ];
 
@@ -962,6 +972,174 @@ class RenderFloatColumn extends RenderBox
     return header;
   }
 
+  ///////////////////////////////////////////////////////////////////////////
+/*
+  /// Collected during [describeSemanticsConfiguration], used by
+  /// [assembleSemanticsNode].
+  AttributedString? _cachedAttributedLabel;
+
+  @override
+  void describeSemanticsConfiguration(SemanticsConfiguration config) {
+    super.describeSemanticsConfiguration(config);
+
+    final hasRecognizer = !visitInlineSpanChildren(
+        (span) => span is! TextSpan || span.recognizer == null);
+    if (hasRecognizer) {
+      config
+        ..explicitChildNodes = true
+        ..isSemanticBoundary = true;
+    } else {
+      if (_cachedAttributedLabel == null) {
+        final buffer = StringBuffer();
+        final attributes = <StringAttribute>[];
+        visitTextRendererChildren((textRenderer) {
+          textRenderer.describeSemanticsConfiguration(buffer, attributes);
+          return true;
+        });
+        _cachedAttributedLabel =
+            AttributedString(buffer.toString(), attributes: attributes);
+      }
+      config
+        ..attributedLabel = _cachedAttributedLabel!
+        ..textDirection = textDirection;
+    }
+  }
+
+  // Caches [SemanticsNode]s created during [assembleSemanticsNode] so they
+  // can be re-used when [assembleSemanticsNode] is called again. This ensures
+  // stable ids for the [SemanticsNode]s of [TextSpan]s across
+  // [assembleSemanticsNode] invocations.
+  Queue<SemanticsNode>? _cachedChildNodes;
+  List<InlineSpanSemanticsInformation>? _cachedCombinedSemanticsInfos;
+
+  @override
+  void assembleSemanticsNode(
+    SemanticsNode node,
+    SemanticsConfiguration config,
+    Iterable<SemanticsNode> children,
+  ) {
+    final newChildren = <SemanticsNode>[];
+    var currentDirection = textDirection;
+    Rect currentRect;
+    var ordinal = 0.0;
+    var start = 0;
+    var placeholderIndex = 0;
+    var childIndex = 0;
+    var child = firstChild;
+    final newChildCache = Queue<SemanticsNode>();
+    _cachedCombinedSemanticsInfos ??= combineSemanticsInfo(_semanticsInfo!);
+    for (final info in _cachedCombinedSemanticsInfos!) {
+      final selection = TextSelection(
+        baseOffset: start,
+        extentOffset: start + info.text.length,
+      );
+      start += info.text.length;
+
+      if (info.isPlaceholder) {
+        // A placeholder span may have 0 to multiple semantics nodes, we need
+        // to annotate all of the semantics nodes belong to this span.
+        while (children.length > childIndex &&
+            children.elementAt(childIndex).isTagged(
+                FloatColumnPlaceholderSpanSemanticsTag(placeholderIndex))) {
+          final childNode = children.elementAt(childIndex);
+          final parentData = child!.parentData! as TextParentData;
+          childNode.rect = Rect.fromLTWH(
+            childNode.rect.left,
+            childNode.rect.top,
+            childNode.rect.width * parentData.scale!,
+            childNode.rect.height * parentData.scale!,
+          );
+          newChildren.add(childNode);
+          childIndex += 1;
+        }
+        child = childAfter(child!);
+        placeholderIndex += 1;
+      } else {
+        final initialDirection = currentDirection;
+        final List<ui.TextBox> rects = getBoxesForSelection(selection);
+        if (rects.isEmpty) {
+          continue;
+        }
+        var rect = rects.first.toRect();
+        currentDirection = rects.first.direction;
+        for (final textBox in rects.skip(1)) {
+          rect = rect.expandToInclude(textBox.toRect());
+          currentDirection = textBox.direction;
+        }
+        // Any of the text boxes may have had infinite dimensions.
+        // We shouldn't pass infinite dimensions up to the bridges.
+        rect = Rect.fromLTWH(
+          math.max(0.0, rect.left),
+          math.max(0.0, rect.top),
+          math.min(rect.width, constraints.maxWidth),
+          math.min(rect.height, constraints.maxHeight),
+        );
+        // round the current rectangle to make this API testable and add some
+        // padding so that the accessibility rects do not overlap with the text.
+        currentRect = Rect.fromLTRB(
+          rect.left.floorToDouble() - 4.0,
+          rect.top.floorToDouble() - 4.0,
+          rect.right.ceilToDouble() + 4.0,
+          rect.bottom.ceilToDouble() + 4.0,
+        );
+        final configuration = SemanticsConfiguration()
+          ..sortKey = OrdinalSortKey(ordinal++)
+          ..textDirection = initialDirection
+          ..attributedLabel = AttributedString(info.semanticsLabel ?? info.text,
+              attributes: info.stringAttributes);
+        final recognizer = info.recognizer;
+        if (recognizer != null) {
+          if (recognizer is TapGestureRecognizer) {
+            if (recognizer.onTap != null) {
+              configuration
+                ..onTap = recognizer.onTap
+                ..isLink = true;
+            }
+          } else if (recognizer is DoubleTapGestureRecognizer) {
+            if (recognizer.onDoubleTap != null) {
+              configuration
+                ..onTap = recognizer.onDoubleTap
+                ..isLink = true;
+            }
+          } else if (recognizer is LongPressGestureRecognizer) {
+            if (recognizer.onLongPress != null) {
+              configuration.onLongPress = recognizer.onLongPress;
+            }
+          } else {
+            assert(false, '${recognizer.runtimeType} is not supported.');
+          }
+        }
+        final newChild = (_cachedChildNodes?.isNotEmpty == true)
+            ? _cachedChildNodes!.removeFirst()
+            : SemanticsNode();
+        // ignore: cascade_invocations
+        newChild
+          ..updateWith(config: configuration)
+          ..rect = currentRect;
+        newChildCache.addLast(newChild);
+        newChildren.add(newChild);
+      }
+    }
+    // Makes sure we annotated all of the semantics children.
+    assert(childIndex == children.length);
+    assert(child == null);
+
+    _cachedChildNodes = newChildCache;
+    node.updateWith(config: config, childrenInInversePaintOrder: newChildren);
+  }
+
+  @override
+  void clearSemantics() {
+    super.clearSemantics();
+    visitTextRendererChildren((textRenderer) {
+      textRenderer.clearSemantics();
+      return true;
+    });
+    _cachedChildNodes = null;
+  }
+*/
+  ///////////////////////////////////////////////////////////////////////////
+
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
@@ -979,8 +1157,8 @@ class RenderFloatColumn extends RenderBox
 
     for (final el in _internalTextAndWidgets) {
       if (el is Widget) {
-        final tag = child!.tag;
-        assert(tag.index == i && tag.placeholderIndex == 0);
+        final floatData = child!.floatData;
+        assert(floatData.index == i && floatData.placeholderIndex == 0);
 
         // Visit the child widget's render object.
         if (!visitor(child)) return false; //------------------------------->
@@ -988,7 +1166,7 @@ class RenderFloatColumn extends RenderBox
       } else if (el is WrappableText) {
         final wtr = _cache[el.defaultKey]!;
         assert(wtr.renderer.placeholderSpans.isEmpty ||
-            (child != null && child.tag.index == i));
+            (child != null && child.floatData.index == i));
 
         // Visit all the text renderers.
         for (final textRenderer in wtr.renderers) {
@@ -997,8 +1175,8 @@ class RenderFloatColumn extends RenderBox
 
         // Visit all the child render objects embedded in the text.
         var widgetIndex = 0;
-        while (child != null && child.tag.index == i) {
-          assert(child.tag.placeholderIndex == widgetIndex);
+        while (child != null && child.floatData.index == i) {
+          assert(child.floatData.placeholderIndex == widgetIndex);
           if (!visitor(child)) return false; //----------------------------->
           child = childAfter(child);
           widgetIndex++;
@@ -1011,10 +1189,43 @@ class RenderFloatColumn extends RenderBox
     }
     return true;
   }
+
+  /// Walks [InlineSpan] children and each [InlineSpan]s descendants in
+  /// pre-order and calls [visitor] for each span that has content.
+  ///
+  /// When [visitor] returns true, the walk continues. When [visitor]
+  /// returns false, the walk ends.
+  bool visitInlineSpanChildren(InlineSpanVisitor visitor) {
+    for (final el in _internalTextAndWidgets) {
+      if (el is WrappableText) {
+        for (final textRenderer in _cache[el.defaultKey]!.renderers) {
+          if (!textRenderer.text.visitChildren(visitor)) return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  /// Walks [TextRenderer] children and calls [visitor] for each.
+  ///
+  /// When [visitor] returns true, the walk continues. When [visitor]
+  /// returns false, the walk ends.
+  bool visitTextRendererChildren(
+    bool Function(TextRenderer textRenderer) visitor,
+  ) {
+    for (final el in _internalTextAndWidgets) {
+      if (el is WrappableText) {
+        for (final textRenderer in _cache[el.defaultKey]!.renderers) {
+          if (!visitor(textRenderer)) return false;
+        }
+      }
+    }
+    return true;
+  }
 }
 
 extension on RenderBox {
-  FloatTag get tag => ((this as RenderMetaData).metaData as FloatTag);
+  FloatData get floatData => ((this as RenderMetaData).metaData as FloatData);
 }
 
 extension on RenderFloatColumn {

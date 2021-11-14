@@ -3,7 +3,7 @@
 // LICENSE file.
 
 import 'dart:math' as math;
-import 'dart:ui' show Rect, TextDirection;
+import 'dart:ui' as ui show Rect, TextDirection;
 
 import 'package:flutter/foundation.dart';
 
@@ -19,7 +19,7 @@ void dmPrint(Object object) {
 
 /// If float is `start` or `end`, returns `left` or `right` depending on the
 /// text direction.
-FCFloat resolveFloat(FCFloat float, {required TextDirection withDir}) {
+FCFloat resolveFloat(FCFloat float, {required ui.TextDirection withDir}) {
   if (float == FCFloat.start) {
     return _isLTR(withDir) ? FCFloat.left : FCFloat.right;
   }
@@ -31,7 +31,7 @@ FCFloat resolveFloat(FCFloat float, {required TextDirection withDir}) {
 
 /// If clear is `start` or `end`, returns `left` or `right` depending on the
 /// text direction.
-FCClear resolveClear(FCClear clear, {required TextDirection withDir}) {
+FCClear resolveClear(FCClear clear, {required ui.TextDirection withDir}) {
   if (clear == FCClear.start) {
     return _isLTR(withDir) ? FCClear.left : FCClear.right;
   }
@@ -41,10 +41,10 @@ FCClear resolveClear(FCClear clear, {required TextDirection withDir}) {
   return clear;
 }
 
-bool _isLTR(TextDirection direction) => direction == TextDirection.ltr;
+bool _isLTR(ui.TextDirection direction) => direction == ui.TextDirection.ltr;
 
 /// List<Rect> extensions
-extension FloatColumnExtOnListOfRect on List<Rect> {
+extension FloatColumnExtOnListOfRect on List<ui.Rect> {
   ///
   /// Returns the `bottom` of the bottom-most rectangle in this list that is
   /// greater than [startY], or [startY] if there is none.
@@ -77,14 +77,14 @@ extension FloatColumnExtOnListOfRect on List<Rect> {
 /// value of the right or left floated rect that constrains the returned
 /// rectangle's width, or `double.infinity` if no floated rect constrains it.
 ///
-Rect findSpaceFor({
+ui.Rect findSpaceFor({
   required double startY,
   required double width,
   required double height,
   double minX = 0.0,
   required double maxX,
-  required List<Rect> floatL,
-  required List<Rect> floatR,
+  required List<ui.Rect> floatL,
+  required List<ui.Rect> floatR,
   // TextDirection? textDir,
 }) {
   assert(startY < double.infinity);
@@ -95,11 +95,11 @@ Rect findSpaceFor({
 
   // If the float lists are empty, just return what was given.
   if (floatL.isEmpty && floatR.isEmpty) {
-    return Rect.fromLTRB(minX, startY, maxX, double.infinity);
+    return ui.Rect.fromLTRB(minX, startY, maxX, double.infinity);
   }
 
-  Rect? lRect;
-  Rect? rRect;
+  ui.Rect? lRect;
+  ui.Rect? rRect;
   var nextY = startY;
 
   const minStep = 1.0;
@@ -120,7 +120,7 @@ Rect findSpaceFor({
 
     // Find the rightmost rect in the float-left rects that overlaps the range
     // `top` - `bottom`.
-    lRect = floatL.fold<Rect?>(
+    lRect = floatL.fold<ui.Rect?>(
         null,
         (max, r) => r.top < bottom &&
                 r.bottom > top &&
@@ -131,7 +131,7 @@ Rect findSpaceFor({
 
     // Find the leftmost rect in the float-right rects that overlaps the range
     // `top` - `bottom`.
-    rRect = floatR.fold<Rect?>(
+    rRect = floatR.fold<ui.Rect?>(
         null,
         (min, r) => r.top < bottom &&
                 r.bottom > top &&
@@ -147,5 +147,5 @@ Rect findSpaceFor({
         lRect?.bottom ?? double.infinity, rRect?.bottom ?? double.infinity);
   } while (width > right - left);
 
-  return Rect.fromLTRB(left, top, right, nextY);
+  return ui.Rect.fromLTRB(left, top, right, nextY);
 }

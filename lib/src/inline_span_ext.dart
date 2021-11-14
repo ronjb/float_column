@@ -98,7 +98,8 @@ extension FCInlineSpanExt on InlineSpan {
 
       final children = span.children;
       if (children != null && children.isNotEmpty) {
-        // If the text.length was equal to index.value, split the text and children.
+        // If the text.length was equal to index.value, split the text and
+        // children.
         if (index.value == 0) {
           return [
             span.copyWith(text: text, noChildren: true),
