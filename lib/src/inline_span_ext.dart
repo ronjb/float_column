@@ -1,7 +1,6 @@
-// Copyright 2021 Ron Booth. All rights reserved.
-// Use of this source code is governed by a license that can be found in the LICENSE file.
-
-// import 'dart:math' as math;
+// Copyright (c) 2021 Ron Booth. All rights reserved.
+// Use of this source code is governed by a license that can be found in the
+// LICENSE file.
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';

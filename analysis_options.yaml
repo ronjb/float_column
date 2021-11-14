@@ -1,20 +1,22 @@
 # Static Analyzer Options
 #
-# For additional info see: https://www.dartlang.org/guides/language/analysis-options
+# For additional info see: https://dart.dev/guides/language/analysis-options
 #
 
 include: package:flutter_lints_plus/flutter.yaml
 
-# Analyzer settings (https://github.com/dart-lang/sdk/blob/master/pkg/analyzer/lib/error/error.dart)
 analyzer:
-  strong-mode:
-    implicit-casts: false
-    implicit-dynamic: false
-
   errors:
     missing_return: error
     missing_required_param: error
     todo: info
+
+  exclude:
+    - /**/generated_plugin_registrant.dart
+
+  strong-mode:
+    implicit-casts: false
+    implicit-dynamic: false
 
 # Linter rules (see: http://dart-lang.github.io/linter/lints/)
 linter:

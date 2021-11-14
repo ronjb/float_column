@@ -133,13 +133,20 @@ class _Box extends StatelessWidget {
 // cspell: disable
 
 const _t1 = TextSpan(
-    text:
-        '“You have brains in your head. You have feet in your shoes. You can steer yourself any direction you choose. You’re on your own. And you know what you know. And YOU are the one who’ll decide where to go…” – Dr. Seuss, Oh, the Places You’ll Go!');
+    text: '“You have brains in your head. You have feet in your shoes. You can '
+        'steer yourself any direction you choose. You’re on your own. And you '
+        'know what you know. And YOU are the one who’ll decide where to go…” '
+        '– Dr. Seuss, Oh, the Places You’ll Go!');
 
 const _t2 = TextSpan(
-    text:
-        '“We are the music-makers, And we are the dreamers of dreams, Wandering by lone sea-breakers, And sitting by desolate streams. World-losers and world-forsakers, Upon whom the pale moon gleams; Yet we are the movers and shakers, Of the world forever, it seems.” – Arthur O’Shaughnessy');
+    text: '“We are the music-makers, And we are the dreamers of dreams, '
+        'Wandering by lone sea-breakers, And sitting by desolate streams. '
+        'World-losers and world-forsakers, Upon whom the pale moon gleams; '
+        'Yet we are the movers and shakers, Of the world forever, it seems.” '
+        '– Arthur O’Shaughnessy');
 
 const _t3 = TextSpan(
     text:
-        '“Stuff your eyes with wonder, he said, live as if you’d drop dead in ten seconds. See the world. It’s more fantastic than any dream made or paid for in factories.” – Ray Bradbury, Fahrenheit 451');
+        '“Stuff your eyes with wonder, he said, live as if you’d drop dead in '
+        'ten seconds. See the world. It’s more fantastic than any dream made '
+        'or paid for in factories.” – Ray Bradbury, Fahrenheit 451');

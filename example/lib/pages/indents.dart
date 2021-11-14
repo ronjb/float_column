@@ -116,5 +116,8 @@ class Heading extends StatelessWidget {
 
 // cspell: disable
 const _text = TextSpan(
-    text:
-        '“We are the music-makers, And we are the dreamers of dreams, Wandering by lone sea-breakers, And sitting by desolate streams. World-losers and world-forsakers, Upon whom the pale moon gleams; Yet we are the movers and shakers, Of the world forever, it seems.” – Arthur O’Shaughnessy');
+    text: '“We are the music-makers, And we are the dreamers of dreams, '
+        'Wandering by lone sea-breakers, And sitting by desolate streams. '
+        'World-losers and world-forsakers, Upon whom the pale moon gleams; '
+        'Yet we are the movers and shakers, Of the world forever, it seems.” '
+        '– Arthur O’Shaughnessy');

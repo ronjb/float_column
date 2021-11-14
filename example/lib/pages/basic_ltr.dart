@@ -14,7 +14,8 @@ class BasicLtr extends StatelessWidget {
       builder: (context, constraints) {
         final scale = (((constraints.maxWidth / 600.0) - 1.0) * 0.75) + 1.0;
         return DefaultTextStyle(
-          style: const TextStyle(fontSize: 18, color: Colors.black, height: 1.5),
+          style:
+              const TextStyle(fontSize: 18, color: Colors.black, height: 1.5),
           child: Scrollbar(
             child: SingleChildScrollView(
               child: Padding(
@@ -25,7 +26,9 @@ class BasicLtr extends StatelessWidget {
                       float: FCFloat.end,
                       maxWidthPercentage: 0.25,
                       padding: EdgeInsetsDirectional.only(start: 8),
-                      child: Img(assetName: _name('walt_whitman.jpg'), title: 'Walt Whitman'),
+                      child: Img(
+                          assetName: _name('walt_whitman.jpg'),
+                          title: 'Walt Whitman'),
                     ),
                     Floatable(
                       float: FCFloat.start,
@@ -34,7 +37,8 @@ class BasicLtr extends StatelessWidget {
                       maxWidthPercentage: 0.25,
                       padding: EdgeInsetsDirectional.only(end: 12),
                       child: Img(
-                        assetName: _name('jeremy-bishop-EwKXn5CapA4-unsplash.jpg'),
+                        assetName:
+                            _name('jeremy-bishop-EwKXn5CapA4-unsplash.jpg'),
                         title: 'Photo by Jeremy Bishop on Unsplash',
                       ),
                     ),
@@ -100,48 +104,61 @@ TextSpan _text(double textScaleFactor) => TextSpan(
               fontWeight: FontWeight.bold, color: Colors.deepPurple),
         ),
         TextSpan(
-          text:
-              ' the earth and sun and the animals, despise riches, give alms to every one that asks, ',
+          text: ' the earth and sun and the animals, despise riches, give alms '
+              'to every one that asks, ',
         ),
         TextSpan(
           text: 'stand up for the stupid and crazy',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
+          style:
+              TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
+        ),
+        TextSpan(
+          text: ', devote your income and labor to others, hate tyrants, argue '
+              'not concerning God, have patience and indulgence toward the '
+              'people, ',
         ),
         TextSpan(
           text:
-              ', devote your income and labor to others, hate tyrants, argue not concerning God, have patience and indulgence toward the people, ',
+              'take off your hat to nothing known or unknown or to any man or '
+              'number of men',
+          style:
+              TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
         ),
         TextSpan(
-          text: 'take off your hat to nothing known or unknown or to any man or number of men',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
-        ),
-        TextSpan(
-          text:
-              ', go freely with powerful uneducated persons and with the young and with the mothers of families, read these leaves in the open air every season of every year of your life, ',
+          text: ', go freely with powerful uneducated persons and with the '
+              'young and with the mothers of families, read these leaves in '
+              'the open air every season of every year of your life, ',
         ),
         TextSpan(
           text: 're-examine all you have been told',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
+          style:
+              TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
         ),
         TextSpan(
           text: ' at school or church or in any book, ',
         ),
         TextSpan(
           text: 'dismiss whatever insults your own soul',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
+          style:
+              TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
         ),
         TextSpan(
-          text:
-              ', and your very flesh shall be a great poem and have the richest fluency not only in its words but in the silent lines of its lips and face and between the lashes of your eyes and in every motion and joint of your body.” – ',
+          text: ', and your very flesh shall be a great poem and have the '
+              'richest fluency not only in its words but in the silent lines '
+              'of its lips and face and between the lashes of your eyes and '
+              'in every motion and joint of your body.” – ',
         ),
         TextSpan(
           text: 'Walt Whitman, ',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
+          style:
+              TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
         ),
         TextSpan(
           text: 'Song of Myself',
           style: TextStyle(
-              fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, color: Colors.deepPurple),
+              fontWeight: FontWeight.bold,
+              fontStyle: FontStyle.italic,
+              color: Colors.deepPurple),
         ),
       ],
     );

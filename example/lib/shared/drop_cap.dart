@@ -6,7 +6,8 @@ class DropCap extends StatelessWidget {
   final double size;
   final double? textScaleFactor;
 
-  const DropCap(this.text, {Key? key, this.size = 2.0, this.textScaleFactor}) : super(key: key);
+  const DropCap(this.text, {Key? key, this.size = 2.0, this.textScaleFactor})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -21,9 +22,14 @@ class DropCap extends StatelessWidget {
         // color: Colors.yellow,
         child: Text(
           text,
-          textScaleFactor: textScaleFactor ?? MediaQuery.of(context).textScaleFactor,
+          textScaleFactor:
+              textScaleFactor ?? MediaQuery.of(context).textScaleFactor,
           style: GoogleFonts.getFont(_fonts[1],
-              fontSize: (style.fontSize ?? 16.0) * (style.height ?? 1.0) * size * 0.99, height: 1),
+              fontSize: (style.fontSize ?? 16.0) *
+                  (style.height ?? 1.0) *
+                  size *
+                  0.99,
+              height: 1),
         ),
       ),
     );

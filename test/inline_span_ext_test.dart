@@ -1,5 +1,6 @@
-// Copyright 2021 Ron Booth. All rights reserved.
-// Use of this source code is governed by a license that can be found in the LICENSE file.
+// Copyright (c) 2021 Ron Booth. All rights reserved.
+// Use of this source code is governed by a license that can be found in the
+// LICENSE file.
 
 import 'package:float_column/src/inline_span_ext.dart';
 import 'package:flutter/widgets.dart';
