@@ -1163,7 +1163,7 @@ class RenderFloatColumn extends RenderBox
             if (wtr == null || textRendererIndex >= wtr.renderers.length) {
               assert(false);
             } else {
-              final textRenderer = wtr[textRendererIndex];
+              final textRenderer = wtr.renderers[textRendererIndex];
 
               final selection = TextSelection(
                 baseOffset: textRangeStart,

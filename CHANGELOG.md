@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.2.1] - November 15, 2021
+
+* Fixed bug in RenderFloatColumn assembleSemanticsNode, it was using the `[]` operator of WrappableTextRenderer, when it should have been using the `renderers` getter.
+
 ## [1.2.0] - November 15, 2021
 
 * Fixed #3 "WrappableText objects that contain TextSpans that have a recognizer (e.g. TapGestureRecognizer) aren't handled correctly, i.e. the recognizer is ignored for hit tests."
