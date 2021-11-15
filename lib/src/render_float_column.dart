@@ -245,8 +245,63 @@ class RenderFloatColumn extends RenderBox
   }
 
   @override
+  bool hitTestSelf(Offset position) => true;
+
+  @override
   bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
-    return defaultHitTestChildren(result, position: position);
+    var hitText = false;
+
+    // First, hit test text renderers.
+    visitTextRendererChildren((tr) {
+      final rect = tr.textRect;
+      if (rect.contains(position)) {
+        final textPosition = tr.getPositionForOffset(position - tr.offset);
+        final span = tr.text.getSpanForPosition(textPosition);
+        if (span != null && span is HitTestTarget) {
+          result.add(HitTestEntry(span as HitTestTarget));
+          hitText = true;
+        }
+      }
+
+      return true; // !hitText; // Return false to stop the walk if hitText is true;
+    });
+
+    // Finally, hit test render object children.
+    var child = firstChild;
+    while (child != null) {
+      final textParentData = child.parentData! as FloatColumnParentData;
+      final transform = Matrix4.translationValues(
+        textParentData.offset.dx,
+        textParentData.offset.dy,
+        0.0,
+      )..scale(
+          textParentData.scale,
+          textParentData.scale,
+          textParentData.scale,
+        );
+      final hitChild = result.addWithPaintTransform(
+        transform: transform,
+        position: position,
+        hitTest: (result, transformed) {
+          assert(() {
+            final manualPosition =
+                (position - textParentData.offset) / textParentData.scale!;
+            return (transformed.dx - manualPosition.dx).abs() <
+                    precisionErrorTolerance &&
+                (transformed.dy - manualPosition.dy).abs() <
+                    precisionErrorTolerance;
+          }());
+          return child!.hitTest(result, position: transformed);
+        },
+      );
+
+      // Stop at the first child hit.
+      if (hitChild) return true;
+
+      child = childAfter(child);
+    }
+
+    return hitText;
   }
 
   @override
@@ -264,6 +319,8 @@ class RenderFloatColumn extends RenderBox
   @override
   void performLayout() {
     assert(_debugHasNecessaryDirections);
+
+    _cachedCombinedSemanticsInfos = null;
 
     final constraints = this.constraints;
     final maxWidth = constraints.maxWidth;
@@ -451,7 +508,9 @@ class RenderFloatColumn extends RenderBox
     // Calculate `xPos` based on alignment and available space.
     final xPos = xPosForChildWithWidth(
         child.size.width, alignment, rect.left, rect.right);
-    parentData.offset = Offset(xPos, rect.top);
+    parentData
+      ..offset = Offset(xPos, rect.top)
+      ..scale = 1.0;
 
     if (addToFloatRects != null) {
       // Include padding for the floated rect.
@@ -970,35 +1029,19 @@ class RenderFloatColumn extends RenderBox
     return header;
   }
 
-  ///////////////////////////////////////////////////////////////////////////
-
-  Map<int, List<List<InlineSpanSemanticsInformation>>> getSemanticsInfo({
-    bool combined = false,
-  }) {
-    final semanticsInfo = <int, List<List<InlineSpanSemanticsInformation>>>{};
-
-    var i = 0;
-    for (final el in _internalTextAndWidgets) {
-      if (el is Widget) {
-        // Add a placeholder for each regular child widget.
-        semanticsInfo[i] = [
-          [InlineSpanSemanticsInformation.placeholder]
-        ];
-      } else if (el is WrappableText) {
-        final wtr = _cache[el.defaultKey]!;
-        semanticsInfo[i] = [
-          for (final textRenderer in wtr.renderers)
-            textRenderer.getSemanticsInfo(combined: combined)
-        ];
-      } else {
-        assert(false);
-      }
-
-      i++;
-    }
-
-    return semanticsInfo;
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties
+      ..add(EnumProperty<CrossAxisAlignment>(
+          'crossAxisAlignment', crossAxisAlignment))
+      ..add(EnumProperty<TextDirection>('textDirection', textDirection,
+          defaultValue: null));
   }
+
+  //
+  // Semantics related:
+  //
 
   /// Collected during [describeSemanticsConfiguration], used by
   /// [assembleSemanticsNode].
@@ -1068,125 +1111,149 @@ class RenderFloatColumn extends RenderBox
 
     var currentDirection = textDirection;
     var ordinal = 0.0;
-    var start = 0;
     var semanticsChildIndex = 0;
     final newChildCache = Queue<SemanticsNode>();
 
     _cachedCombinedSemanticsInfos ??= getSemanticsInfo(combined: true);
 
+    // dmPrint('\n\n************ assembleSemanticsNode *************');
+
     for (final entry in _cachedCombinedSemanticsInfos!.entries) {
       final floatColumnChildIndex = entry.key;
       var placeholderIndex = 0;
 
-      final el = _internalTextAndWidgets[entry.key];
+      final el = _internalTextAndWidgets[floatColumnChildIndex];
 
       final wtr = (el is WrappableText) ? _cache[el.defaultKey]! : null;
       assert(wtr == null ||
           wtr.renderer.placeholderSpans.isEmpty ||
-          (renderChild != null && renderChild.floatData.index == entry.key));
+          (renderChild != null &&
+              renderChild.floatData.index == floatColumnChildIndex));
+
+      var textRendererIndex = 0;
 
       for (final list in entry.value) {
-        var textRendererIndex = 0;
+        var textRangeStart = 0;
         for (final info in list) {
           if (info.isPlaceholder) {
-            // A placeholder span may have 0 to multiple semantics nodes, we need
-            // to annotate all of the semantics nodes belong to this span.
+            // A placeholder span may have 0 to multiple semantics nodes.
             while (semanticsChildren.length > semanticsChildIndex &&
                 semanticsChildren.elementAt(semanticsChildIndex).isTagged(
                     FloatColumnPlaceholderSpanSemanticsTag(
                         floatColumnChildIndex, placeholderIndex))) {
               final semanticsChildNode =
                   semanticsChildren.elementAt(semanticsChildIndex);
-              final parentData = renderChild!.parentData! as TextParentData;
-              semanticsChildNode.rect = Rect.fromLTWH(
+              final parentData =
+                  renderChild!.parentData! as FloatColumnParentData;
+              final rect = Rect.fromLTWH(
                 semanticsChildNode.rect.left,
                 semanticsChildNode.rect.top,
                 semanticsChildNode.rect.width * parentData.scale!,
                 semanticsChildNode.rect.height * parentData.scale!,
               );
+              semanticsChildNode.rect = rect;
+              // dmPrint('Adding semantics node for widget $floatColumnChildIndex '
+              //     'with rect $rect');
               newSemanticsChildren.add(semanticsChildNode);
               semanticsChildIndex += 1;
             }
             renderChild = childAfter(renderChild!);
             placeholderIndex += 1;
           } else {
-            assert(wtr != null);
-            if (wtr != null) {
+            if (wtr == null || textRendererIndex >= wtr.renderers.length) {
+              assert(false);
+            } else {
+              final textRenderer = wtr[textRendererIndex];
+
               final selection = TextSelection(
-                baseOffset: start,
-                extentOffset: start + info.text.length,
+                baseOffset: textRangeStart,
+                extentOffset: textRangeStart + info.text.length,
               );
-              start += info.text.length;
+              textRangeStart += info.text.length;
+
+              // dmPrint('\n\ncalling getBoxes for '
+              //     '[${selection.baseOffset}, ${selection.extentOffset}] '
+              //     'substring '
+              //     '[${info.text}] in [${textRenderer.toPlainText()}]\n');
 
               final initialDirection = currentDirection;
-              final rects =
-                  wtr[textRendererIndex].getBoxesForSelection(selection);
-              if (rects.isEmpty) {
-                continue;
-              }
-              var rect = rects.first.toRect();
-              currentDirection = rects.first.direction;
-              for (final textBox in rects.skip(1)) {
-                rect = rect.expandToInclude(textBox.toRect());
-                currentDirection = textBox.direction;
-              }
-              // Any of the text boxes may have had infinite dimensions.
-              // We shouldn't pass infinite dimensions up to the bridges.
-              rect = Rect.fromLTWH(
-                math.max(0.0, rect.left),
-                math.max(0.0, rect.top),
-                math.min(rect.width, constraints.maxWidth),
-                math.min(rect.height, constraints.maxHeight),
-              );
-              // round the current rectangle to make this API testable and add some
-              // padding so that the accessibility rects do not overlap with the text.
-              final currentRect = Rect.fromLTRB(
-                rect.left.floorToDouble() - 4.0,
-                rect.top.floorToDouble() - 4.0,
-                rect.right.ceilToDouble() + 4.0,
-                rect.bottom.ceilToDouble() + 4.0,
-              );
-              final configuration = SemanticsConfiguration()
-                ..sortKey = OrdinalSortKey(ordinal++)
-                ..textDirection = initialDirection
-                ..attributedLabel = AttributedString(
-                    info.semanticsLabel ?? info.text,
-                    attributes: info.stringAttributes);
-              final recognizer = info.recognizer;
-              if (recognizer != null) {
-                if (recognizer is TapGestureRecognizer) {
-                  if (recognizer.onTap != null) {
-                    configuration
-                      ..onTap = recognizer.onTap
-                      ..isLink = true;
-                  }
-                } else if (recognizer is DoubleTapGestureRecognizer) {
-                  if (recognizer.onDoubleTap != null) {
-                    configuration
-                      ..onTap = recognizer.onDoubleTap
-                      ..isLink = true;
-                  }
-                } else if (recognizer is LongPressGestureRecognizer) {
-                  if (recognizer.onLongPress != null) {
-                    configuration.onLongPress = recognizer.onLongPress;
-                  }
-                } else {
-                  assert(false, '${recognizer.runtimeType} is not supported.');
+              final rects = textRenderer.getBoxesForSelection(selection);
+              if (rects.isNotEmpty) {
+                var rect = rects.first.toRect();
+                currentDirection = rects.first.direction;
+                for (final textBox in rects.skip(1)) {
+                  rect = rect.expandToInclude(textBox.toRect());
+                  currentDirection = textBox.direction;
                 }
+
+                // Any of the text boxes may have had infinite dimensions.
+                // We shouldn't pass infinite dimensions up to the bridges.
+                rect = Rect.fromLTWH(
+                  math.max(0.0, rect.left),
+                  math.max(0.0, rect.top),
+                  math.min(rect.width, constraints.maxWidth),
+                  math.min(rect.height, constraints.maxHeight),
+                );
+
+                // Round the current rectangle to make this API testable and
+                // add some padding so that the accessibility rects do not
+                // overlap with the text.
+                final currentRect = Rect.fromLTRB(
+                  rect.left.floorToDouble() - 4.0,
+                  rect.top.floorToDouble() - 4.0,
+                  rect.right.ceilToDouble() + 4.0,
+                  rect.bottom.ceilToDouble() + 4.0,
+                );
+
+                final configuration = SemanticsConfiguration()
+                  ..sortKey = OrdinalSortKey(ordinal++)
+                  ..textDirection = initialDirection
+                  ..attributedLabel = AttributedString(
+                      info.semanticsLabel ?? info.text,
+                      attributes: info.stringAttributes);
+
+                final recognizer = info.recognizer;
+                if (recognizer != null) {
+                  if (recognizer is TapGestureRecognizer) {
+                    if (recognizer.onTap != null) {
+                      configuration
+                        ..onTap = recognizer.onTap
+                        ..isLink = true;
+                    }
+                  } else if (recognizer is DoubleTapGestureRecognizer) {
+                    if (recognizer.onDoubleTap != null) {
+                      configuration
+                        ..onTap = recognizer.onDoubleTap
+                        ..isLink = true;
+                    }
+                  } else if (recognizer is LongPressGestureRecognizer) {
+                    if (recognizer.onLongPress != null) {
+                      configuration.onLongPress = recognizer.onLongPress;
+                    }
+                  } else {
+                    assert(
+                        false, '${recognizer.runtimeType} is not supported.');
+                  }
+                }
+
+                // dmPrint('Adding semantics node for span $floatColumnChildIndex:'
+                //     '$textRendererIndex with rect $rect '
+                //     '${recognizer == null ? '' : 'WITH RECOGNIZER '}'
+                //     'for text "${info.text}" ');
+
+                final newChild = ((_cachedChildNodes?.isNotEmpty == true)
+                    ? _cachedChildNodes!.removeFirst()
+                    : SemanticsNode())
+                  ..updateWith(config: configuration)
+                  ..rect = currentRect;
+
+                newChildCache.addLast(newChild);
+                newSemanticsChildren.add(newChild);
               }
-              final newChild = (_cachedChildNodes?.isNotEmpty == true)
-                  ? _cachedChildNodes!.removeFirst()
-                  : SemanticsNode();
-              // ignore: cascade_invocations
-              newChild
-                ..updateWith(config: configuration)
-                ..rect = currentRect;
-              newChildCache.addLast(newChild);
-              newSemanticsChildren.add(newChild);
             }
           }
-          textRendererIndex++;
         }
+        textRendererIndex++;
       }
     }
 
@@ -1205,16 +1272,36 @@ class RenderFloatColumn extends RenderBox
     _cachedChildNodes = null;
   }
 
-  ///////////////////////////////////////////////////////////////////////////
+  //
+  // Utility functions:
+  //
 
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties
-      ..add(EnumProperty<CrossAxisAlignment>(
-          'crossAxisAlignment', crossAxisAlignment))
-      ..add(EnumProperty<TextDirection>('textDirection', textDirection,
-          defaultValue: null));
+  Map<int, List<List<InlineSpanSemanticsInformation>>> getSemanticsInfo({
+    bool combined = false,
+  }) {
+    final semanticsInfo = <int, List<List<InlineSpanSemanticsInformation>>>{};
+
+    var i = 0;
+    for (final el in _internalTextAndWidgets) {
+      if (el is Widget) {
+        // Add a placeholder for each regular child widget.
+        semanticsInfo[i] = [
+          [InlineSpanSemanticsInformation.placeholder]
+        ];
+      } else if (el is WrappableText) {
+        final wtr = _cache[el.defaultKey]!;
+        semanticsInfo[i] = [
+          for (final textRenderer in wtr.renderers)
+            textRenderer.getSemanticsInfo(combined: combined)
+        ];
+      } else {
+        assert(false);
+      }
+
+      i++;
+    }
+
+    return semanticsInfo;
   }
 
   @override

@@ -138,6 +138,10 @@ class WrappableTextRenderer {
     if (needsLayout) {
       parent.markNeedsLayout();
     } else if (needsPaint) {
+      for (final sub in subs) {
+        sub._semanticsInfo = sub._cachedCombinedSemanticsInfos = null;
+      }
+
       parent
         ..markNeedsPaint()
         ..markNeedsSemanticsUpdate();
@@ -159,8 +163,15 @@ class TextRenderer with RenderTextMixin {
   final int startingPlaceholderIndex;
   List<PlaceholderSpan>? _placeholderSpans;
 
+  String toPlainText() => text.toPlainText(includeSemanticsLabels: false);
+
   Offset? _offset;
   set offset(Offset value) => _offset = value;
+
+  Rect get textRect {
+    final size = textSize;
+    return Rect.fromLTWH(_offset!.dx, _offset!.dy, size.width, size.height);
+  }
 
   int get nextPlaceholderIndex =>
       startingPlaceholderIndex + placeholderSpans.length;

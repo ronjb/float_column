@@ -1,5 +1,6 @@
 import 'package:float_column/float_column.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -42,7 +43,8 @@ class BasicLtr extends StatelessWidget {
                         title: 'Photo by Jeremy Bishop on Unsplash',
                       ),
                     ),
-                    WrappableText(text: _text(scale), textScaleFactor: scale),
+                    WrappableText(
+                        text: _text(context, scale), textScaleFactor: scale),
                   ],
                 ),
               ),
@@ -83,7 +85,7 @@ class Img extends StatelessWidget {
 
 // ignore_for_file: prefer_const_constructors, cspell: disable
 
-TextSpan _text(double textScaleFactor) => TextSpan(
+TextSpan _text(BuildContext context, double textScaleFactor) => TextSpan(
       children: [
         WidgetSpan(
           child: Floatable(
@@ -100,8 +102,17 @@ TextSpan _text(double textScaleFactor) => TextSpan(
         ),
         TextSpan(
           text: 'Love',
-          style: GoogleFonts.getFont('Sevillana',
-              fontWeight: FontWeight.bold, color: Colors.deepPurple),
+          style: GoogleFonts.getFont(
+            'Sevillana',
+            fontWeight: FontWeight.bold,
+            color: Colors.deepPurple,
+            decoration: TextDecoration.underline,
+          ),
+          recognizer: TapGestureRecognizer()
+            ..onTap = () {
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(SnackBar(content: Text('Tapped on "Love"')));
+            },
         ),
         TextSpan(
           text: ' the earth and sun and the animals, despise riches, give alms '
@@ -109,8 +120,17 @@ TextSpan _text(double textScaleFactor) => TextSpan(
         ),
         TextSpan(
           text: 'stand up for the stupid and crazy',
-          style:
-              TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.deepPurple,
+            decoration: TextDecoration.underline,
+          ),
+          recognizer: TapGestureRecognizer()
+            ..onTap = () {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content:
+                      Text('Tapped on "stand up for the stupid and crazy"')));
+            },
         ),
         TextSpan(
           text: ', devote your income and labor to others, hate tyrants, argue '
@@ -156,9 +176,16 @@ TextSpan _text(double textScaleFactor) => TextSpan(
         TextSpan(
           text: 'Song of Myself',
           style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontStyle: FontStyle.italic,
-              color: Colors.deepPurple),
+            fontWeight: FontWeight.bold,
+            fontStyle: FontStyle.italic,
+            color: Colors.deepPurple,
+            decoration: TextDecoration.underline,
+          ),
+          recognizer: TapGestureRecognizer()
+            ..onTap = () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Tapped on "Song of Myself"')));
+            },
         ),
       ],
     );

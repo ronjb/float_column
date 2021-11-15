@@ -21,3 +21,4 @@ analyzer:
 # Linter rules (see: http://dart-lang.github.io/linter/lints/)
 linter:
   rules:
+    avoid_print: false

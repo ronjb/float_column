@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [1.2.0] - November 15, 2021
+
+* Fixed #3 "WrappableText objects that contain TextSpans that have a recognizer (e.g. TapGestureRecognizer) aren't handled correctly, i.e. the recognizer is ignored for hit tests."
+* Updated RenderFloatColumn to support standard `describeSemanticsConfiguration` and `assembleSemanticsNode` methods.
+
 ## [1.1.2] - November 13, 2021
 
 * Fixed bug in RenderFloatColumn `visitChildrenOfAnyType`.

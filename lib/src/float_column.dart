@@ -51,7 +51,10 @@ class FloatColumn extends MultiChildRenderObjectWidget {
         result.add(
           MetaData(
             metaData: FloatData(index, 0, child),
-            child: child,
+            child: Semantics(
+              tagForChildren: FloatColumnPlaceholderSpanSemanticsTag(index, 0),
+              child: child,
+            ),
           ),
         );
       } else if (child is WrappableText) {
