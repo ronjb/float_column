@@ -7,12 +7,21 @@ include: package:flutter_lints_plus/flutter.yaml
 
 analyzer:
   errors:
-    missing_return: error
+    # Treat missing required parameters as an error.
     missing_required_param: error
+
+    # Treat missing returns as an error, not as a hint or a warning.
+    missing_return: error
+    
+    # Allow having TODOs in the code.
     todo: info
 
   exclude:
-    - /**/generated_plugin_registrant.dart
+    - "bin/cache/**"
+    - "test/.test_coverage.dart"
+    - "**/generated_plugin_registrant.dart"
+    - "**/*.freezed.dart"
+    - "**/*.g.dart"
 
   strong-mode:
     implicit-casts: false
