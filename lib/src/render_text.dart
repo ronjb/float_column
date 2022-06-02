@@ -140,10 +140,7 @@ class WrappableTextRenderer {
       for (final sub in subs) {
         sub._semanticsInfo = sub._cachedCombinedSemanticsInfos = null;
       }
-
-      parent
-        ..markNeedsPaint()
-        ..markNeedsSemanticsUpdate();
+      parent.markNeedsPaint();
     }
 
     return comparison;
@@ -164,6 +161,7 @@ class TextRenderer with RenderTextMixin {
 
   String toPlainText() => text.toPlainText(includeSemanticsLabels: false);
 
+  // ignore: use_late_for_private_fields_and_variables
   Offset? _offset;
   set offset(Offset value) => _offset = value;
 

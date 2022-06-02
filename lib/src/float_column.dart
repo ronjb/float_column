@@ -27,7 +27,7 @@ class FloatColumn extends MultiChildRenderObjectWidget {
   /// any. If there is no ambient directionality, [textDirection] must not be
   /// null.
   FloatColumn({
-    Key? key,
+    super.key,
     this.crossAxisAlignment = CrossAxisAlignment.start,
     this.textDirection,
     this.clipBehavior = Clip.none,
@@ -38,7 +38,7 @@ class FloatColumn extends MultiChildRenderObjectWidget {
         assert(clipBehavior != null), // ignore: unnecessary_null_comparison
         assert(children != null), // ignore: unnecessary_null_comparison
         _textAndWidgets = children,
-        super(key: key, children: _extractWidgets(children));
+        super(children: _extractWidgets(children));
 
   /// The list of WrappableText and Widget children.
   final List<Object> _textAndWidgets;

@@ -10,7 +10,7 @@ import 'shared.dart';
 class Floatable extends StatelessWidget {
   /// Creates and returns a new floatable widget.
   const Floatable({
-    Key? key,
+    super.key,
     this.float = FCFloat.none,
     this.clear = FCClear.none,
     this.clearMinSpacing = 0.0,
@@ -18,7 +18,7 @@ class Floatable extends StatelessWidget {
     this.padding = EdgeInsets.zero,
     this.maxWidthPercentage = 1.0,
     required this.child,
-  }) : super(key: key);
+  });
 
   /// Should the child widget float to the `left`, `right`, `start`, or `end`?
   /// The default is `none`.

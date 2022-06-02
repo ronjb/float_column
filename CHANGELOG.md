@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [1.2.2] - June 2, 2022
+
+* Code updates to fix warnings related to Flutter 3.0 release.
+* Fixed bug related to when `markNeedsSemanticsUpdate` is called. Since it can immediately result in a call to `describeSemanticsConfiguration`, it needed to be moved outside of the loop updating the cached WrappableTextRenderer list.
+
 ## [1.2.1] - November 15, 2021
 
 * Fixed bug in RenderFloatColumn assembleSemanticsNode, it was using the `[]` operator of WrappableTextRenderer, when it should have been using the `renderers` getter.

@@ -2,7 +2,7 @@ import 'package:float_column/float_column.dart';
 import 'package:flutter/material.dart';
 
 class Indents extends StatelessWidget {
-  const Indents({Key? key}) : super(key: key);
+  const Indents({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -92,9 +92,9 @@ class Indents extends StatelessWidget {
 }
 
 class Heading extends StatelessWidget {
-  final String title;
+  const Heading({super.key, required this.title});
 
-  const Heading({Key? key, required this.title}) : super(key: key);
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -106,8 +106,10 @@ class Heading extends StatelessWidget {
         child: Text(
           title,
           textAlign: TextAlign.center,
-          style:
-              const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
       ),
     );

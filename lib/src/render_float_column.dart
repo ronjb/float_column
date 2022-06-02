@@ -105,6 +105,7 @@ class RenderFloatColumn extends RenderBox
   final _cache = <Object, WrappableTextRenderer>{};
   void _updateCache() {
     final keys = <Object>{};
+    var needsSemanticsUpdate = false;
     for (var i = 0; i < _internalTextAndWidgets.length; i++) {
       var el = _internalTextAndWidgets[i];
       if (el is WrappableText) {
@@ -141,12 +142,22 @@ class RenderFloatColumn extends RenderBox
               comparison == RenderComparison.paint) {
             _cachedAttributedLabel = null;
             _cachedCombinedSemanticsInfos = null;
+            if (comparison == RenderComparison.paint) {
+              needsSemanticsUpdate = true;
+            }
           }
         }
       }
     }
 
     _cache.removeWhere((key, value) => !keys.contains(key));
+
+    if (needsSemanticsUpdate) {
+      // Calling `markNeedsSemanticsUpdate` can immediately result in a call to
+      // `describeSemanticsConfiguration`, so it needs to be outside of the
+      // `for` loop above.
+      markNeedsSemanticsUpdate();
+    }
   }
 
   /// How the children should be placed along the cross axis.
@@ -566,7 +577,6 @@ class RenderFloatColumn extends RenderBox
 
     TextRenderer? rendererBeforeSplit;
 
-    //
     // Loop over this WrappableText's renderers. It starts out with the default
     // text renderer which includes all the text, but if the text needs to be
     // split because the available width and/or x position changes (because of
@@ -574,7 +584,7 @@ class RenderFloatColumn extends RenderBox
     // replace the current renderer, and the loop is run again. This continues
     // until all the text is laid out, using as many renderers as necessary to
     // wrap around floated widget positions.
-    //
+
     var subIndex = -1;
     while (subIndex < wtr.subs.length) {
       // Get the estimated line height for the first line. We want to find

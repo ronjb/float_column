@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../shared/drop_cap.dart';
 
 class BasicRtl extends StatelessWidget {
-  const BasicRtl({Key? key}) : super(key: key);
+  const BasicRtl({super.key});
 
   @override
   Widget build(BuildContext context) {

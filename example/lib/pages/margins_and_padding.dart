@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../shared/drop_cap.dart';
 
 class MarginsAndPadding extends StatelessWidget {
-  const MarginsAndPadding({Key? key}) : super(key: key);
+  const MarginsAndPadding({super.key});
 
   @override
   Widget build(BuildContext context) {

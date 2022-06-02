@@ -7,7 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../shared/drop_cap.dart';
 
 class BasicLtr extends StatelessWidget {
-  const BasicLtr({Key? key}) : super(key: key);
+  const BasicLtr({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -59,10 +59,10 @@ class BasicLtr extends StatelessWidget {
 String _name(String name) => kIsWeb && kDebugMode ? name : 'assets/$name';
 
 class Img extends StatelessWidget {
+  const Img({super.key, required this.assetName, this.title});
+
   final String assetName;
   final String? title;
-
-  const Img({Key? key, required this.assetName, this.title}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -141,8 +141,10 @@ TextSpan _text(BuildContext context, double textScaleFactor) => TextSpan(
           text:
               'take off your hat to nothing known or unknown or to any man or '
               'number of men',
-          style:
-              TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.deepPurple,
+          ),
         ),
         TextSpan(
           text: ', go freely with powerful uneducated persons and with the '
@@ -151,16 +153,20 @@ TextSpan _text(BuildContext context, double textScaleFactor) => TextSpan(
         ),
         TextSpan(
           text: 're-examine all you have been told',
-          style:
-              TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.deepPurple,
+          ),
         ),
         TextSpan(
           text: ' at school or church or in any book, ',
         ),
         TextSpan(
           text: 'dismiss whatever insults your own soul',
-          style:
-              TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.deepPurple,
+          ),
         ),
         TextSpan(
           text: ', and your very flesh shall be a great poem and have the '
@@ -170,8 +176,10 @@ TextSpan _text(BuildContext context, double textScaleFactor) => TextSpan(
         ),
         TextSpan(
           text: 'Walt Whitman, ',
-          style:
-              TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.deepPurple,
+          ),
         ),
         TextSpan(
           text: 'Song of Myself',

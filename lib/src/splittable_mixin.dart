@@ -41,8 +41,8 @@ mixin SplittableMixin<T> {
 /// Mutable wrapper of an integer index that can be passed by reference.
 ///
 class SplitAtIndex {
-  int value = 0;
   SplitAtIndex(this.value);
+  int value = 0;
 }
 
 ///
@@ -50,9 +50,9 @@ class SplitAtIndex {
 /// string.
 ///
 class SplittableString with SplittableMixin<SplittableString> {
-  final String value;
-
   SplittableString(this.value);
+
+  final String value;
 
   @override
   List<SplittableString> splitAtIndex(SplitAtIndex index) {

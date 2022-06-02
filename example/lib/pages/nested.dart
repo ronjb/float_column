@@ -2,7 +2,7 @@ import 'package:float_column/float_column.dart';
 import 'package:flutter/material.dart';
 
 class Nested extends StatelessWidget {
-  const Nested({Key? key}) : super(key: key);
+  const Nested({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -117,13 +117,12 @@ class Nested extends StatelessWidget {
 }
 
 class _Box extends StatelessWidget {
-  final Widget child;
-  final Color? color;
+  const _Box(this.child);
 
-  const _Box(this.child, {Key? key, this.color}) : super(key: key);
+  final Widget child;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => DecoratedBox(
         decoration: BoxDecoration(border: Border.all()),
         child: Padding(
             padding: const EdgeInsets.fromLTRB(8, 8, 8, 8), child: child),

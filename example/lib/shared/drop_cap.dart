@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class DropCap extends StatelessWidget {
+  const DropCap(this.text, {super.key, this.size = 2.0, this.textScaleFactor});
+
   final String text;
   final double size;
   final double? textScaleFactor;
-
-  const DropCap(this.text, {Key? key, this.size = 2.0, this.textScaleFactor})
-      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
