@@ -20,27 +20,34 @@ extension FloatColumnExtOnRenderObject on RenderObject {
   ///
   bool visitChildrenAndTextRenderers(CancelableObjectVisitor visitor) {
     var canceled = false;
-    var firstTime = true;
 
-    // Local render object visitor function.
-    void renderObjectVisitor(RenderObject ro) {
-      if (canceled) return; //----------------------------------->
+    late void Function(Object object) visitChildrenRecursively;
 
-      if (ro is VisitChildrenOfAnyTypeMixin) {
-        if (firstTime) firstTime = false;
-        canceled = !(ro as VisitChildrenOfAnyTypeMixin)
-            .visitChildrenOfAnyType(visitor);
-      } else {
-        if (firstTime) {
-          firstTime = false;
-        } else {
-          canceled = !visitor(ro);
-        }
-        if (!canceled) ro.visitChildren(renderObjectVisitor);
+    void recursiveRenderObjectVisitor(RenderObject object) {
+      // This is called for every child of the render object, even after the
+      // [visitor] function may have returned `false` for one of the children,
+      // so check if canceled before handling.
+      if (!canceled) {
+        canceled = !visitor(object);
+        if (!canceled) visitChildrenRecursively(object);
       }
     }
 
-    renderObjectVisitor(this);
+    bool recursiveObjectVisitor(Object object) {
+      canceled = !visitor(object);
+      if (!canceled) visitChildrenRecursively(object);
+      return !canceled;
+    }
+
+    visitChildrenRecursively = (object) {
+      if (object is VisitChildrenOfAnyTypeMixin) {
+        canceled = !object.visitChildrenOfAnyType(recursiveObjectVisitor);
+      } else if (object is RenderObject) {
+        object.visitChildren(recursiveRenderObjectVisitor);
+      }
+    };
+
+    visitChildrenRecursively(this);
     return !canceled;
   }
 }

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.2.3] - June 28, 2022
+
+* Fixed bug in the RenderObject extension method `visitChildrenAndTextRenderers`. It would not recursively visit children with `VisitChildrenOfAnyTypeMixin`. Now it does.
+
 ## [1.2.2] - June 2, 2022
 
 * Code updates to fix warnings related to Flutter 3.0 release.
