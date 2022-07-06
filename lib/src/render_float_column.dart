@@ -594,7 +594,9 @@ class RenderFloatColumn extends RenderBox
       // If the text starts with a line feed, remove the line feed, add the
       // line height to `yPosNext`, and re-run the loop.
       final initialText = wtr[subIndex].text.initialText();
-      if (initialText.isNotEmpty && initialText.codeUnitAt(0) == 0x0a) {
+      if (initialText.isNotEmpty &&
+          initialText.codeUnitAt(0) == 0x0a &&
+          (wtr[subIndex].maxLines == null || wtr[subIndex].maxLines! > 1)) {
         final textRenderer = wtr[subIndex];
         final split = textRenderer.text.splitAtCharacterIndex(1);
         if (split.length == 2) {
@@ -604,8 +606,13 @@ class RenderFloatColumn extends RenderBox
             wtr.subs.removeAt(subIndex);
           }
 
-          wtr.subs.add(textRenderer.copyWith(split.last,
-              subIndex == 0 ? 0 : wtr.subs[subIndex - 1].nextPlaceholderIndex));
+          final maxLines =
+              textRenderer.maxLines == null ? null : textRenderer.maxLines! - 1;
+
+          wtr.subs.add(textRenderer.copyWith(
+              split.last,
+              subIndex == 0 ? 0 : wtr.subs[subIndex - 1].nextPlaceholderIndex,
+              maxLines));
 
           yPosNext += estLineHeight;
 
@@ -773,14 +780,35 @@ class RenderFloatColumn extends RenderBox
                   } else {
                     wtr.subs.removeLast();
                   }
-                  wtr.subs
-                    ..add(textRenderer.copyWith(
-                        split.first,
-                        subIndex == 0
-                            ? 0
-                            : wtr.subs[subIndex - 1].nextPlaceholderIndex))
-                    ..add(textRenderer.copyWith(
-                        split.last, wtr.subs[subIndex].nextPlaceholderIndex));
+
+                  final part1 = textRenderer.copyWith(
+                      split.first,
+                      subIndex == 0
+                          ? 0
+                          : wtr.subs[subIndex - 1].nextPlaceholderIndex,
+                      null);
+                  wtr.subs.add(part1);
+
+                  // If [maxLines] was set, [remainingLines] needs to be set to
+                  // [maxLines] minus the number of lines in [part1].
+                  int? remainingLines;
+                  if (textRenderer.maxLines != null) {
+                    // Need to layout [part1] and call `computeLineMetrics` to
+                    // know how many lines it has.
+                    part1.layout(subConstraints);
+                    final lineMetrics = part1.textPainter.computeLineMetrics();
+                    remainingLines =
+                        textRenderer.maxLines! - lineMetrics.length;
+                  }
+
+                  // Only add [part2] if [remainingLines] is null or greater
+                  // than zero.
+                  if (remainingLines == null || remainingLines > 0) {
+                    wtr.subs.add(textRenderer.copyWith(
+                        split.last,
+                        wtr.subs[subIndex].nextPlaceholderIndex,
+                        remainingLines));
+                  }
 
                   // Re-run the loop, keeping the index the same.
                   continue; //------------------------------------>

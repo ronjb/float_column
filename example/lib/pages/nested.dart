@@ -86,7 +86,11 @@ class Nested extends StatelessWidget {
                                         child: _Box(Text('c2')),
                                       ),
                                       WrappableText(
-                                          text: _t3, textAlign: textAlign),
+                                        text: _t3,
+                                        textAlign: textAlign,
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 5,
+                                      ),
                                     ],
                                   ),
                                 ),

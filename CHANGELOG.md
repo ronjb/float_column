@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.2.4] - July 6, 2022
+
+* Added `TextOverflow overflow` and `int? maxLines` to `WrappableText` class.
+
 ## [1.2.3] - June 28, 2022
 
 * Fixed bug in the RenderObject extension method `visitChildrenAndTextRenderers`. It would not recursively visit children with `VisitChildrenOfAnyTypeMixin`. Now it does.

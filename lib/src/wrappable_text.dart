@@ -30,17 +30,23 @@ class WrappableText {
     this.clear = FCClear.none,
     this.textAlign,
     this.textDirection,
+    this.overflow = TextOverflow.clip,
     this.textScaleFactor,
+    this.maxLines,
     this.locale,
     this.strutStyle,
     this.textHeightBehavior,
     this.indent = 0.0,
     this.margin = EdgeInsets.zero,
     this.padding = EdgeInsets.zero,
-  }) : assert(
-          text != null, // ignore: unnecessary_null_comparison
+  })  : assert(
+          // ignore: unnecessary_null_comparison
+          text != null,
           'A non-null TextSpan must be provided to a WrappableText.',
-        );
+        ),
+        // ignore: unnecessary_null_comparison
+        assert(overflow != null),
+        assert(maxLines == null || maxLines > 0);
 
   WrappableText copyWith({
     Key? key,
@@ -48,7 +54,9 @@ class WrappableText {
     FCClear? clear,
     TextAlign? textAlign,
     TextDirection? textDirection,
+    TextOverflow? overflow,
     double? textScaleFactor,
+    int? maxLines,
     Locale? locale,
     StrutStyle? strutStyle,
     ui.TextHeightBehavior? textHeightBehavior,
@@ -62,7 +70,9 @@ class WrappableText {
         clear: clear ?? this.clear,
         textAlign: textAlign ?? this.textAlign,
         textDirection: textDirection ?? this.textDirection,
+        overflow: overflow ?? this.overflow,
         textScaleFactor: textScaleFactor ?? this.textScaleFactor,
+        maxLines: maxLines ?? this.maxLines,
         locale: locale ?? this.locale,
         strutStyle: strutStyle ?? this.strutStyle,
         textHeightBehavior: textHeightBehavior ?? this.textHeightBehavior,
@@ -101,6 +111,9 @@ class WrappableText {
   /// `Directionality`, then this must not be null.
   final TextDirection? textDirection;
 
+  /// How visual overflow should be handled.
+  final TextOverflow overflow;
+
   /// The number of font pixels for each logical pixel.
   ///
   /// For example, if the text scale factor is 1.5, text will be 50% larger
@@ -110,6 +123,14 @@ class WrappableText {
   /// use the [MediaQueryData.textScaleFactor] obtained from the ambient
   /// [MediaQuery], or 1.0 if there is no [MediaQuery] in scope.
   final double? textScaleFactor;
+
+  /// An optional maximum number of lines for the text to span, wrapping if
+  /// necessary. If the text exceeds the given number of lines, it will be
+  /// truncated according to [overflow].
+  ///
+  /// If this is 1, text will not wrap. Otherwise, text will be wrapped at the
+  /// edge of the box.
+  final int? maxLines;
 
   /// Used to select a font when the same Unicode character can be rendered
   /// differently, depending on the locale.
@@ -148,7 +169,9 @@ class WrappableText {
         other.clear == clear &&
         other.textAlign == textAlign &&
         other.textDirection == textDirection &&
+        other.overflow == overflow &&
         other.textScaleFactor == textScaleFactor &&
+        other.maxLines == maxLines &&
         other.locale == locale &&
         other.strutStyle == strutStyle &&
         other.textHeightBehavior == textHeightBehavior &&
@@ -164,7 +187,9 @@ class WrappableText {
       clear,
       textAlign,
       textDirection,
+      overflow,
       textScaleFactor,
+      maxLines,
       locale,
       strutStyle,
       textHeightBehavior,

@@ -14,6 +14,8 @@ import 'render_text_mixin.dart';
 import 'shared.dart';
 import 'wrappable_text.dart';
 
+const String _kEllipsis = '\u2026';
+
 ///
 /// WrappableTextRenderer
 ///
@@ -34,6 +36,9 @@ class WrappableTextRenderer {
                     TextAlign.start,
                 textDirection: wt.textDirection ?? defaultTextDirection,
                 textScaleFactor: wt.textScaleFactor ?? defaultTextScaleFactor,
+                maxLines: wt.maxLines,
+                ellipsis:
+                    wt.overflow == TextOverflow.ellipsis ? _kEllipsis : null,
                 locale: wt.locale,
                 strutStyle: wt.strutStyle,
                 textHeightBehavior: wt.textHeightBehavior),
@@ -159,6 +164,8 @@ class TextRenderer with RenderTextMixin {
   final int startingPlaceholderIndex;
   List<PlaceholderSpan>? _placeholderSpans;
 
+  TextPainter get textPainter => _painter;
+
   String toPlainText() => text.toPlainText(includeSemanticsLabels: false);
 
   // ignore: use_late_for_private_fields_and_variables
@@ -196,6 +203,7 @@ class TextRenderer with RenderTextMixin {
   TextRenderer copyWith(
     InlineSpan text,
     int startingPlaceholderIndex,
+    int? maxLines,
   ) =>
       TextRenderer(
           _parent,
@@ -204,8 +212,11 @@ class TextRenderer with RenderTextMixin {
               textAlign: _painter.textAlign,
               textDirection: _painter.textDirection,
               textScaleFactor: _painter.textScaleFactor,
+              maxLines: maxLines ?? _painter.maxLines,
+              ellipsis: _painter.ellipsis,
               locale: _painter.locale,
               strutStyle: _painter.strutStyle,
+              textWidthBasis: _painter.textWidthBasis,
               textHeightBehavior: _painter.textHeightBehavior),
           startingPlaceholderIndex);
 
