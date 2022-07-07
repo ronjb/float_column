@@ -13,7 +13,7 @@ class BasicLtr extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final scale = (((constraints.maxWidth / 600.0) - 1.0) * 0.75) + 1.0;
+        final scale = (((constraints.maxWidth / 600.0) - 1.0) * 0.6) + 1.0;
         return DefaultTextStyle(
           style:
               const TextStyle(fontSize: 18, color: Colors.black, height: 1.5),
@@ -34,7 +34,7 @@ class BasicLtr extends StatelessWidget {
                     Floatable(
                       float: FCFloat.start,
                       clear: FCClear.end,
-                      // clearMinSpacing: -120,
+                      clearMinSpacing: -50 * scale,
                       maxWidthPercentage: 0.25,
                       padding: EdgeInsetsDirectional.only(end: 12),
                       child: Img(

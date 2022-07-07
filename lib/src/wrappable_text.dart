@@ -5,7 +5,6 @@
 import 'dart:ui' as ui show TextHeightBehavior;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 
 import 'shared.dart';
 
@@ -30,7 +29,7 @@ class WrappableText {
     this.clear = FCClear.none,
     this.textAlign,
     this.textDirection,
-    this.overflow = TextOverflow.clip,
+    this.overflow,
     this.textScaleFactor,
     this.maxLines,
     this.locale,
@@ -44,9 +43,45 @@ class WrappableText {
           text != null,
           'A non-null TextSpan must be provided to a WrappableText.',
         ),
-        // ignore: unnecessary_null_comparison
-        assert(overflow != null),
         assert(maxLines == null || maxLines > 0);
+
+  WrappableText.fromText(Text text)
+      :
+        // ignore: unnecessary_null_comparison
+        assert(text != null),
+        key = text.key,
+        text = _textSpanFrom(text.textSpan, text.data, text.style),
+        clear = FCClear.none,
+        textAlign = text.textAlign,
+        textDirection = text.textDirection,
+        overflow = text.overflow,
+        textScaleFactor = text.textScaleFactor,
+        maxLines = text.maxLines,
+        locale = text.locale,
+        strutStyle = text.strutStyle,
+        textHeightBehavior = text.textHeightBehavior,
+        indent = 0.0,
+        margin = EdgeInsets.zero,
+        padding = EdgeInsets.zero;
+
+  WrappableText.fromRichText(RichText text)
+      :
+        // ignore: unnecessary_null_comparison
+        assert(text != null),
+        key = text.key,
+        text = _textSpanFrom(text.text, null, null),
+        clear = FCClear.none,
+        textAlign = text.textAlign,
+        textDirection = text.textDirection,
+        overflow = text.overflow,
+        textScaleFactor = text.textScaleFactor,
+        maxLines = text.maxLines,
+        locale = text.locale,
+        strutStyle = text.strutStyle,
+        textHeightBehavior = text.textHeightBehavior,
+        indent = 0.0,
+        margin = EdgeInsets.zero,
+        padding = EdgeInsets.zero;
 
   WrappableText copyWith({
     Key? key,
@@ -112,7 +147,7 @@ class WrappableText {
   final TextDirection? textDirection;
 
   /// How visual overflow should be handled.
-  final TextOverflow overflow;
+  final TextOverflow? overflow;
 
   /// The number of font pixels for each logical pixel.
   ///
@@ -137,8 +172,6 @@ class WrappableText {
   ///
   /// It's rarely necessary to set this property. By default its value
   /// is inherited from the enclosing app with Localizations.localeOf(context).
-  ///
-  /// See [RenderParagraph.locale] for more information.
   final Locale? locale;
 
   /// {@macro flutter.painting.textPainter.strutStyle}
@@ -196,4 +229,14 @@ class WrappableText {
       indent,
       margin,
       padding);
+}
+
+TextSpan _textSpanFrom(InlineSpan? span, String? data, TextStyle? style) {
+  final inlineSpan = span ?? TextSpan(style: style, text: data);
+  final textSpan = inlineSpan is TextSpan
+      ? inlineSpan
+      : TextSpan(style: style, children: [inlineSpan]);
+  return style == null || span == null || inlineSpan is! TextSpan
+      ? textSpan
+      : TextSpan(style: style, children: [textSpan]);
 }

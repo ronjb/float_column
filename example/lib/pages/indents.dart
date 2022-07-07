@@ -56,7 +56,7 @@ class Indents extends StatelessWidget {
                           clear: FCClear.both,
                           maxWidthPercentage: 0.333,
                           child: Container(
-                              height: 200,
+                              height: boxHeight,
                               color: Colors.blue,
                               margin:
                                   const EdgeInsetsDirectional.only(end: 8))),
@@ -75,10 +75,7 @@ class Indents extends StatelessWidget {
                           maxWidthPercentage: 0.333,
                           child: Container(
                               height: boxHeight, color: Colors.green)),
-                      const WrappableText(
-                        text: _text,
-                        textAlign: textAlign,
-                      ),
+                      _text,
                     ],
                   ),
                 ],

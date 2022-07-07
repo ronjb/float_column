@@ -27,22 +27,25 @@ class WrappableTextRenderer {
     DefaultTextStyle defaultTextStyle,
     double defaultTextScaleFactor,
   ) : renderer = TextRenderer(
-            parent,
-            TextPainter(
-                text: TextSpan(
-                    style: defaultTextStyle.style, children: [wt.text]),
-                textAlign: wt.textAlign ??
-                    defaultTextStyle.textAlign ??
-                    TextAlign.start,
-                textDirection: wt.textDirection ?? defaultTextDirection,
-                textScaleFactor: wt.textScaleFactor ?? defaultTextScaleFactor,
-                maxLines: wt.maxLines,
-                ellipsis:
-                    wt.overflow == TextOverflow.ellipsis ? _kEllipsis : null,
-                locale: wt.locale,
-                strutStyle: wt.strutStyle,
-                textHeightBehavior: wt.textHeightBehavior),
-            0);
+          parent,
+          TextPainter(
+            text: TextSpan(style: defaultTextStyle.style, children: [wt.text]),
+            textAlign:
+                wt.textAlign ?? defaultTextStyle.textAlign ?? TextAlign.start,
+            textDirection: wt.textDirection ?? defaultTextDirection,
+            textScaleFactor: wt.textScaleFactor ?? defaultTextScaleFactor,
+            maxLines: wt.maxLines ?? defaultTextStyle.maxLines,
+            ellipsis: (wt.overflow ?? defaultTextStyle.overflow) ==
+                    TextOverflow.ellipsis
+                ? _kEllipsis
+                : null,
+            locale: wt.locale,
+            strutStyle: wt.strutStyle,
+            textHeightBehavior:
+                wt.textHeightBehavior ?? defaultTextStyle.textHeightBehavior,
+          ),
+          0,
+        );
 
   final TextRenderer renderer;
 
@@ -124,6 +127,21 @@ class WrappableTextRenderer {
       needsLayout = true;
     }
 
+    final maxLines = wt.maxLines ?? defaultTextStyle.maxLines;
+    if (renderer._painter.maxLines != maxLines) {
+      renderer._painter.maxLines = maxLines;
+      needsLayout = true;
+    }
+
+    final ellipsis =
+        (wt.overflow ?? defaultTextStyle.overflow) == TextOverflow.ellipsis
+            ? _kEllipsis
+            : null;
+    if (renderer._painter.ellipsis != ellipsis) {
+      renderer._painter.ellipsis = ellipsis;
+      needsLayout = true;
+    }
+
     if (renderer._painter.locale != wt.locale) {
       renderer._painter.locale = wt.locale;
       needsLayout = true;
@@ -134,8 +152,10 @@ class WrappableTextRenderer {
       needsLayout = true;
     }
 
-    if (renderer._painter.textHeightBehavior != wt.textHeightBehavior) {
-      renderer._painter.textHeightBehavior = wt.textHeightBehavior;
+    final textHeightBehavior =
+        wt.textHeightBehavior ?? defaultTextStyle.textHeightBehavior;
+    if (renderer._painter.textHeightBehavior != textHeightBehavior) {
+      renderer._painter.textHeightBehavior = textHeightBehavior;
       needsLayout = true;
     }
 

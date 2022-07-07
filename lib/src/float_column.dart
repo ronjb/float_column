@@ -15,10 +15,13 @@ import 'wrappable_text.dart';
 /// widgets to the left or right, allowing the text to wrap around them —
 /// similar to the functionality of the CSS `float` and `clear` properties.
 class FloatColumn extends MultiChildRenderObjectWidget {
-  /// Creates and returns a new FloatColumn.
+  /// Creates a [FloatColumn] — a vertical column of widgets and text with the
+  /// ability to "float" child widgets to the left or right, allowing the text
+  /// to wrap around them — similar to the functionality of the CSS `float`
+  /// property.
   ///
-  /// The [children] argument must only contain [Widget] and [WrappableText]
-  /// children.
+  /// The [children] argument can contain [TextSpan], [Text], [RichText],
+  /// [WrappableText], and [Widget] children.
   ///
   /// For child widgets that should "float", wrap them in a [Floatable] widget,
   /// indicating, via the `float` parameter, which side they should float on.
@@ -32,22 +35,40 @@ class FloatColumn extends MultiChildRenderObjectWidget {
     this.textDirection,
     this.clipBehavior = Clip.none,
     List<Object> children = const <Object>[],
-  })  : assert(
-            crossAxisAlignment != null), // ignore: unnecessary_null_comparison
+  })  :
+        // ignore: unnecessary_null_comparison
         assert(crossAxisAlignment != CrossAxisAlignment.baseline),
-        assert(clipBehavior != null), // ignore: unnecessary_null_comparison
-        assert(children != null), // ignore: unnecessary_null_comparison
-        _textAndWidgets = children,
-        super(children: _extractWidgets(children));
+        // ignore: unnecessary_null_comparison
+        assert(clipBehavior != null),
+        // ignore: unnecessary_null_comparison
+        assert(children != null),
+        super(children: _extractWidgets(children)) {
+    _textAndWidgets = children.map((e) {
+      if (e is WrappableText) return e;
+      if (e is TextSpan) return WrappableText(text: e);
+      if (e is Text) return WrappableText.fromText(e);
+      if (e is RichText) return WrappableText.fromRichText(e);
+      if (e is Widget) return e;
+      throw ArgumentError(_errorMsgWithUnsupportedObject(e));
+    }).toList();
+  }
 
   /// The list of WrappableText and Widget children.
-  final List<Object> _textAndWidgets;
+  late final List<Object> _textAndWidgets;
 
   static List<Widget> _extractWidgets(List<Object> list) {
     var index = 0;
     final result = <Widget>[];
     for (final child in list) {
-      if (child is Widget) {
+      if (child is WrappableText) {
+        result._addWidgetSpanChildrenOf(child.text, index);
+      } else if (child is TextSpan) {
+        result._addWidgetSpanChildrenOf(child, index);
+      } else if (child is Text) {
+        result._addWidgetSpanChildrenOf(child.textSpan, index);
+      } else if (child is RichText) {
+        result._addWidgetSpanChildrenOf(child.text, index);
+      } else if (child is Widget) {
         result.add(
           MetaData(
             metaData: FloatData(index, 0, child),
@@ -57,29 +78,8 @@ class FloatColumn extends MultiChildRenderObjectWidget {
             ),
           ),
         );
-      } else if (child is WrappableText) {
-        // Traverses the child's InlineSpan tree and depth-first collects
-        // the list of child widgets that are created in WidgetSpans.
-        var placeholderIndex = 0;
-        child.text.visitChildren((span) {
-          if (span is WidgetSpan) {
-            result.add(
-              MetaData(
-                metaData: FloatData(index, placeholderIndex, span.child),
-                child: Semantics(
-                  tagForChildren: FloatColumnPlaceholderSpanSemanticsTag(
-                      index, placeholderIndex),
-                  child: span.child,
-                ),
-              ),
-            );
-            placeholderIndex++;
-          }
-          return true;
-        });
       } else {
-        assert(false,
-            'FloatColumn only supports Widget and WrappableText children.');
+        throw ArgumentError(_errorMsgWithUnsupportedObject(child));
       }
       index++;
     }
@@ -149,5 +149,35 @@ class FloatColumn extends MultiChildRenderObjectWidget {
           'crossAxisAlignment', crossAxisAlignment))
       ..add(EnumProperty<TextDirection>('textDirection', textDirection,
           defaultValue: null));
+  }
+}
+
+String _errorMsgWithUnsupportedObject(Object object) =>
+    'FloatColumn does not support children of type ${object.runtimeType}. '
+    'It supports TextSpan, Text, RichText, WrappableText, and Widget children.';
+
+extension on List<Widget> {
+  void _addWidgetSpanChildrenOf(InlineSpan? inlineSpan, int index) {
+    if (inlineSpan == null) return;
+
+    // Traverses the child's InlineSpan tree and depth-first collects
+    // the list of child widgets that are created in WidgetSpans.
+    var placeholderIndex = 0;
+    inlineSpan.visitChildren((span) {
+      if (span is WidgetSpan) {
+        add(
+          MetaData(
+            metaData: FloatData(index, placeholderIndex, span.child),
+            child: Semantics(
+              tagForChildren: FloatColumnPlaceholderSpanSemanticsTag(
+                  index, placeholderIndex),
+              child: span.child,
+            ),
+          ),
+        );
+        placeholderIndex++;
+      }
+      return true;
+    });
   }
 }

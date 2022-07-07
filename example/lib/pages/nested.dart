@@ -71,23 +71,23 @@ class Nested extends StatelessWidget {
                                 padding: const EdgeInsets.only(right: 8),
                                 child: _Box(
                                   FloatColumn(
-                                    children: const [
-                                      Floatable(
+                                    children: [
+                                      const Floatable(
                                         float: FCFloat.start,
                                         clear: FCClear.both,
                                         padding: EdgeInsets.only(right: 8),
                                         child: _Box(Text('c1')),
                                       ),
-                                      Floatable(
+                                      const Floatable(
                                         float: FCFloat.end,
                                         clear: FCClear.both,
                                         clearMinSpacing: 20,
                                         padding: EdgeInsets.only(left: 8),
                                         child: _Box(Text('c2')),
                                       ),
-                                      WrappableText(
+                                      RichText(
                                         text: _t3,
-                                        textAlign: textAlign,
+                                        textAlign: textAlign ?? TextAlign.start,
                                         overflow: TextOverflow.ellipsis,
                                         maxLines: 5,
                                       ),
@@ -95,19 +95,18 @@ class Nested extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                              const WrappableText(
-                                  text: _t2, textAlign: textAlign),
+                              const Text.rich(_t2, textAlign: textAlign),
                             ],
                           ),
                         ),
                       ),
-                      const WrappableText(text: _t1, textAlign: textAlign),
+                      Text(_t1.text!, textAlign: textAlign),
                       const Floatable(
                         float: FCFloat.end,
                         padding: EdgeInsets.only(left: 8),
                         child: _Box(Text('a2')),
                       ),
-                      const WrappableText(text: _t2, textAlign: textAlign),
+                      _t2,
                     ],
                   ),
                 ],

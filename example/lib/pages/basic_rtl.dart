@@ -16,7 +16,7 @@ class BasicRtl extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final scale = (((constraints.maxWidth / 500.0) - 1.0) * 0.75) + 1.0;
+        final scale = (((constraints.maxWidth / 600.0) - 1.0) * 0.6) + 1.0;
         return DefaultTextStyle(
           style:
               const TextStyle(fontSize: 18, color: Colors.black, height: 1.5),

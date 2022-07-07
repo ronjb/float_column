@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.3.0] - July 7, 2022
+
+* Updated `FloatColumn` to support children of type `TextSpan`, `Text`, and `RichText`.
+
 ## [1.2.4] - July 6, 2022
 
 * Added `TextOverflow overflow` and `int? maxLines` to `WrappableText` class.
