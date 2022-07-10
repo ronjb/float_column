@@ -23,28 +23,7 @@ class BasicLtr extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 child: FloatColumn(
                   children: [
-                    Floatable(
-                      float: FCFloat.end,
-                      maxWidthPercentage: 0.25,
-                      padding: EdgeInsetsDirectional.only(start: 8),
-                      child: Img(
-                          assetName: _name('walt_whitman.jpg'),
-                          title: 'Walt Whitman'),
-                    ),
-                    Floatable(
-                      float: FCFloat.start,
-                      clear: FCClear.end,
-                      clearMinSpacing: -50 * scale,
-                      maxWidthPercentage: 0.25,
-                      padding: EdgeInsetsDirectional.only(end: 12),
-                      child: Img(
-                        assetName:
-                            _name('jeremy-bishop-EwKXn5CapA4-unsplash.jpg'),
-                        title: 'Photo by Jeremy Bishop on Unsplash',
-                      ),
-                    ),
-                    WrappableText(
-                        text: _text(context, scale), textScaleFactor: scale),
+                    Text.rich(_text(context, scale), textScaleFactor: scale),
                   ],
                 ),
               ),
@@ -77,13 +56,14 @@ class Img extends StatelessWidget {
           Text(
             title!,
             style: const TextStyle(fontSize: 9),
+            textAlign: TextAlign.center,
           ),
       ],
     );
   }
 }
 
-// ignore_for_file: prefer_const_constructors, cspell: disable
+// cspell: disable
 
 TextSpan _text(BuildContext context, double textScaleFactor) => TextSpan(
       children: [
@@ -97,7 +77,31 @@ TextSpan _text(BuildContext context, double textScaleFactor) => TextSpan(
             ),
           ),
         ),
-        TextSpan(
+        WidgetSpan(
+          child: Floatable(
+            float: FCFloat.end,
+            clear: FCClear.both,
+            clearMinSpacing: 16,
+            maxWidthPercentage: 0.33,
+            padding: const EdgeInsetsDirectional.only(start: 8),
+            child: Img(
+                assetName: _name('walt_whitman.jpg'), title: 'Walt Whitman'),
+          ),
+        ),
+        WidgetSpan(
+          child: Floatable(
+            float: FCFloat.start,
+            clear: FCClear.start,
+            clearMinSpacing: 220,
+            maxWidthPercentage: 0.25 / textScaleFactor,
+            padding: const EdgeInsetsDirectional.only(end: 12),
+            child: Img(
+              assetName: _name('jeremy-bishop-EwKXn5CapA4-unsplash.jpg'),
+              title: 'Photo by Jeremy Bishop on Unsplash',
+            ),
+          ),
+        ),
+        const TextSpan(
           text: 'his is what you shall do; ',
         ),
         TextSpan(
@@ -110,34 +114,34 @@ TextSpan _text(BuildContext context, double textScaleFactor) => TextSpan(
           ),
           recognizer: TapGestureRecognizer()
             ..onTap = () {
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(SnackBar(content: Text('Tapped on "Love"')));
+              ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Tapped on "Love"')));
             },
         ),
-        TextSpan(
+        const TextSpan(
           text: ' the earth and sun and the animals, despise riches, give alms '
               'to every one that asks, ',
         ),
         TextSpan(
           text: 'stand up for the stupid and crazy',
-          style: TextStyle(
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             color: Colors.deepPurple,
             decoration: TextDecoration.underline,
           ),
           recognizer: TapGestureRecognizer()
             ..onTap = () {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                   content:
                       Text('Tapped on "stand up for the stupid and crazy"')));
             },
         ),
-        TextSpan(
+        const TextSpan(
           text: ', devote your income and labor to others, hate tyrants, argue '
               'not concerning God, have patience and indulgence toward the '
               'people, ',
         ),
-        TextSpan(
+        const TextSpan(
           text:
               'take off your hat to nothing known or unknown or to any man or '
               'number of men',
@@ -146,35 +150,35 @@ TextSpan _text(BuildContext context, double textScaleFactor) => TextSpan(
             color: Colors.deepPurple,
           ),
         ),
-        TextSpan(
+        const TextSpan(
           text: ', go freely with powerful uneducated persons and with the '
               'young and with the mothers of families, read these leaves in '
               'the open air every season of every year of your life, ',
         ),
-        TextSpan(
+        const TextSpan(
           text: 're-examine all you have been told',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: Colors.deepPurple,
           ),
         ),
-        TextSpan(
+        const TextSpan(
           text: ' at school or church or in any book, ',
         ),
-        TextSpan(
+        const TextSpan(
           text: 'dismiss whatever insults your own soul',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: Colors.deepPurple,
           ),
         ),
-        TextSpan(
+        const TextSpan(
           text: ', and your very flesh shall be a great poem and have the '
               'richest fluency not only in its words but in the silent lines '
               'of its lips and face and between the lashes of your eyes and '
               'in every motion and joint of your body.” – ',
         ),
-        TextSpan(
+        const TextSpan(
           text: 'Walt Whitman, ',
           style: TextStyle(
             fontWeight: FontWeight.bold,
@@ -183,7 +187,7 @@ TextSpan _text(BuildContext context, double textScaleFactor) => TextSpan(
         ),
         TextSpan(
           text: 'Song of Myself',
-          style: TextStyle(
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontStyle: FontStyle.italic,
             color: Colors.deepPurple,
@@ -192,7 +196,7 @@ TextSpan _text(BuildContext context, double textScaleFactor) => TextSpan(
           recognizer: TapGestureRecognizer()
             ..onTap = () {
               ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Tapped on "Song of Myself"')));
+                  const SnackBar(content: Text('Tapped on "Song of Myself"')));
             },
         ),
       ],
