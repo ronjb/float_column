@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.3.1] - December 10, 2022
+
+* Updated to remove warnings related to latest Flutter version.
+
 ## [1.3.0] - July 7, 2022
 
 * Updated `FloatColumn` to support children of type `TextSpan`, `Text`, and `RichText`.

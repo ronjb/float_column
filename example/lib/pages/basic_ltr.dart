@@ -2,7 +2,6 @@ import 'package:float_column/float_column.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../shared/drop_cap.dart';
 
@@ -11,26 +10,21 @@ class BasicLtr extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final scale = (((constraints.maxWidth / 600.0) - 1.0) * 0.6) + 1.0;
-        return DefaultTextStyle(
-          style:
-              const TextStyle(fontSize: 18, color: Colors.black, height: 1.5),
-          child: Scrollbar(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: FloatColumn(
-                  children: [
-                    Text.rich(_text(context, scale), textScaleFactor: scale),
-                  ],
-                ),
-              ),
-            ),
+    final scale =
+        (((MediaQuery.of(context).size.width / 600.0) - 1.0) * 0.6) + 1.0;
+
+    return DefaultTextStyle(
+      style: const TextStyle(fontSize: 18, color: Colors.black, height: 1.5),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: FloatColumn(
+            children: [
+              Text.rich(_text(context, scale), textScaleFactor: scale),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
@@ -106,8 +100,7 @@ TextSpan _text(BuildContext context, double textScaleFactor) => TextSpan(
         ),
         TextSpan(
           text: 'Love',
-          style: GoogleFonts.getFont(
-            'Sevillana',
+          style: textStyleWithGoogleFont('Sevillana').copyWith(
             fontWeight: FontWeight.bold,
             color: Colors.deepPurple,
             decoration: TextDecoration.underline,

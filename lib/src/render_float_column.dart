@@ -598,7 +598,8 @@ class RenderFloatColumn extends RenderBox
           initialText.codeUnitAt(0) == 0x0a &&
           (wtr[subIndex].maxLines == null || wtr[subIndex].maxLines! > 1)) {
         final textRenderer = wtr[subIndex];
-        final split = textRenderer.text.splitAtCharacterIndex(1);
+        final split = textRenderer.text
+            .splitAtCharacterIndex(1, ignoreFloatedWidgetSpans: true);
         if (split.length == 2) {
           if (subIndex == -1) {
             subIndex = 0;
@@ -752,7 +753,8 @@ class RenderFloatColumn extends RenderBox
                 // dmPrint('Splitting at ${Offset(x, y)} after "$str1"');
 
                 // Split the TextSpan at `charIndex`.
-                final split = span.splitAtCharacterIndex(charIndex);
+                final split = span.splitAtCharacterIndex(charIndex,
+                    ignoreFloatedWidgetSpans: true);
 
                 // If it was split into two spans...
                 if (split.length == 2) {
@@ -764,7 +766,8 @@ class RenderFloatColumn extends RenderBox
                   // If the second span starts with a '\n' (line feed), remove
                   // the '\n'.
                   if (text.codeUnitAt(charIndex) == 0x0a) {
-                    final s2 = split.last.splitAtCharacterIndex(1);
+                    final s2 = split.last.splitAtCharacterIndex(1,
+                        ignoreFloatedWidgetSpans: true);
                     if (s2.length == 2) {
                       assert(
                           s2.first.toPlainText(includeSemanticsLabels: false) ==
@@ -830,7 +833,7 @@ class RenderFloatColumn extends RenderBox
         /// The floated children need to be laid out one at a time because
         /// each time one is laid out the positions of subsequent floated
         /// children will likely be affected.
-        bool _layoutFloatedChildren(
+        bool layoutFloatedChildren(
             TextRenderer renderer, RenderBox? firstChild) {
           if (firstChild == null) return false;
           RenderBox? child = firstChild;
@@ -864,7 +867,7 @@ class RenderFloatColumn extends RenderBox
           return false;
         }
 
-        final rerunLoop = _layoutFloatedChildren(wtr[subIndex], child);
+        final rerunLoop = layoutFloatedChildren(wtr[subIndex], child);
         if (rerunLoop) {
           // If the original renderer was split, undo the split because it
           // will likely need to be re-split differently.

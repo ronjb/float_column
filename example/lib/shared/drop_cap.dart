@@ -23,7 +23,7 @@ class DropCap extends StatelessWidget {
           text,
           textScaleFactor:
               textScaleFactor ?? MediaQuery.of(context).textScaleFactor,
-          style: GoogleFonts.getFont(_fonts[1],
+          style: textStyleWithGoogleFont().copyWith(
               fontSize: (style.fontSize ?? 16.0) *
                   (style.height ?? 1.0) *
                   size *
@@ -32,6 +32,14 @@ class DropCap extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+TextStyle textStyleWithGoogleFont([String? fontFamily]) {
+  try {
+    return GoogleFonts.getFont(fontFamily ?? _fonts[1]);
+  } catch (_) {
+    return const TextStyle();
   }
 }
 

@@ -214,7 +214,7 @@ class WrappableText {
   }
 
   @override
-  int get hashCode => hashValues(
+  int get hashCode => Object.hash(
       key,
       text,
       clear,

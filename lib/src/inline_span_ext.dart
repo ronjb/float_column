@@ -2,17 +2,20 @@
 // Use of this source code is governed by a license that can be found in the
 // LICENSE file.
 
+import 'dart:ui' as ui show Locale;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import 'floatable.dart';
+import 'shared.dart';
 import 'splittable_mixin.dart';
 
 extension FCInlineSpanExt on InlineSpan {
-  ///
   /// Returns the font size of the first non-empty text in the span, or
   /// [defaultValue] if none.
-  ///
   double initialFontSize(double defaultValue) {
     return valueOfFirstDescendantOf(
           this,
@@ -24,10 +27,8 @@ extension FCInlineSpanExt on InlineSpan {
         defaultValue;
   }
 
-  ///
   /// Returns the line height of the first non-empty text in the span, or
   /// [defaultValue] if none.
-  ///
   double initialLineHeightScale(double defaultValue) {
     return valueOfFirstDescendantOf(
           this,
@@ -39,13 +40,11 @@ extension FCInlineSpanExt on InlineSpan {
         defaultValue;
   }
 
-  ///
   /// Returns the first non-empty text in the span, or the empty string if
   /// none.
   ///
   /// Note, a WidgetSpan is represented as '\uFFFC', the standard object
   /// replacement character.
-  ///
   String initialText() {
     return valueOfFirstDescendantOf(
           this,
@@ -64,19 +63,24 @@ extension FCInlineSpanExt on InlineSpan {
         '';
   }
 
-  ///
   /// Splits this span at the given character [index] and returns a list of one
   /// or two spans. If [index] is zero, or if [index] is greater than the
   /// number of characters in this span, a list containing just this span is
   /// returned. If this span was split, a list of two spans is returned,
   /// containing the two new spans.
-  ///
-  List<InlineSpan> splitAtCharacterIndex(int index) =>
+  List<InlineSpan> splitAtCharacterIndex(
+    int index, {
+    bool ignoreFloatedWidgetSpans = false,
+  }) =>
       this is SplittableMixin<InlineSpan>
           ? (this as SplittableMixin<InlineSpan>).splitAt(index)
-          : _splitAtIndex(SplitAtIndex(index));
+          : _splitAtIndex(SplitAtIndex(index),
+              ignoreFloatedWidgetSpans: ignoreFloatedWidgetSpans);
 
-  List<InlineSpan> _splitAtIndex(SplitAtIndex index) {
+  List<InlineSpan> _splitAtIndex(
+    SplitAtIndex index, {
+    required bool ignoreFloatedWidgetSpans,
+  }) {
     if (index.value == 0) return [this];
 
     final span = this;
@@ -107,7 +111,8 @@ extension FCInlineSpanExt on InlineSpan {
           ];
         }
 
-        final result = children.splitAtCharacterIndex(index);
+        final result = children.splitAtCharacterIndex(index,
+            ignoreFloatedWidgetSpans: ignoreFloatedWidgetSpans);
 
         if (index.value == 0) {
           if (result.length == 2) {
@@ -125,7 +130,13 @@ extension FCInlineSpanExt on InlineSpan {
         }
       }
     } else if (span is WidgetSpan) {
-      index.value -= 1;
+      if (!ignoreFloatedWidgetSpans &&
+          span.child is Floatable &&
+          (span.child as Floatable).float != FCFloat.none) {
+        index.value += 1;
+      } else {
+        index.value -= 1;
+      }
     } else {
       assert(false);
     }
@@ -135,21 +146,23 @@ extension FCInlineSpanExt on InlineSpan {
 }
 
 extension FCListOfInlineSpanExt on List<InlineSpan> {
-  ///
   /// Splits this list of spans at the given character [index] and returns one
   /// or two lists. If [index] is zero, or if [index] is greater than the
   /// number of characters in these spans, a list containing just this list is
   /// returned. If this list was split, an array of two lists is returned,
   /// containing the two new lists.
-  ///
-  List<List<InlineSpan>> splitAtCharacterIndex(SplitAtIndex index) {
+  List<List<InlineSpan>> splitAtCharacterIndex(
+    SplitAtIndex index, {
+    bool ignoreFloatedWidgetSpans = false,
+  }) {
     if (index.value == 0) return [this];
 
     var i = 0;
     for (final span in this) {
       final result = span is SplittableMixin<InlineSpan>
           ? (span as SplittableMixin<InlineSpan>).splitAtIndex(index)
-          : span._splitAtIndex(index);
+          : span._splitAtIndex(index,
+              ignoreFloatedWidgetSpans: ignoreFloatedWidgetSpans);
 
       if (index.value == 0) {
         if (result.length == 2) {
@@ -181,7 +194,12 @@ extension FCTextSpanExt on TextSpan {
     List<InlineSpan>? children,
     TextStyle? style,
     GestureRecognizer? recognizer,
+    MouseCursor? mouseCursor,
+    PointerEnterEventListener? onEnter,
+    PointerExitEventListener? onExit,
     String? semanticsLabel,
+    ui.Locale? locale,
+    bool? spellOut,
     bool noText = false,
     bool noChildren = false,
   }) =>
@@ -190,7 +208,12 @@ extension FCTextSpanExt on TextSpan {
         children: noChildren ? null : (children ?? this.children),
         style: style ?? this.style,
         recognizer: recognizer ?? this.recognizer,
+        mouseCursor: mouseCursor ?? this.mouseCursor,
+        onEnter: onEnter ?? this.onEnter,
+        onExit: onExit ?? this.onExit,
         semanticsLabel: semanticsLabel ?? this.semanticsLabel,
+        locale: locale ?? this.locale,
+        spellOut: spellOut ?? this.spellOut,
       );
 }
 
@@ -206,7 +229,6 @@ extension FCTextSpanExt on TextSpan {
 ///
 /// If the value of the matching node is `null` and [isValueInherited] is
 /// set to `false`, the [defaultValue] is returned.
-///
 V? valueOfFirstDescendantOf<T, V>(
   T node, {
   required bool Function(T) where,

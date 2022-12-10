@@ -13,57 +13,50 @@ class BasicRtl extends StatelessWidget {
     // const crossAxisAlignment = CrossAxisAlignment.stretch;
 
     const boxHeight = 40.0;
+    final scale =
+        (((MediaQuery.of(context).size.width / 600.0) - 1.0) * 0.6) + 1.0;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final scale = (((constraints.maxWidth / 600.0) - 1.0) * 0.6) + 1.0;
-        return DefaultTextStyle(
-          style:
-              const TextStyle(fontSize: 18, color: Colors.black, height: 1.5),
-          child: Directionality(
-            textDirection: TextDirection.rtl,
-            child: Builder(
-              builder: (context) => SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: FloatColumn(
-                    crossAxisAlignment: crossAxisAlignment,
-                    children: [
-                      const Floatable(
-                          float: FCFloat.start, child: DropCap('فقط')),
-                      Floatable(
-                          float: FCFloat.end,
-                          clear: FCClear.both,
-                          clearMinSpacing: 20,
-                          maxWidthPercentage: 0.333,
-                          child: Container(
-                              height: boxHeight, color: Colors.orange)),
-                      Floatable(
-                          float: FCFloat.start,
-                          clear: FCClear.both,
-                          clearMinSpacing: 40,
-                          maxWidthPercentage: 0.333,
-                          child: Container(
-                              height: 200,
-                              color: Colors.blue,
-                              margin:
-                                  const EdgeInsetsDirectional.only(end: 8))),
-                      Floatable(
-                          float: FCFloat.end,
-                          clear: FCClear.end,
-                          clearMinSpacing: 100,
-                          maxWidthPercentage: 0.333,
-                          child: Container(
-                              height: boxHeight, color: Colors.green)),
-                      WrappableText(text: _text, textScaleFactor: scale),
-                    ],
-                  ),
-                ),
+    return DefaultTextStyle(
+      style: const TextStyle(fontSize: 18, color: Colors.black, height: 1.5),
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Builder(
+          builder: (context) => SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: FloatColumn(
+                crossAxisAlignment: crossAxisAlignment,
+                children: [
+                  const Floatable(float: FCFloat.start, child: DropCap('فقط')),
+                  Floatable(
+                      float: FCFloat.end,
+                      clear: FCClear.both,
+                      clearMinSpacing: 20,
+                      maxWidthPercentage: 0.333,
+                      child:
+                          Container(height: boxHeight, color: Colors.orange)),
+                  Floatable(
+                      float: FCFloat.start,
+                      clear: FCClear.both,
+                      clearMinSpacing: 40,
+                      maxWidthPercentage: 0.333,
+                      child: Container(
+                          height: 200,
+                          color: Colors.blue,
+                          margin: const EdgeInsetsDirectional.only(end: 8))),
+                  Floatable(
+                      float: FCFloat.end,
+                      clear: FCClear.end,
+                      clearMinSpacing: 100,
+                      maxWidthPercentage: 0.333,
+                      child: Container(height: boxHeight, color: Colors.green)),
+                  WrappableText(text: _text, textScaleFactor: scale),
+                ],
               ),
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

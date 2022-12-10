@@ -2,8 +2,6 @@
 // Use of this source code is governed by a license that can be found in the
 // LICENSE file.
 
-import 'dart:ui' as ui show hashValues;
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart' show EdgeInsetsGeometry, EdgeInsets;
 
@@ -68,6 +66,6 @@ class FloatData {
   }
 
   @override
-  int get hashCode => ui.hashValues(FloatData, index, placeholderIndex, float,
+  int get hashCode => Object.hash(FloatData, index, placeholderIndex, float,
       clear, clearMinSpacing, margin, padding, maxWidthPercentage);
 }

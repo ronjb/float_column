@@ -2,8 +2,6 @@
 // Use of this source code is governed by a license that can be found in the
 // LICENSE file.
 
-import 'dart:ui' as ui show hashValues;
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/semantics.dart';
 
@@ -34,6 +32,6 @@ class FloatColumnPlaceholderSpanSemanticsTag extends SemanticsTag {
   }
 
   @override
-  int get hashCode => ui.hashValues(
+  int get hashCode => Object.hash(
       FloatColumnPlaceholderSpanSemanticsTag, index, placeholderIndex);
 }
