@@ -15,7 +15,14 @@ mixin SplittableMixin<T> {
   ///
   /// Classes the adopt this mixin should not implement this method.
   ///
-  List<T> splitAt(int index) => splitAtIndex(SplitAtIndex(index));
+  List<T> splitAt(
+    int index, {
+    bool ignoreFloatedWidgetSpans = false,
+  }) =>
+      splitAtIndex(
+        SplitAtIndex(index),
+        ignoreFloatedWidgetSpans: ignoreFloatedWidgetSpans,
+      );
 
   ///
   /// Splits this object at the given [index] and returns a list of one or two
@@ -34,7 +41,10 @@ mixin SplittableMixin<T> {
   ///
   /// Classes that adopt this mixin MUST implement this method.
   ///
-  List<T> splitAtIndex(SplitAtIndex index);
+  List<T> splitAtIndex(
+    SplitAtIndex index, {
+    bool ignoreFloatedWidgetSpans = false,
+  });
 }
 
 ///
@@ -55,7 +65,10 @@ class SplittableString with SplittableMixin<SplittableString> {
   final String value;
 
   @override
-  List<SplittableString> splitAtIndex(SplitAtIndex index) {
+  List<SplittableString> splitAtIndex(
+    SplitAtIndex index, {
+    bool ignoreFloatedWidgetSpans = false,
+  }) {
     // If `index.value` is zero, just return `[this]`.
     if (index.value == 0) return [this];
 

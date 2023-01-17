@@ -73,11 +73,12 @@ extension FCInlineSpanExt on InlineSpan {
     bool ignoreFloatedWidgetSpans = false,
   }) =>
       this is SplittableMixin<InlineSpan>
-          ? (this as SplittableMixin<InlineSpan>).splitAt(index)
-          : _splitAtIndex(SplitAtIndex(index),
+          ? (this as SplittableMixin<InlineSpan>).splitAt(index,
+              ignoreFloatedWidgetSpans: ignoreFloatedWidgetSpans)
+          : defaultSplitSpanAtIndex(SplitAtIndex(index),
               ignoreFloatedWidgetSpans: ignoreFloatedWidgetSpans);
 
-  List<InlineSpan> _splitAtIndex(
+  List<InlineSpan> defaultSplitSpanAtIndex(
     SplitAtIndex index, {
     required bool ignoreFloatedWidgetSpans,
   }) {
@@ -160,8 +161,9 @@ extension FCListOfInlineSpanExt on List<InlineSpan> {
     var i = 0;
     for (final span in this) {
       final result = span is SplittableMixin<InlineSpan>
-          ? (span as SplittableMixin<InlineSpan>).splitAtIndex(index)
-          : span._splitAtIndex(index,
+          ? (span as SplittableMixin<InlineSpan>).splitAtIndex(index,
+              ignoreFloatedWidgetSpans: ignoreFloatedWidgetSpans)
+          : span.defaultSplitSpanAtIndex(index,
               ignoreFloatedWidgetSpans: ignoreFloatedWidgetSpans);
 
       if (index.value == 0) {

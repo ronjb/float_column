@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.3.2] - January 17, 2022
+
+* Added optional an `bool ignoreFloatedWidgetSpans = false` parameter to the `splitAt` and `splitAtIndex` methods of `SplittableMixin`.
+
 ## [1.3.1] - December 10, 2022
 
 * Updated to remove warnings related to latest Flutter version.
