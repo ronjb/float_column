@@ -76,11 +76,19 @@ extension FCInlineSpanExt on InlineSpan {
           ? (this as SplittableMixin<InlineSpan>).splitAt(index,
               ignoreFloatedWidgetSpans: ignoreFloatedWidgetSpans)
           : defaultSplitSpanAtIndex(SplitAtIndex(index),
-              ignoreFloatedWidgetSpans: ignoreFloatedWidgetSpans);
+              ignoreFloatedWidgetSpans: ignoreFloatedWidgetSpans,
+              copyWithTextSpan: (span, text, children) => span.copyWith(
+                  text: text,
+                  children: children,
+                  noText: text == null,
+                  noChildren: children == null));
 
   List<InlineSpan> defaultSplitSpanAtIndex(
     SplitAtIndex index, {
     required bool ignoreFloatedWidgetSpans,
+    required TextSpan Function(
+            TextSpan span, String? text, List<InlineSpan>? children)
+        copyWithTextSpan,
   }) {
     if (index.value == 0) return [this];
 
@@ -92,9 +100,8 @@ extension FCInlineSpanExt on InlineSpan {
           index.value -= text.length;
         } else {
           final result = [
-            span.copyWith(
-                text: text.substring(0, index.value), noChildren: true),
-            span.copyWith(text: text.substring(index.value)),
+            copyWithTextSpan(span, text.substring(0, index.value), null),
+            copyWithTextSpan(span, text.substring(index.value), span.children),
           ];
           index.value = 0;
           return result;
@@ -107,8 +114,8 @@ extension FCInlineSpanExt on InlineSpan {
         // children.
         if (index.value == 0) {
           return [
-            span.copyWith(text: text, noChildren: true),
-            span.copyWith(noText: true),
+            copyWithTextSpan(span, text, null),
+            copyWithTextSpan(span, null, span.children),
           ];
         }
 
@@ -118,8 +125,8 @@ extension FCInlineSpanExt on InlineSpan {
         if (index.value == 0) {
           if (result.length == 2) {
             return [
-              span.copyWith(text: text, children: result.first),
-              span.copyWith(noText: true, children: result.last),
+              copyWithTextSpan(span, text, result.first),
+              copyWithTextSpan(span, null, result.last),
             ];
           } else if (result.length == 1) {
             // Only true if the number of characters in all the children was
@@ -164,7 +171,12 @@ extension FCListOfInlineSpanExt on List<InlineSpan> {
           ? (span as SplittableMixin<InlineSpan>).splitAtIndex(index,
               ignoreFloatedWidgetSpans: ignoreFloatedWidgetSpans)
           : span.defaultSplitSpanAtIndex(index,
-              ignoreFloatedWidgetSpans: ignoreFloatedWidgetSpans);
+              ignoreFloatedWidgetSpans: ignoreFloatedWidgetSpans,
+              copyWithTextSpan: (span, text, children) => span.copyWith(
+                  text: text,
+                  children: children,
+                  noText: text == null,
+                  noChildren: children == null));
 
       if (index.value == 0) {
         if (result.length == 2) {
@@ -206,8 +218,8 @@ extension FCTextSpanExt on TextSpan {
     bool noChildren = false,
   }) =>
       TextSpan(
-        text: noText ? null : (text ?? this.text),
-        children: noChildren ? null : (children ?? this.children),
+        text: text ?? (noText ? null : this.text),
+        children: children ?? (noChildren ? null : this.children),
         style: style ?? this.style,
         recognizer: recognizer ?? this.recognizer,
         mouseCursor: mouseCursor ?? this.mouseCursor,

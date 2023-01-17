@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.3.3] - January 17, 2023
+
+* Added a `copyWithTextSpan` parameter to the `defaultSplitSpanAtIndex` extension method on the `InlineSpan` class.
+
 ## [1.3.2] - January 17, 2023
 
 * Added optional an `bool ignoreFloatedWidgetSpans = false` parameter to the `splitAt` and `splitAtIndex` methods of `SplittableMixin`.
