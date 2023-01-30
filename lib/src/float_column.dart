@@ -108,7 +108,6 @@ class FloatColumn extends MultiChildRenderObjectWidget {
   /// [CrossAxisAlignment.start] and [CrossAxisAlignment.end] values.
   ///
   /// The [textDirection] (or the ambient [Directionality]) must not be null.
-  ///
   final TextDirection? textDirection;
 
   /// {@macro flutter.material.Material.clipBehavior}

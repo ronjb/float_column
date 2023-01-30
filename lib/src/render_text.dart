@@ -172,9 +172,7 @@ class WrappableTextRenderer {
   }
 }
 
-///
 /// TextRenderer
-///
 class TextRenderer with RenderTextMixin {
   TextRenderer(this._parent, this._painter, this.startingPlaceholderIndex)
       : assert(_painter.text != null);

@@ -9,10 +9,8 @@ import 'package:flutter/foundation.dart';
 
 import 'shared.dart';
 
-///
 /// Iff kDebugMode is true, prints a string representation of the object
 /// to the console.
-///
 void dmPrint(Object object) {
   if (kDebugMode) print(object); // ignore: avoid_print
 }
@@ -45,20 +43,16 @@ bool _isLTR(ui.TextDirection direction) => direction == ui.TextDirection.ltr;
 
 /// List<Rect> extensions
 extension FloatColumnExtOnListOfRect on List<ui.Rect> {
-  ///
   /// Returns the `bottom` of the bottom-most rectangle in this list that is
   /// greater than [startY], or [startY] if there is none.
-  ///
   double maxYBelow(double startY) =>
       fold<double>(startY, (max, r) => math.max(max, r.bottom));
 
   double nextY(double startY, double clearMinSpacing) =>
       maxYBelow(startY - clearMinSpacing) + clearMinSpacing;
 
-  ///
   /// Returns the `top` of the top-most rectangle in this list that is greater
   /// than or equal to [startY], or `double.infinity` if there is none.
-  ///
   double topOfTopMostRectAtOrBelow(double startY) =>
       fold<double?>(
           null,
@@ -67,7 +61,6 @@ extension FloatColumnExtOnListOfRect on List<ui.Rect> {
       double.infinity;
 }
 
-///
 /// Given a starting Y position, [startY], an optional [minX] value (defaults
 /// to 0.0), a [maxX] value, and the floated rectangle lists [floatL] and
 /// [floatR], returns the first vertical space that a rectangle with the given
@@ -76,7 +69,6 @@ extension FloatColumnExtOnListOfRect on List<ui.Rect> {
 /// The `bottom` value in the returned rectangle contains the minimum `bottom`
 /// value of the right or left floated rect that constrains the returned
 /// rectangle's width, or `double.infinity` if no floated rect constrains it.
-///
 ui.Rect findSpaceFor({
   required double startY,
   required double width,

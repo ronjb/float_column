@@ -2,11 +2,8 @@
 // Use of this source code is governed by a license that can be found in the
 // LICENSE file.
 
-///
 /// Mix this in with a class that can be split at an integer index.
-///
 mixin SplittableMixin<T> {
-  ///
   /// Splits this object at the given [index] and returns a list of one or two
   /// objects. If [index] is zero, or if [index] is greater than the number of
   /// items in this object, a list containing just this object is returned. If
@@ -14,7 +11,6 @@ mixin SplittableMixin<T> {
   /// two new split objects.
   ///
   /// Classes the adopt this mixin should not implement this method.
-  ///
   List<T> splitAt(
     int index, {
     bool ignoreFloatedWidgetSpans = false,
@@ -24,7 +20,6 @@ mixin SplittableMixin<T> {
         ignoreFloatedWidgetSpans: ignoreFloatedWidgetSpans,
       );
 
-  ///
   /// Splits this object at the given [index] and returns a list of one or two
   /// objects. If [index] is zero, or if [index] is greater than the number of
   /// items in this object, a list containing just this object is returned. If
@@ -40,25 +35,20 @@ mixin SplittableMixin<T> {
   ///      `index.value`, and the two new split objects should be returned.
   ///
   /// Classes that adopt this mixin MUST implement this method.
-  ///
   List<T> splitAtIndex(
     SplitAtIndex index, {
     bool ignoreFloatedWidgetSpans = false,
   });
 }
 
-///
 /// Mutable wrapper of an integer index that can be passed by reference.
-///
 class SplitAtIndex {
   SplitAtIndex(this.value);
   int value = 0;
 }
 
-///
 /// An example of a class that adopts the SplittableMixin -- a splittable
 /// string.
-///
 class SplittableString with SplittableMixin<SplittableString> {
   SplittableString(this.value);
 

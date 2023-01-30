@@ -56,7 +56,6 @@ class FloatColumnParentData extends ContainerBoxParentData<RenderBox> {
 ///
 /// 3. The main axis extent of the [RenderFloatColumn] is the sum of the main
 ///    axis extents of the children (subject to the incoming constraints).
-///
 class RenderFloatColumn extends RenderBox
     with
         ContainerRenderObjectMixin<RenderBox, FloatColumnParentData>,
@@ -431,10 +430,8 @@ class RenderFloatColumn extends RenderBox
     size = constraints.constrain(Size(maxWidth, totalHeight));
   }
 
-  ///
   /// Lays out the given [child] widget, and returns the y position for the
   /// next child.
-  ///
   double _layoutWidget(
     RenderBox child,
     FloatColumnParentData parentData,
@@ -540,10 +537,8 @@ class RenderFloatColumn extends RenderBox
     return yPosNext;
   }
 
-  ///
   /// Lays out the given WrappableText object, and returns the y position for
   /// the next child.
-  ///
   double _layoutWrappableText(
     WrappableText wt,
     WrappableTextRenderer wtr,
@@ -918,10 +913,8 @@ class RenderFloatColumn extends RenderBox
     return yPosNext + padding.bottom;
   }
 
-  ///
   /// Given a child's [width] and [alignment], and the [minX] and [maxX],
   /// returns the x position for the child.
-  ///
   double xPosForChildWithWidth(
       double width, CrossAxisAlignment alignment, double minX, double maxX) {
     final double childCrossPosition;
@@ -1015,18 +1008,21 @@ class RenderFloatColumn extends RenderBox
     // There's no point in drawing the children if we're empty.
     if (size.isEmpty) return;
 
+    // TODO(ron): In PR #102274, April 26th, 2022, the Flex class was updated
+    // to just have the `else` part of this if-else statement. Should we make
+    // the same change here? Needs to be tested...
     if (clipBehavior == Clip.none) {
-      _clipRectLayer = null;
+      _clipRectLayer.layer = null;
       _paintFloatColumn(context, offset);
     } else {
       // We have overflow and the clipBehavior isn't none. Clip it.
-      _clipRectLayer = context.pushClipRect(
+      _clipRectLayer.layer = context.pushClipRect(
         needsCompositing,
         offset,
         Offset.zero & size,
         _paintFloatColumn,
         clipBehavior: clipBehavior,
-        oldLayer: _clipRectLayer,
+        oldLayer: _clipRectLayer.layer,
       );
     }
 
@@ -1057,16 +1053,31 @@ class RenderFloatColumn extends RenderBox
     }());
   }
 
-  ClipRectLayer? _clipRectLayer;
+  final LayerHandle<ClipRectLayer> _clipRectLayer =
+      LayerHandle<ClipRectLayer>();
 
   @override
-  Rect? describeApproximatePaintClip(RenderObject child) =>
-      _hasOverflow ? Offset.zero & size : null;
+  void dispose() {
+    _clipRectLayer.layer = null;
+    super.dispose();
+  }
+
+  @override
+  Rect? describeApproximatePaintClip(RenderObject child) {
+    switch (clipBehavior) {
+      case Clip.none:
+        return null;
+      case Clip.hardEdge:
+      case Clip.antiAlias:
+      case Clip.antiAliasWithSaveLayer:
+        return _hasOverflow ? Offset.zero & size : null;
+    }
+  }
 
   @override
   String toStringShort() {
     var header = super.toStringShort();
-    if (_hasOverflow) header += ' OVERFLOWING';
+    if (!kReleaseMode && _hasOverflow) header += ' OVERFLOWING';
     return header;
   }
 
@@ -1134,7 +1145,7 @@ class RenderFloatColumn extends RenderBox
   // can be re-used when [assembleSemanticsNode] is called again. This ensures
   // stable ids for the [SemanticsNode]s of [TextSpan]s across
   // [assembleSemanticsNode] invocations.
-  Queue<SemanticsNode>? _cachedChildNodes;
+  LinkedHashMap<Key, SemanticsNode>? _cachedChildNodes;
 
   Map<int, List<List<InlineSpanSemanticsInformation>>>?
       _cachedCombinedSemanticsInfos;
@@ -1153,7 +1164,8 @@ class RenderFloatColumn extends RenderBox
     var currentDirection = textDirection;
     var ordinal = 0.0;
     var semanticsChildIndex = 0;
-    final newChildCache = Queue<SemanticsNode>();
+    // ignore: prefer_collection_literals
+    final newChildCache = LinkedHashMap<Key, SemanticsNode>();
 
     _cachedCombinedSemanticsInfos ??= getSemanticsInfo(combined: true);
 
@@ -1186,16 +1198,23 @@ class RenderFloatColumn extends RenderBox
                   semanticsChildren.elementAt(semanticsChildIndex);
               final parentData =
                   renderChild!.parentData! as FloatColumnParentData;
-              final rect = Rect.fromLTWH(
-                semanticsChildNode.rect.left,
-                semanticsChildNode.rect.top,
-                semanticsChildNode.rect.width * parentData.scale!,
-                semanticsChildNode.rect.height * parentData.scale!,
-              );
-              semanticsChildNode.rect = rect;
-              // dmPrint('Adding semantics node for widget $floatColumnChildIndex '
-              //     'with rect $rect');
-              newSemanticsChildren.add(semanticsChildNode);
+
+              assert(
+                  parentData.scale != null || parentData.offset == Offset.zero);
+              // parentData.scale may be null if the render object is truncated.
+              if (parentData.scale != null) {
+                final rect = Rect.fromLTWH(
+                  semanticsChildNode.rect.left,
+                  semanticsChildNode.rect.top,
+                  semanticsChildNode.rect.width * parentData.scale!,
+                  semanticsChildNode.rect.height * parentData.scale!,
+                );
+                semanticsChildNode.rect = rect;
+                // dmPrint('Adding semantics node for widget '
+                //     '$floatColumnChildIndex with rect $rect');
+                newSemanticsChildren.add(semanticsChildNode);
+              }
+
               semanticsChildIndex += 1;
             }
             renderChild = childAfter(renderChild!);
@@ -1277,18 +1296,33 @@ class RenderFloatColumn extends RenderBox
                   }
                 }
 
-                // dmPrint('Adding semantics node for span $floatColumnChildIndex:'
+                // dmPrint('Adding semantics node for span '
+                //     '$floatColumnChildIndex:'
                 //     '$textRendererIndex with rect $rect '
                 //     '${recognizer == null ? '' : 'WITH RECOGNIZER '}'
                 //     'for text "${info.text}" ');
 
-                final newChild = ((_cachedChildNodes?.isNotEmpty == true)
-                    ? _cachedChildNodes!.removeFirst()
-                    : SemanticsNode())
+                if (node.parentPaintClipRect != null) {
+                  final paintRect =
+                      node.parentPaintClipRect!.intersect(currentRect);
+                  configuration.isHidden =
+                      paintRect.isEmpty && !currentRect.isEmpty;
+                }
+                late final SemanticsNode newChild;
+                if (_cachedChildNodes?.isNotEmpty ?? false) {
+                  newChild =
+                      _cachedChildNodes!.remove(_cachedChildNodes!.keys.first)!;
+                } else {
+                  final key = UniqueKey();
+                  newChild = SemanticsNode(
+                    key: key,
+                    showOnScreen: _createShowOnScreenFor(key),
+                  );
+                }
+                newChild
                   ..updateWith(config: configuration)
                   ..rect = currentRect;
-
-                newChildCache.addLast(newChild);
+                newChildCache[newChild.key!] = newChild;
                 newSemanticsChildren.add(newChild);
               }
             }
@@ -1305,6 +1339,13 @@ class RenderFloatColumn extends RenderBox
     _cachedChildNodes = newChildCache;
     node.updateWith(
         config: config, childrenInInversePaintOrder: newSemanticsChildren);
+  }
+
+  VoidCallback? _createShowOnScreenFor(Key key) {
+    return () {
+      final node = _cachedChildNodes![key]!;
+      showOnScreen(descendant: this, rect: node.rect);
+    };
   }
 
   @override

@@ -8,11 +8,9 @@ import 'package:flutter/material.dart';
 
 import 'shared.dart';
 
-///
 /// An immutable span of inline content which forms a paragraph. Only useful as
 /// a child of a `FloatColumn`, which provides the capability of wrapping the
 /// paragraph around child widgets that "float" to the right or left.
-///
 @immutable
 class WrappableText {
   /// Creates a paragraph of rich text, that when used in a `FloatColumn` can
