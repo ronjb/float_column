@@ -1129,23 +1129,14 @@ class RenderFloatColumn extends RenderBox
     // There's no point in drawing the children if we're empty.
     if (size.isEmpty) return;
 
-    // TODO(ron): In PR #102274, April 26th, 2022, the Flex class was updated
-    // to just have the `else` part of this if-else statement. Should we make
-    // the same change here? Needs to be tested...
-    if (clipBehavior == Clip.none) {
-      _clipRectLayer.layer = null;
-      _paintFloatColumn(context, offset);
-    } else {
-      // We have overflow and the clipBehavior isn't none. Clip it.
-      _clipRectLayer.layer = context.pushClipRect(
-        needsCompositing,
-        offset,
-        Offset.zero & size,
-        _paintFloatColumn,
-        clipBehavior: clipBehavior,
-        oldLayer: _clipRectLayer.layer,
-      );
-    }
+    _clipRectLayer.layer = context.pushClipRect(
+      needsCompositing,
+      offset,
+      Offset.zero & size,
+      _paintFloatColumn,
+      clipBehavior: clipBehavior,
+      oldLayer: _clipRectLayer.layer,
+    );
 
     assert(() {
       final debugOverflowHints = <DiagnosticsNode>[

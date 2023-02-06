@@ -441,7 +441,8 @@ class SelectableFragment
 
   /// Compares two text positions.
   ///
-  /// Returns 1 if `position` < `otherPosition`, -1 if `position` > `otherPosition`,
+  /// Returns 1 if `position` < `otherPosition`,
+  /// -1 if `position` > `otherPosition`,
   /// or 0 if they are equal.
   static int _compareTextPositions(
       TextPosition position, TextPosition otherPosition) {
