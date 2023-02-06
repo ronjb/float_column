@@ -72,6 +72,8 @@ class RenderFloatColumn extends RenderBox
     required DefaultTextStyle defaultTextStyle,
     required double defaultTextScaleFactor,
     Clip clipBehavior = Clip.none,
+    SelectionRegistrar? registrar,
+    Color? selectionColor,
     List<RenderBox>? widgets,
   })  :
         // ignore: unnecessary_null_comparison
@@ -83,9 +85,11 @@ class RenderFloatColumn extends RenderBox
         _textDirection = textDirection,
         _defaultTextStyle = defaultTextStyle,
         _defaultTextScaleFactor = defaultTextScaleFactor,
-        _clipBehavior = clipBehavior {
+        _clipBehavior = clipBehavior,
+        _selectionColor = selectionColor {
     addAll(widgets);
     _updateCache();
+    this.registrar = registrar;
   }
 
   // List<Object> get textAndWidgets => _textAndWidgets;
@@ -101,7 +105,40 @@ class RenderFloatColumn extends RenderBox
     }
   }
 
+  /// Cache of [WrappableTextRenderer]s.
   final _cache = <Object, WrappableTextRenderer>{};
+
+  /// Clears the `_cache`, calling `dispose()` on each renderer in it.
+  /// This MUST be called in this object's `dispose()` method.
+  void _clearAndDisposeOfCache() {
+    for (final value in _cache.values) {
+      value.dispose();
+    }
+    _cache.clear();
+  }
+
+  /// Updates every [TextRenderer] with [registrar].
+  void _updateEveryTextRendererWith(SelectionRegistrar? registrar) {
+    // If `_needsLayout` just return. This is called again after layout.
+    if (_needsLayout) return;
+
+    /* for (final wtr in _cache.values) {
+      if (wtr.subsLength == 0) {
+        wtr.renderer.registrar = registrar;
+      } else {
+        wtr.renderer.registrar = null;
+        for (final renderer in wtr.renderers) {
+          renderer.registrar = registrar;
+        }
+      }
+    } */
+  }
+
+  /// Returns the renderer for the given [WrappableText].
+  WrappableTextRenderer _cachedRendererWith(WrappableText wt) =>
+      _cache[wt.defaultKey]!;
+
+  /// Updates the cached renderers.
   void _updateCache() {
     final keys = <Object>{};
     var needsSemanticsUpdate = false;
@@ -130,10 +167,10 @@ class RenderFloatColumn extends RenderBox
         final wtr = _cache[el.defaultKey];
         if (wtr == null) {
           _cache[el.defaultKey] = WrappableTextRenderer(this, el, textDirection,
-              defaultTextStyle, defaultTextScaleFactor);
+              defaultTextStyle, defaultTextScaleFactor, selectionColor);
         } else {
           final comparison = wtr.updateWith(el, this, textDirection,
-              defaultTextStyle, defaultTextScaleFactor);
+              defaultTextStyle, defaultTextScaleFactor, selectionColor);
 
           // If any text renderers need to layout or paint, clear some
           // semantic related caches.
@@ -149,7 +186,14 @@ class RenderFloatColumn extends RenderBox
       }
     }
 
-    _cache.removeWhere((key, value) => !keys.contains(key));
+    // Dispose of and remove unused renderers from the cache.
+    _cache.removeWhere((key, value) {
+      if (!keys.contains(key)) {
+        value.dispose();
+        return true;
+      }
+      return false;
+    });
 
     if (needsSemanticsUpdate) {
       // Calling `markNeedsSemanticsUpdate` can immediately result in a call to
@@ -184,7 +228,6 @@ class RenderFloatColumn extends RenderBox
     if (_textDirection != value) {
       _textDirection = value;
       _updateCache();
-      markNeedsLayout();
     }
   }
 
@@ -194,7 +237,6 @@ class RenderFloatColumn extends RenderBox
     if (_defaultTextStyle != value) {
       _defaultTextStyle = value;
       _updateCache();
-      markNeedsLayout();
     }
   }
 
@@ -204,8 +246,31 @@ class RenderFloatColumn extends RenderBox
     if (_defaultTextScaleFactor != value) {
       _defaultTextScaleFactor = value;
       _updateCache();
-      markNeedsLayout();
     }
+  }
+
+  /// The [SelectionRegistrar] this paragraph will be, or is, registered to.
+  SelectionRegistrar? get registrar => _registrar;
+  SelectionRegistrar? _registrar;
+  set registrar(SelectionRegistrar? value) {
+    if (value == _registrar) {
+      return;
+    }
+    _registrar = value;
+    _updateEveryTextRendererWith(registrar);
+  }
+
+  /// The color to use when painting the selection.
+  ///
+  /// Ignored if the text is not selectable (e.g. if [registrar] is null).
+  Color? get selectionColor => _selectionColor;
+  Color? _selectionColor;
+  set selectionColor(Color? value) {
+    if (_selectionColor == value) {
+      return;
+    }
+    _selectionColor = value;
+    _updateCache();
   }
 
   bool get _debugHasNecessaryDirections {
@@ -241,9 +306,12 @@ class RenderFloatColumn extends RenderBox
     }
   }
 
+  var _needsLayout = true;
+
   @override
   void markNeedsLayout() {
     super.markNeedsLayout();
+    _needsLayout = true;
     _overflow = 0.0;
   }
 
@@ -382,7 +450,7 @@ class RenderFloatColumn extends RenderBox
 
       // Else, if it is a WrappableText...
       else if (el is WrappableText) {
-        final wtr = _cache[el.defaultKey]!;
+        final wtr = _cachedRendererWith(el);
         assert(wtr.renderer.placeholderSpans.isEmpty ||
             (child != null && child.floatData.index == i));
 
@@ -428,6 +496,10 @@ class RenderFloatColumn extends RenderBox
         ? totalHeight - constraints.maxHeight
         : 0.0;
     size = constraints.constrain(Size(maxWidth, totalHeight));
+
+    // Now that `performLayout` is finished...
+    _needsLayout = false;
+    _updateEveryTextRendererWith(registrar);
   }
 
   /// Lays out the given [child] widget, and returns the y position for the
@@ -564,24 +636,25 @@ class RenderFloatColumn extends RenderBox
     }
 
     // Clear the sub-paragraph renderers for wrapping text.
-    wtr.subs.clear();
+    wtr.subsClearAndDispose();
 
     // Keep track of the indices of the floated inline widget children that
     // have already been laid out, because they can only be laid out once.
     final laidOutFloaterIndices = <int>{};
 
     TextRenderer? rendererBeforeSplit;
+    TextRenderer? removedSubTextRenderer;
 
     // Loop over this WrappableText's renderers. It starts out with the default
     // text renderer which includes all the text, but if the text needs to be
     // split because the available width and/or x position changes (because of
-    // floated widgets), the the text is split into two new renderers that
-    // replace the current renderer, and the loop is run again. This continues
-    // until all the text is laid out, using as many renderers as necessary to
-    // wrap around floated widget positions.
+    // floated widgets), the text is split into two new renderers that replace
+    // the current renderer, and the loop is run again. This continues until
+    // all the text is laid out, using as many renderers as necessary to wrap
+    // around floated widgets.
 
     var subIndex = -1;
-    while (subIndex < wtr.subs.length) {
+    while (subIndex < wtr.subsLength) {
       // Get the estimated line height for the first line. We want to find
       // space for at least the first line of text.
       final estLineHeight = wtr[subIndex].initialLineHeight();
@@ -596,19 +669,22 @@ class RenderFloatColumn extends RenderBox
         final split = textRenderer.text
             .splitAtCharacterIndex(1, ignoreFloatedWidgetSpans: true);
         if (split.length == 2) {
+          TextRenderer? removedSub;
           if (subIndex == -1) {
             subIndex = 0;
           } else {
-            wtr.subs.removeAt(subIndex);
+            removedSub = wtr.subsRemoveAt(subIndex, dispose: false);
           }
 
           final maxLines =
               textRenderer.maxLines == null ? null : textRenderer.maxLines! - 1;
 
-          wtr.subs.add(textRenderer.copyWith(
+          wtr.subsAdd(textRenderer.copyWith(
               split.last,
-              subIndex == 0 ? 0 : wtr.subs[subIndex - 1].nextPlaceholderIndex,
+              subIndex == 0 ? 0 : wtr[subIndex - 1].nextPlaceholderIndex,
               maxLines));
+
+          removedSub?.dispose();
 
           yPosNext += estLineHeight;
 
@@ -672,7 +748,7 @@ class RenderFloatColumn extends RenderBox
 
       // If this is the default (-1) or last renderer, check to see if it needs
       // to be split.
-      if (subIndex == -1 || subIndex == wtr.subs.length - 1) {
+      if (subIndex == -1 || subIndex == wtr.subsLength - 1) {
         // TODO(ron): It is possible that the estimated line height is less
         // than the actual first line height, which could cause the text in the
         // line to overlap floated widgets below it. This could be fixed by
@@ -771,21 +847,30 @@ class RenderFloatColumn extends RenderBox
                     }
                   }
 
-                  final textRenderer = wtr[subIndex];
-                  rendererBeforeSplit = textRenderer;
+                  final textRenderer = rendererBeforeSplit = wtr[subIndex];
+
+                  if (removedSubTextRenderer != null) {
+                    if (removedSubTextRenderer == textRenderer) {
+                      assert(false);
+                    } else {
+                      removedSubTextRenderer.dispose();
+                    }
+                    removedSubTextRenderer = null;
+                  }
+
                   if (subIndex == -1) {
                     subIndex = 0;
                   } else {
-                    wtr.subs.removeLast();
+                    removedSubTextRenderer = wtr.subsRemoveLast(dispose: false);
                   }
 
                   final part1 = textRenderer.copyWith(
                       split.first,
                       subIndex == 0
                           ? 0
-                          : wtr.subs[subIndex - 1].nextPlaceholderIndex,
+                          : wtr[subIndex - 1].nextPlaceholderIndex,
                       null);
-                  wtr.subs.add(part1);
+                  wtr.subsAdd(part1);
 
                   // If [maxLines] was set, [remainingLines] needs to be set to
                   // [maxLines] minus the number of lines in [part1].
@@ -802,10 +887,8 @@ class RenderFloatColumn extends RenderBox
                   // Only add [part2] if [remainingLines] is null or greater
                   // than zero.
                   if (remainingLines == null || remainingLines > 0) {
-                    wtr.subs.add(textRenderer.copyWith(
-                        split.last,
-                        wtr.subs[subIndex].nextPlaceholderIndex,
-                        remainingLines));
+                    wtr.subsAdd(textRenderer.copyWith(split.last,
+                        wtr[subIndex].nextPlaceholderIndex, remainingLines));
                   }
 
                   // Re-run the loop, keeping the index the same.
@@ -867,12 +950,26 @@ class RenderFloatColumn extends RenderBox
           // If the original renderer was split, undo the split because it
           // will likely need to be re-split differently.
           if (rendererBeforeSplit != null) {
-            assert(wtr.subs.length == subIndex + 2);
-            wtr.subs
-              ..removeLast()
-              ..removeLast()
-              ..add(rendererBeforeSplit);
+            if (wtr.subsLength == subIndex + 2 ||
+                (rendererBeforeSplit.maxLines != null &&
+                    wtr.subsLength == subIndex + 1)) {
+              while (wtr.subsLength > subIndex) {
+                wtr.subsRemoveLast();
+              }
+
+              // If `rendererBeforeSplit` is the base renderer, we don't want
+              // to add it as a sub-renderer, so just set `subIndex` back to -1.
+              if (rendererBeforeSplit == wtr.renderer) {
+                assert(wtr.subsLength == 0 && subIndex == 0);
+                subIndex = -1;
+              } else {
+                wtr.subsAdd(rendererBeforeSplit);
+              }
+            } else {
+              assert(false);
+            }
             rendererBeforeSplit = null;
+            removedSubTextRenderer = null;
           }
 
           // Re-run the loop, keeping the index the same.
@@ -880,8 +977,10 @@ class RenderFloatColumn extends RenderBox
         }
       }
 
-      // Clear this before the next loop.
+      // Clear these before the next loop.
       rendererBeforeSplit = null;
+      removedSubTextRenderer?.dispose();
+      removedSubTextRenderer = null;
 
       CrossAxisAlignment alignment() {
         switch (wtr[subIndex].textAlign) {
@@ -956,7 +1055,7 @@ class RenderFloatColumn extends RenderBox
       // Else, if it is a WrappableText
       //
       else if (el is WrappableText) {
-        final wtr = _cache[el.defaultKey]!;
+        final wtr = _cachedRendererWith(el);
 
         for (final textRenderer in wtr.renderers) {
           textRenderer.paint(context, offset);
@@ -1058,6 +1157,7 @@ class RenderFloatColumn extends RenderBox
 
   @override
   void dispose() {
+    _clearAndDisposeOfCache();
     _clipRectLayer.layer = null;
     super.dispose();
   }
@@ -1177,7 +1277,7 @@ class RenderFloatColumn extends RenderBox
 
       final el = _internalTextAndWidgets[floatColumnChildIndex];
 
-      final wtr = (el is WrappableText) ? _cache[el.defaultKey]! : null;
+      final wtr = (el is WrappableText) ? _cachedRendererWith(el) : null;
       assert(wtr == null ||
           wtr.renderer.placeholderSpans.isEmpty ||
           (renderChild != null &&
@@ -1371,7 +1471,7 @@ class RenderFloatColumn extends RenderBox
           [InlineSpanSemanticsInformation.placeholder]
         ];
       } else if (el is WrappableText) {
-        final wtr = _cache[el.defaultKey]!;
+        final wtr = _cachedRendererWith(el);
         semanticsInfo[i] = [
           for (final textRenderer in wtr.renderers)
             textRenderer.getSemanticsInfo(combined: combined)
@@ -1400,7 +1500,7 @@ class RenderFloatColumn extends RenderBox
         if (!visitor(child)) return false; //------------------------------->
         child = childAfter(child);
       } else if (el is WrappableText) {
-        final wtr = _cache[el.defaultKey]!;
+        final wtr = _cachedRendererWith(el);
         assert(wtr.renderer.placeholderSpans.isEmpty ||
             (child != null && child.floatData.index == i));
 
@@ -1434,7 +1534,7 @@ class RenderFloatColumn extends RenderBox
   bool visitInlineSpanChildren(InlineSpanVisitor visitor) {
     for (final el in _internalTextAndWidgets) {
       if (el is WrappableText) {
-        for (final textRenderer in _cache[el.defaultKey]!.renderers) {
+        for (final textRenderer in _cachedRendererWith(el).renderers) {
           if (!textRenderer.text.visitChildren(visitor)) return false;
         }
       }
@@ -1447,11 +1547,10 @@ class RenderFloatColumn extends RenderBox
   /// When [visitor] returns true, the walk continues. When [visitor]
   /// returns false, the walk ends.
   bool visitTextRendererChildren(
-    bool Function(TextRenderer textRenderer) visitor,
-  ) {
+      bool Function(TextRenderer textRenderer) visitor) {
     for (final el in _internalTextAndWidgets) {
       if (el is WrappableText) {
-        for (final textRenderer in _cache[el.defaultKey]!.renderers) {
+        for (final textRenderer in _cachedRendererWith(el).renderers) {
           if (!visitor(textRenderer)) return false;
         }
       }

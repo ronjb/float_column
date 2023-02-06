@@ -2,7 +2,7 @@
 // Use of this source code is governed by a license that can be found in the
 // LICENSE file.
 
-import 'dart:ui' as ui show PlaceholderAlignment;
+import 'dart:ui' as ui show BoxHeightStyle, BoxWidthStyle, PlaceholderAlignment;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -11,6 +11,7 @@ import 'float_data.dart';
 import 'inline_span_ext.dart';
 import 'render_float_column.dart';
 import 'render_text_mixin.dart';
+import 'selectable_fragment.dart';
 import 'shared.dart';
 import 'wrappable_text.dart';
 
@@ -26,7 +27,8 @@ class WrappableTextRenderer {
     TextDirection defaultTextDirection,
     DefaultTextStyle defaultTextStyle,
     double defaultTextScaleFactor,
-  ) : renderer = TextRenderer(
+    Color? selectionColor,
+  ) : renderer = TextRenderer._(
           parent,
           TextPainter(
             text: TextSpan(style: defaultTextStyle.style, children: [wt.text]),
@@ -45,24 +47,53 @@ class WrappableTextRenderer {
                 wt.textHeightBehavior ?? defaultTextStyle.textHeightBehavior,
           ),
           0,
+          selectionColor,
         );
 
+  void dispose() {
+    subsClearAndDispose();
+    renderer.dispose();
+  }
+
   final TextRenderer renderer;
+  final _subs = <TextRenderer>[];
 
-  final subs = <TextRenderer>[];
+  TextRenderer operator [](int index) => index == -1 ? renderer : _subs[index];
 
-  TextRenderer operator [](int index) => index == -1 ? renderer : subs[index];
+  int get subsLength => _subs.length;
+
+  void subsClearAndDispose() {
+    for (final tr in _subs) {
+      tr.dispose();
+    }
+    _subs.clear();
+  }
+
+  TextRenderer? subsRemoveAt(int i, {bool dispose = true}) {
+    final removed = _subs.removeAt(i);
+    if (dispose) {
+      // dmPrint('subsRemoveAt($i, dispose: true) uid: ${removed.uid}');
+      removed.dispose();
+      return null;
+    }
+    return removed;
+  }
+
+  TextRenderer? subsRemoveLast({bool dispose = true}) =>
+      subsRemoveAt(subsLength - 1, dispose: dispose);
+
+  void subsAdd(TextRenderer tr) => _subs.add(tr);
 
   TextDirection get textDirection => renderer._painter.textDirection!;
 
-  List<TextRenderer> get renderers => subs.isNotEmpty ? subs : [renderer];
+  List<TextRenderer> get renderers => _subs.isNotEmpty ? _subs : [renderer];
 
   TextRenderer rendererWithPlaceholder(int index) {
-    if (subs.isEmpty) {
+    if (_subs.isEmpty) {
       return renderer;
     } else {
       var i = index;
-      for (final sub in subs) {
+      for (final sub in _subs) {
         final count = sub.placeholderSpans.length;
         if (i < count) {
           return sub;
@@ -81,6 +112,7 @@ class WrappableTextRenderer {
     TextDirection defaultTextDirection,
     DefaultTextStyle defaultTextStyle,
     double defaultTextScaleFactor,
+    Color? selectionColor,
   ) {
     var needsPaint = false;
     var needsLayout = false;
@@ -93,19 +125,27 @@ class WrappableTextRenderer {
       case RenderComparison.metadata:
         break;
       case RenderComparison.paint:
-        renderer._painter.text = textSpan;
-        renderer._semanticsInfo = null;
-        renderer._cachedCombinedSemanticsInfos = null;
-        renderer.clearPlaceholderSpans();
         needsPaint = true;
         break;
       case RenderComparison.layout:
-        renderer._painter.text = textSpan;
-        renderer._semanticsInfo = null;
-        renderer._cachedCombinedSemanticsInfos = null;
-        renderer.clearPlaceholderSpans();
         needsLayout = true;
         break;
+    }
+
+    if (needsPaint || needsLayout) {
+      renderer
+        .._painter.text = textSpan
+        .._semanticsInfo = null
+        .._cachedCombinedSemanticsInfos = null
+        ..clearPlaceholderSpans();
+
+      // `subsClearAndDispose()` is called during layout, so we only need to
+      // clear semantics for `_subs` if `needsPaint`.
+      if (needsPaint) {
+        for (final sub in _subs) {
+          sub._semanticsInfo = sub._cachedCombinedSemanticsInfos = null;
+        }
+      }
     }
 
     final textAlign =
@@ -161,22 +201,46 @@ class WrappableTextRenderer {
 
     if (needsLayout) {
       parent.markNeedsLayout();
-    } else if (needsPaint) {
-      for (final sub in subs) {
-        sub._semanticsInfo = sub._cachedCombinedSemanticsInfos = null;
+      // `subsClearAndDispose()` is called during layout, so no need for any
+      // other cleanup here.
+    } else {
+      if (selectionColor != renderer.selectionColor) {
+        renderer.selectionColor = selectionColor;
+        for (final tr in renderers) {
+          tr.selectionColor = selectionColor;
+          if (!needsPaint &&
+              (tr._lastSelectableFragments?.any((e) => e.value.hasSelection) ??
+                  false)) {
+            needsPaint = true;
+          }
+        }
       }
-      parent.markNeedsPaint();
+
+      if (needsPaint) {
+        parent.markNeedsPaint();
+      }
     }
 
     return comparison;
   }
 }
 
+///
 /// TextRenderer
+///
 class TextRenderer with RenderTextMixin {
-  TextRenderer(this._parent, this._painter, this.startingPlaceholderIndex)
-      : assert(_painter.text != null);
+  TextRenderer._(
+    this._parent,
+    this._painter,
+    this.startingPlaceholderIndex,
+    this.selectionColor,
+  ) : assert(_painter.text != null) {
+    // uid = ++_instanceCount;
+  }
 
+  // static var _instanceCount = 0;
+
+  // late int uid;
   final RenderBox _parent;
   final TextPainter _painter;
   final int startingPlaceholderIndex;
@@ -223,20 +287,23 @@ class TextRenderer with RenderTextMixin {
     int startingPlaceholderIndex,
     int? maxLines,
   ) =>
-      TextRenderer(
-          _parent,
-          TextPainter(
-              text: text,
-              textAlign: _painter.textAlign,
-              textDirection: _painter.textDirection,
-              textScaleFactor: _painter.textScaleFactor,
-              maxLines: maxLines ?? _painter.maxLines,
-              ellipsis: _painter.ellipsis,
-              locale: _painter.locale,
-              strutStyle: _painter.strutStyle,
-              textWidthBasis: _painter.textWidthBasis,
-              textHeightBehavior: _painter.textHeightBehavior),
-          startingPlaceholderIndex);
+      TextRenderer._(
+        _parent,
+        TextPainter(
+          text: text,
+          textAlign: _painter.textAlign,
+          textDirection: _painter.textDirection,
+          textScaleFactor: _painter.textScaleFactor,
+          maxLines: maxLines,
+          ellipsis: _painter.ellipsis,
+          locale: _painter.locale,
+          strutStyle: _painter.strutStyle,
+          textWidthBasis: _painter.textWidthBasis,
+          textHeightBehavior: _painter.textHeightBehavior,
+        ),
+        startingPlaceholderIndex,
+        selectionColor,
+      );
 
   TextBox placeholderBoxForWidgetIndex(int index) {
     final i = index - startingPlaceholderIndex;
@@ -329,8 +396,7 @@ class TextRenderer with RenderTextMixin {
     final Size childSize;
     if (!dry) {
       if (!child.hasSize) {
-        // TODO(ron): Maybe need to call this every time in case constraints
-        // change?
+        // TODO(ron): Maybe call this every time in case constraints change?
         child.layout(
           constraints,
           parentUsesSize: true,
@@ -360,7 +426,126 @@ class TextRenderer with RenderTextMixin {
     );
   }
 
+  // ------------------------------------------------------------------------
+  // Selection related:
   //
+
+  Color? selectionColor;
+
+  // Should be null if selection is not enabled, i.e. [registrar] is null. The
+  // text splits on [PlaceholderSpan.placeholderCodeUnit], and stores each
+  // fragment in this list.
+  List<SelectableFragment>? _lastSelectableFragments;
+
+  /// The ongoing selections in this text.
+  ///
+  /// The selection does not include selections in [PlaceholderSpan] if there
+  /// are any.
+  @visibleForTesting
+  List<TextSelection> get selections {
+    if (_lastSelectableFragments == null) {
+      return const <TextSelection>[];
+    }
+    final results = <TextSelection>[];
+    for (final fragment in _lastSelectableFragments!) {
+      if (fragment.textSelectionStart != null &&
+          fragment.textSelectionEnd != null &&
+          fragment.textSelectionStart!.offset !=
+              fragment.textSelectionEnd!.offset) {
+        results.add(TextSelection(
+            baseOffset: fragment.textSelectionStart!.offset,
+            extentOffset: fragment.textSelectionEnd!.offset));
+      }
+    }
+    return results;
+  }
+
+  /// The [SelectionRegistrar] this text will be, or is, registered to.
+  SelectionRegistrar? get registrar => _registrar;
+  SelectionRegistrar? _registrar;
+  set registrar(SelectionRegistrar? value) {
+    if (value == _registrar) {
+      return;
+    }
+    _removeSelectionRegistrarSubscription();
+    _disposeSelectableFragments();
+    _registrar = value;
+
+    if (registrar != null) {
+      _lastSelectableFragments ??= _getSelectableFragments();
+      _lastSelectableFragments!.forEach(registrar!.add);
+    }
+  }
+
+  void _removeSelectionRegistrarSubscription() {
+    if (registrar == null || _lastSelectableFragments == null) {
+      return;
+    }
+    _lastSelectableFragments!.forEach(registrar!.remove);
+  }
+
+  List<SelectableFragment> _getSelectableFragments() {
+    final plainText = text.toPlainText(includeSemanticsLabels: false);
+    final result = <SelectableFragment>[];
+    var start = 0;
+    while (start < plainText.length) {
+      var end = plainText.indexOf('\uFFFC', start);
+      if (start != end) {
+        if (end == -1) end = plainText.length;
+        result.add(SelectableFragment(
+            paragraph: this,
+            range: TextRange(start: start, end: end),
+            fullText: plainText));
+        start = end;
+      }
+      start += 1;
+    }
+    return result;
+  }
+
+  void _disposeSelectableFragments() {
+    if (_lastSelectableFragments == null) {
+      return;
+    }
+    for (final fragment in _lastSelectableFragments!) {
+      fragment.dispose();
+    }
+    _lastSelectableFragments = null;
+  }
+
+  void markNeedsLayout() {
+    _lastSelectableFragments
+        ?.forEach((element) => element.didChangeParagraphLayout());
+    _parent.markNeedsLayout();
+  }
+
+  void markNeedsPaint() {
+    _parent.markNeedsPaint();
+  }
+
+  void dispose() {
+    _removeSelectionRegistrarSubscription();
+
+    // `_lastSelectableFragments` may hold references to this TextRenderer.
+    // Release them manually to avoid retain cycles.
+    _disposeSelectableFragments();
+
+    // TODO(ron): [RenderParagraph] `dispose()` does not call
+    // `_disposeSelectableFragments()`, it just sets `_lastSelectableFragments`
+    // to `null`. Seems like a bug, but if we see problems, that may be why.
+
+    _painter.dispose();
+  }
+
+  bool get attached => _parent.attached;
+
+  Matrix4 getTransformTo(RenderObject? ancestor) =>
+      _parent.getTransformTo(ancestor);
+
+  Offset globalToLocal(Offset point, {RenderObject? ancestor}) =>
+      _parent.globalToLocal(point, ancestor: ancestor);
+
+  // ------------------------------------------------------------------------
   // Semantics related:
   //
 
@@ -379,13 +564,18 @@ class TextRenderer with RenderTextMixin {
     }
   }
 
-  //
-  // RenderTextAdapter overrides:
+  // ------------------------------------------------------------------------
+  // RenderTextMixin overrides:
   //
 
   @override
-  List<TextBox> getBoxesForSelection(TextSelection selection) =>
-      _painter.getBoxesForSelection(selection);
+  List<TextBox> getBoxesForSelection(
+    TextSelection selection, {
+    ui.BoxHeightStyle boxHeightStyle = ui.BoxHeightStyle.tight,
+    ui.BoxWidthStyle boxWidthStyle = ui.BoxWidthStyle.tight,
+  }) =>
+      _painter.getBoxesForSelection(selection,
+          boxHeightStyle: boxHeightStyle, boxWidthStyle: boxWidthStyle);
 
   @override
   double? getFullHeightForCaret(TextPosition position) =>
@@ -429,6 +619,9 @@ class TextRenderer with RenderTextMixin {
 
   @override
   TextDirection get textDirection => _painter.textDirection!;
+
+  @override
+  bool get softWrap => true;
 
   @override
   TextHeightBehavior? get textHeightBehavior => _painter.textHeightBehavior;

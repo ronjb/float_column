@@ -34,6 +34,8 @@ class FloatColumn extends MultiChildRenderObjectWidget {
     this.crossAxisAlignment = CrossAxisAlignment.start,
     this.textDirection,
     this.clipBehavior = Clip.none,
+    this.selectionRegistrar,
+    this.selectionColor,
     List<Object> children = const <Object>[],
   })  :
         // ignore: unnecessary_null_comparison
@@ -115,9 +117,22 @@ class FloatColumn extends MultiChildRenderObjectWidget {
   /// Defaults to [Clip.none].
   final Clip clipBehavior;
 
+  /// The [SelectionRegistrar] this [FloatColumn] is subscribed to.
+  ///
+  /// If this is `null`, `SelectionContainer.maybeOf(context)` is used to
+  /// get the [SelectionRegistrar] from the context.
+  final SelectionRegistrar? selectionRegistrar;
+
+  /// The color to use when painting the selection.
+  ///
+  /// This is ignored if `SelectionContainer.maybeOf(context)` and
+  /// [selectionRegistrar] are null.
+  final Color? selectionColor;
+
   @override
   RenderFloatColumn createRenderObject(BuildContext context) {
     assert(textDirection != null || debugCheckHasDirectionality(context));
+    final registrar = selectionRegistrar ?? SelectionContainer.maybeOf(context);
     return RenderFloatColumn(
       _textAndWidgets,
       crossAxisAlignment: crossAxisAlignment,
@@ -125,19 +140,32 @@ class FloatColumn extends MultiChildRenderObjectWidget {
       defaultTextStyle: DefaultTextStyle.of(context),
       defaultTextScaleFactor: MediaQuery.textScaleFactorOf(context),
       clipBehavior: clipBehavior,
+      registrar: registrar,
+      selectionColor: registrar == null
+          ? null
+          : selectionColor ??
+              DefaultSelectionStyle.of(context).selectionColor ??
+              DefaultSelectionStyle.defaultColor,
     );
   }
 
   @override
   void updateRenderObject(
       BuildContext context, covariant RenderFloatColumn renderObject) {
+    final registrar = selectionRegistrar ?? SelectionContainer.maybeOf(context);
     renderObject
       ..textAndWidgets = _textAndWidgets
       ..crossAxisAlignment = crossAxisAlignment
       ..textDirection = textDirection ?? Directionality.of(context)
       ..defaultTextStyle = DefaultTextStyle.of(context)
       ..defaultTextScaleFactor = MediaQuery.textScaleFactorOf(context)
-      ..clipBehavior = clipBehavior;
+      ..clipBehavior = clipBehavior
+      ..registrar = registrar
+      ..selectionColor = registrar == null
+          ? null
+          : selectionColor ??
+              DefaultSelectionStyle.of(context).selectionColor ??
+              DefaultSelectionStyle.defaultColor;
   }
 
   @override

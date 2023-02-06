@@ -2,12 +2,14 @@
 // Use of this source code is governed by a license that can be found in the
 // LICENSE file.
 
+import 'dart:ui' as ui show BoxHeightStyle, BoxWidthStyle;
+
 import 'package:flutter/rendering.dart';
 
-///
+// ignore_for_file: comment_references
+
 /// Mix this into classes that should mirror the functionality of
 /// RenderParagraph.
-///
 mixin RenderTextMixin {
   /// The render box containing this text.
   RenderBox get renderBox;
@@ -36,6 +38,15 @@ mixin RenderTextMixin {
   /// This must not be null.
   TextDirection get textDirection;
 
+  /// Whether the text should break at soft line breaks.
+  ///
+  /// If false, the glyphs in the text will be positioned as if there was
+  /// unlimited horizontal space.
+  ///
+  /// If [softWrap] is false, [overflow] and [textAlign] may have unexpected
+  /// effects.
+  bool get softWrap;
+
   /// The number of font pixels for each logical pixel.
   ///
   /// For example, if the text scale factor is 1.5, text will be 50% larger
@@ -62,7 +73,7 @@ mixin RenderTextMixin {
   /// {@macro flutter.painting.textPainter.textWidthBasis}
   TextWidthBasis get textWidthBasis;
 
-  /// {@macro flutter.dart:ui.textHeightBehavior}
+  /// {@macro dart.ui.textHeightBehavior}
   TextHeightBehavior? get textHeightBehavior;
 
   /// Returns the offset at which to paint the caret.
@@ -77,12 +88,26 @@ mixin RenderTextMixin {
 
   /// Returns a list of rects that bound the given selection.
   ///
-  /// A given selection might have more than one rect if this text painter
-  /// contains bidirectional text because logically contiguous text might not
-  /// be visually contiguous.
+  /// The [boxHeightStyle] and [boxWidthStyle] arguments may be used to select
+  /// the shape of the [TextBox]es. These properties default to
+  /// [ui.BoxHeightStyle.tight] and [ui.BoxWidthStyle.tight] respectively and
+  /// must not be null.
   ///
-  /// Valid only after `layout`.
-  List<TextBox> getBoxesForSelection(TextSelection selection);
+  /// A given selection might have more than one rect if the [RenderParagraph]
+  /// contains multiple [InlineSpan]s or bidirectional text, because logically
+  /// contiguous text might not be visually contiguous.
+  ///
+  /// Valid only after [layout].
+  ///
+  /// See also:
+  ///
+  ///  * [TextPainter.getBoxesForSelection], the method in TextPainter to get
+  ///    the equivalent boxes.
+  List<TextBox> getBoxesForSelection(
+    TextSelection selection, {
+    ui.BoxHeightStyle boxHeightStyle = ui.BoxHeightStyle.tight,
+    ui.BoxWidthStyle boxWidthStyle = ui.BoxWidthStyle.tight,
+  });
 
   /// Returns the position within the text for the given pixel offset.
   ///
@@ -125,17 +150,20 @@ mixin RenderTextMixin {
   void paint(PaintingContext context, Offset offset);
 }
 
-///
 /// Adapts a [RenderParagraph] to support [RenderTextMixin].
-///
 class RenderParagraphAdapter with RenderTextMixin {
   RenderParagraphAdapter(this.rp);
 
   final RenderParagraph rp;
 
   @override
-  List<TextBox> getBoxesForSelection(TextSelection selection) =>
-      rp.getBoxesForSelection(selection);
+  List<TextBox> getBoxesForSelection(
+    TextSelection selection, {
+    ui.BoxHeightStyle boxHeightStyle = ui.BoxHeightStyle.tight,
+    ui.BoxWidthStyle boxWidthStyle = ui.BoxWidthStyle.tight,
+  }) =>
+      rp.getBoxesForSelection(selection,
+          boxHeightStyle: boxHeightStyle, boxWidthStyle: boxWidthStyle);
 
   @override
   double? getFullHeightForCaret(TextPosition position) =>
@@ -179,6 +207,9 @@ class RenderParagraphAdapter with RenderTextMixin {
 
   @override
   TextDirection get textDirection => rp.textDirection;
+
+  @override
+  bool get softWrap => rp.softWrap;
 
   @override
   TextHeightBehavior? get textHeightBehavior => rp.textHeightBehavior;
