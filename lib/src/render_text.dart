@@ -513,10 +513,9 @@ class TextRenderer with RenderTextMixin {
     _lastSelectableFragments = null;
   }
 
-  void markNeedsLayout() {
+  void didChangeParagraphLayout() {
     _lastSelectableFragments
         ?.forEach((element) => element.didChangeParagraphLayout());
-    _parent.markNeedsLayout();
   }
 
   void markNeedsPaint() {
@@ -638,6 +637,12 @@ class TextRenderer with RenderTextMixin {
   @override
   void paint(PaintingContext context, Offset offset) {
     _painter.paint(context.canvas, this.offset + offset);
+
+    if (_lastSelectableFragments != null) {
+      for (final fragment in _lastSelectableFragments!) {
+        fragment.paint(context, offset);
+      }
+    }
   }
 
   @override

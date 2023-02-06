@@ -45,7 +45,7 @@ class MyHomePage extends StatelessWidget {
       length: tabs.length,
       child: Scaffold(
         appBar: AppBar(title: TabBar(tabs: tabsTitles, isScrollable: true)),
-        body: TabBarView(children: tabViews),
+        body: SelectionArea(child: TabBarView(children: tabViews)),
       ),
     );
   }

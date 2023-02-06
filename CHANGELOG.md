@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.4.0] - February 6, 2023
+
+* Added support for Flutter's selection functionality.
+
 ## [1.3.3] - January 17, 2023
 
 * Added a `copyWithTextSpan` parameter to the `defaultSplitSpanAtIndex` extension method on the `InlineSpan` class.

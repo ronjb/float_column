@@ -122,7 +122,7 @@ class RenderFloatColumn extends RenderBox
     // If `_needsLayout` just return. This is called again after layout.
     if (_needsLayout) return;
 
-    /* for (final wtr in _cache.values) {
+    for (final wtr in _cache.values) {
       if (wtr.subsLength == 0) {
         wtr.renderer.registrar = registrar;
       } else {
@@ -131,15 +131,30 @@ class RenderFloatColumn extends RenderBox
           renderer.registrar = registrar;
         }
       }
-    } */
+    }
+  }
+
+  void _didChangeParagraphLayout() {
+    // If `_isUpdatingCache` just return. This is called again afterwards.
+    if (_isUpdatingCache) return;
+
+    for (final wtr in _cache.values) {
+      for (final renderer in wtr.renderers) {
+        renderer.didChangeParagraphLayout();
+      }
+    }
   }
 
   /// Returns the renderer for the given [WrappableText].
   WrappableTextRenderer _cachedRendererWith(WrappableText wt) =>
       _cache[wt.defaultKey]!;
 
+  var _isUpdatingCache = false;
+
   /// Updates the cached renderers.
   void _updateCache() {
+    _isUpdatingCache = true;
+
     final keys = <Object>{};
     var needsSemanticsUpdate = false;
     for (var i = 0; i < _internalTextAndWidgets.length; i++) {
@@ -194,6 +209,12 @@ class RenderFloatColumn extends RenderBox
       }
       return false;
     });
+
+    _isUpdatingCache = false;
+
+    if (_needsLayout) {
+      _didChangeParagraphLayout();
+    }
 
     if (needsSemanticsUpdate) {
       // Calling `markNeedsSemanticsUpdate` can immediately result in a call to
@@ -310,9 +331,10 @@ class RenderFloatColumn extends RenderBox
 
   @override
   void markNeedsLayout() {
-    super.markNeedsLayout();
     _needsLayout = true;
     _overflow = 0.0;
+    _didChangeParagraphLayout();
+    super.markNeedsLayout();
   }
 
   @override
@@ -1349,8 +1371,8 @@ class RenderFloatColumn extends RenderBox
                 // Any of the text boxes may have had infinite dimensions.
                 // We shouldn't pass infinite dimensions up to the bridges.
                 rect = Rect.fromLTWH(
-                  math.max(0.0, rect.left),
-                  math.max(0.0, rect.top),
+                  math.max(0.0, rect.left + textRenderer.offset.dx),
+                  math.max(0.0, rect.top + textRenderer.offset.dy),
                   math.min(rect.width, constraints.maxWidth),
                   math.min(rect.height, constraints.maxHeight),
                 );

@@ -176,8 +176,8 @@ class SelectableFragment
       direction: paragraph.textDirection,
     );
 
-    final position =
-        _clampTextPosition(paragraph.getPositionForOffset(adjustedOffset));
+    final position = _clampTextPosition(
+        paragraph.getPositionForOffset(adjustedOffset - paragraph.offset));
     _setSelectionPosition(position, isEnd: isEnd);
     if (position.offset == range.end) {
       return SelectionResult.next;
@@ -227,8 +227,8 @@ class SelectableFragment
   }
 
   SelectionResult _handleSelectWord(Offset globalPosition) {
-    final position =
-        paragraph.getPositionForOffset(paragraph.globalToLocal(globalPosition));
+    final position = paragraph.getPositionForOffset(
+        paragraph.globalToLocal(globalPosition) - paragraph.offset);
     if (_positionIsWithinCurrentSelection(position)) {
       return SelectionResult.end;
     }
@@ -297,8 +297,8 @@ class SelectableFragment
           edgeOffsetInParagraphCoordinates.dy -
               paragraph.textPainter.preferredLineHeight / 2,
         );
-        newPosition = paragraph
-            .getPositionForOffset(baselineOffsetInParagraphCoordinates);
+        newPosition = paragraph.getPositionForOffset(
+            baselineOffsetInParagraphCoordinates - paragraph.offset);
         result = SelectionResult.end;
         break;
     }
@@ -382,10 +382,11 @@ class SelectableFragment
       {required double horizontalBaselineInParagraphCoordinates,
       required bool below}) {
     final lines = paragraph._computeLineMetrics();
-    final offset = paragraph.getOffsetForCaret(position, Rect.zero);
+    final offset =
+        paragraph.getOffsetForCaret(position, Rect.zero) + paragraph.offset;
     var currentLine = lines.length - 1;
     for (final lineMetrics in lines) {
-      if (lineMetrics.baseline > offset.dy) {
+      if (lineMetrics.baseline + paragraph.offset.dy > offset.dy) {
         currentLine = lineMetrics.lineNumber;
         break;
       }
@@ -399,7 +400,9 @@ class SelectableFragment
     } else {
       final newLine = below ? currentLine + 1 : currentLine - 1;
       newPosition = _clampTextPosition(paragraph.getPositionForOffset(Offset(
-          horizontalBaselineInParagraphCoordinates, lines[newLine].baseline)));
+              horizontalBaselineInParagraphCoordinates,
+              lines[newLine].baseline + paragraph.offset.dy) -
+          paragraph.offset));
     }
     final SelectionResult result;
     if (newPosition.offset == range.start) {
@@ -490,7 +493,7 @@ class SelectableFragment
         for (var index = 1; index < boxes.length; index += 1) {
           result = result.expandToInclude(boxes[index].toRect());
         }
-        _cachedRect = result;
+        _cachedRect = result.shift(paragraph.offset);
       } else {
         final offset =
             paragraph._getOffsetForPosition(TextPosition(offset: range.start));
@@ -525,7 +528,9 @@ class SelectableFragment
         ..style = PaintingStyle.fill
         ..color = paragraph.selectionColor!;
       for (final textBox in paragraph.getBoxesForSelection(selection)) {
-        context.canvas.drawRect(textBox.toRect().shift(offset), selectionPaint);
+        context.canvas.drawRect(
+            textBox.toRect().shift(paragraph.offset).shift(offset),
+            selectionPaint);
       }
     }
     final transform = getTransformToParagraph();
@@ -583,6 +588,7 @@ class SelectableFragment
 extension on TextRenderer {
   Offset _getOffsetForPosition(TextPosition position) {
     return getOffsetForCaret(position, Rect.zero) +
+        offset +
         Offset(0, getFullHeightForCaret(position) ?? 0.0);
   }
 
@@ -605,9 +611,9 @@ extension on TextRenderer {
 
   TextPosition _getTextPositionVertical(
       TextPosition position, double verticalOffset) {
-    final caretOffset = textPainter.getOffsetForCaret(position, Rect.zero);
+    final caretOffset = getOffsetForCaret(position, Rect.zero) + offset;
     final caretOffsetTranslated = caretOffset.translate(0.0, verticalOffset);
-    return textPainter.getPositionForOffset(caretOffsetTranslated);
+    return getPositionForOffset(caretOffsetTranslated - offset);
   }
 
   List<ui.LineMetrics> _computeLineMetrics() {
