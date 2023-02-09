@@ -256,7 +256,7 @@ class TextRenderer with RenderTextMixin {
 
   Rect get textRect {
     final size = textSize;
-    return Rect.fromLTWH(_offset!.dx, _offset!.dy, size.width, size.height);
+    return Rect.fromLTWH(offset.dx, offset.dy, size.width, size.height);
   }
 
   int get nextPlaceholderIndex =>
