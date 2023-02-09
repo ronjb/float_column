@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [1.4.1] - February 8, 2023
+
+* Updated how text renderers are cached for quicker access.
+* Some code cleanup to RenderFloatColumn `hitTestChildren` and other code cleanup.
+
 ## [1.4.0] - February 6, 2023
 
 * Added support for Flutter's selection functionality.
