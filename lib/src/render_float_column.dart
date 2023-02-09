@@ -80,7 +80,6 @@ class RenderFloatColumn extends RenderBox
         assert(crossAxisAlignment != null),
         // ignore: unnecessary_null_comparison
         assert(clipBehavior != null),
-        _internalTextAndWidgets = _textAndWidgets,
         _crossAxisAlignment = crossAxisAlignment,
         _textDirection = textDirection,
         _defaultTextStyle = defaultTextStyle,
@@ -94,24 +93,23 @@ class RenderFloatColumn extends RenderBox
 
   // List<Object> get textAndWidgets => _textAndWidgets;
   List<Object> _textAndWidgets;
-  List<Object> _internalTextAndWidgets;
   // ignore: avoid_setters_without_getters
   set textAndWidgets(List<Object> value) {
     assert(value != null); // ignore: unnecessary_null_comparison
     if (_textAndWidgets != value) {
-      _internalTextAndWidgets = _textAndWidgets = value;
+      _textAndWidgets = value;
       _updateCache();
       markNeedsLayout();
     }
   }
 
   /// Cache of [WrappableTextRenderer]s.
-  final _cache = <Object, WrappableTextRenderer>{};
+  final _cache = <WrappableTextRenderer>[];
 
   /// Clears the `_cache`, calling `dispose()` on each renderer in it.
   /// This MUST be called in this object's `dispose()` method.
   void _clearAndDisposeOfCache() {
-    for (final value in _cache.values) {
+    for (final value in _cache) {
       value.dispose();
     }
     _cache.clear();
@@ -122,7 +120,7 @@ class RenderFloatColumn extends RenderBox
     // If `_needsLayout` just return. This is called again after layout.
     if (_needsLayout) return;
 
-    for (final wtr in _cache.values) {
+    for (final wtr in _cache) {
       if (wtr.subsLength == 0) {
         wtr.renderer.registrar = registrar;
       } else {
@@ -138,16 +136,12 @@ class RenderFloatColumn extends RenderBox
     // If `_isUpdatingCache` just return. This is called again afterwards.
     if (_isUpdatingCache) return;
 
-    for (final wtr in _cache.values) {
+    for (final wtr in _cache) {
       for (final renderer in wtr.renderers) {
         renderer.didChangeParagraphLayout();
       }
     }
   }
-
-  /// Returns the renderer for the given [WrappableText].
-  WrappableTextRenderer _cachedRendererWith(WrappableText wt) =>
-      _cache[wt.defaultKey]!;
 
   var _isUpdatingCache = false;
 
@@ -155,34 +149,17 @@ class RenderFloatColumn extends RenderBox
   void _updateCache() {
     _isUpdatingCache = true;
 
-    final keys = <Object>{};
+    var cacheIndex = 0;
     var needsSemanticsUpdate = false;
-    for (var i = 0; i < _internalTextAndWidgets.length; i++) {
-      var el = _internalTextAndWidgets[i];
+    for (var i = 0; i < _textAndWidgets.length; i++) {
+      final el = _textAndWidgets[i];
       if (el is WrappableText) {
-        // The key MUST be unique, so if it is not, make it so...
-        if (keys.contains(el.defaultKey)) {
-          var k = -i;
-          var newKey = ValueKey(k);
-          while (keys.contains(newKey)) {
-            newKey = ValueKey(--k);
-          }
-          el = el.copyWith(key: newKey);
+        final wtr = cacheIndex < _cache.length ? _cache[cacheIndex] : null;
+        cacheIndex++;
 
-          // Before we make a change to `_internalTextAndWidgets`, make sure it
-          // is a copy.
-          if (identical(_internalTextAndWidgets, _textAndWidgets)) {
-            _internalTextAndWidgets = List<Object>.of(_textAndWidgets);
-          }
-
-          _internalTextAndWidgets[i] = el;
-        }
-
-        keys.add(el.defaultKey);
-        final wtr = _cache[el.defaultKey];
         if (wtr == null) {
-          _cache[el.defaultKey] = WrappableTextRenderer(this, el, textDirection,
-              defaultTextStyle, defaultTextScaleFactor, selectionColor);
+          _cache.add(WrappableTextRenderer(this, el, textDirection,
+              defaultTextStyle, defaultTextScaleFactor, selectionColor));
         } else {
           final comparison = wtr.updateWith(el, this, textDirection,
               defaultTextStyle, defaultTextScaleFactor, selectionColor);
@@ -202,13 +179,9 @@ class RenderFloatColumn extends RenderBox
     }
 
     // Dispose of and remove unused renderers from the cache.
-    _cache.removeWhere((key, value) {
-      if (!keys.contains(key)) {
-        value.dispose();
-        return true;
-      }
-      return false;
-    });
+    while (_cache.length > cacheIndex) {
+      _cache.removeLast().dispose();
+    }
 
     _isUpdatingCache = false;
 
@@ -438,6 +411,7 @@ class RenderFloatColumn extends RenderBox
     final floatR = <Rect>[];
 
     var child = firstChild;
+    var textIndex = 0;
 
     // This gets updated to the y position for the next child.
     var yPosNext = 0.0;
@@ -446,7 +420,7 @@ class RenderFloatColumn extends RenderBox
     var prevBottomMargin = 0.0;
 
     var i = 0;
-    for (final el in _internalTextAndWidgets) {
+    for (final el in _textAndWidgets) {
       // If it is a Widget...
       if (el is Widget) {
         final floatData = child!.floatData;
@@ -472,7 +446,8 @@ class RenderFloatColumn extends RenderBox
 
       // Else, if it is a WrappableText...
       else if (el is WrappableText) {
-        final wtr = _cachedRendererWith(el);
+        final wtr = _cache[textIndex];
+        textIndex++;
         assert(wtr.renderer.placeholderSpans.isEmpty ||
             (child != null && child.floatData.index == i));
 
@@ -1059,8 +1034,9 @@ class RenderFloatColumn extends RenderBox
 
   void _paintFloatColumn(PaintingContext context, Offset offset) {
     var child = firstChild;
+    var textIndex = 0;
     var i = 0;
-    for (final el in _internalTextAndWidgets) {
+    for (final el in _textAndWidgets) {
       //---------------------------------------------------------------------
       // If it is a Widget
       //
@@ -1077,7 +1053,8 @@ class RenderFloatColumn extends RenderBox
       // Else, if it is a WrappableText
       //
       else if (el is WrappableText) {
-        final wtr = _cachedRendererWith(el);
+        final wtr = _cache[textIndex];
+        textIndex++;
 
         for (final textRenderer in wtr.renderers) {
           textRenderer.paint(context, offset);
@@ -1273,6 +1250,7 @@ class RenderFloatColumn extends RenderBox
     final newSemanticsChildren = <SemanticsNode>[];
 
     var renderChild = firstChild;
+    var textIndex = 0;
 
     var currentDirection = textDirection;
     var ordinal = 0.0;
@@ -1288,9 +1266,9 @@ class RenderFloatColumn extends RenderBox
       final floatColumnChildIndex = entry.key;
       var placeholderIndex = 0;
 
-      final el = _internalTextAndWidgets[floatColumnChildIndex];
+      final el = _textAndWidgets[floatColumnChildIndex];
 
-      final wtr = (el is WrappableText) ? _cachedRendererWith(el) : null;
+      final wtr = (el is WrappableText) ? _cache[textIndex++] : null;
       assert(wtr == null ||
           wtr.renderer.placeholderSpans.isEmpty ||
           (renderChild != null &&
@@ -1476,15 +1454,17 @@ class RenderFloatColumn extends RenderBox
   }) {
     final semanticsInfo = <int, List<List<InlineSpanSemanticsInformation>>>{};
 
+    var textIndex = 0;
+
     var i = 0;
-    for (final el in _internalTextAndWidgets) {
+    for (final el in _textAndWidgets) {
       if (el is Widget) {
         // Add a placeholder for each regular child widget.
         semanticsInfo[i] = [
           [InlineSpanSemanticsInformation.placeholder]
         ];
       } else if (el is WrappableText) {
-        final wtr = _cachedRendererWith(el);
+        final wtr = _cache[textIndex++];
         semanticsInfo[i] = [
           for (final textRenderer in wtr.renderers)
             textRenderer.getSemanticsInfo(combined: combined)
@@ -1502,9 +1482,10 @@ class RenderFloatColumn extends RenderBox
   @override
   bool visitChildrenOfAnyType(CancelableObjectVisitor visitor) {
     var child = firstChild;
+    var textIndex = 0;
     var i = 0;
 
-    for (final el in _internalTextAndWidgets) {
+    for (final el in _textAndWidgets) {
       if (el is Widget) {
         final floatData = child!.floatData;
         assert(floatData.index == i && floatData.placeholderIndex == 0);
@@ -1513,7 +1494,7 @@ class RenderFloatColumn extends RenderBox
         if (!visitor(child)) return false; //------------------------------->
         child = childAfter(child);
       } else if (el is WrappableText) {
-        final wtr = _cachedRendererWith(el);
+        final wtr = _cache[textIndex++];
         assert(wtr.renderer.placeholderSpans.isEmpty ||
             (child != null && child.floatData.index == i));
 
@@ -1545,9 +1526,11 @@ class RenderFloatColumn extends RenderBox
   /// When [visitor] returns true, the walk continues. When [visitor]
   /// returns false, the walk ends.
   bool visitInlineSpanChildren(InlineSpanVisitor visitor) {
-    for (final el in _internalTextAndWidgets) {
+    var textIndex = 0;
+    for (final el in _textAndWidgets) {
       if (el is WrappableText) {
-        for (final textRenderer in _cachedRendererWith(el).renderers) {
+        final wtr = _cache[textIndex++];
+        for (final textRenderer in wtr.renderers) {
           if (!textRenderer.text.visitChildren(visitor)) return false;
         }
       }
@@ -1561,9 +1544,11 @@ class RenderFloatColumn extends RenderBox
   /// returns false, the walk ends.
   bool visitTextRendererChildren(
       bool Function(TextRenderer textRenderer) visitor) {
-    for (final el in _internalTextAndWidgets) {
+    var textIndex = 0;
+    for (final el in _textAndWidgets) {
       if (el is WrappableText) {
-        for (final textRenderer in _cachedRendererWith(el).renderers) {
+        final wtr = _cache[textIndex++];
+        for (final textRenderer in wtr.renderers) {
           if (!visitor(textRenderer)) return false;
         }
       }
@@ -1579,10 +1564,6 @@ extension on RenderBox {
 extension on RenderFloatColumn {
   bool get isLTR => textDirection == TextDirection.ltr;
   bool get isRTL => textDirection == TextDirection.rtl;
-}
-
-extension on WrappableText {
-  Key get defaultKey => key ?? ValueKey(this);
 }
 
 extension _PrivateExtOnMapOfListOfList<S, T> on Map<S, List<List<T>>> {
