@@ -322,7 +322,7 @@ class RenderFloatColumn extends RenderBox
 
   @override
   bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
-    var hitText = false;
+    var didHitChild = false;
 
     // First, hit test text renderers.
     visitTextRendererChildren((tr) {
@@ -332,11 +332,11 @@ class RenderFloatColumn extends RenderBox
         final span = tr.text.getSpanForPosition(textPosition);
         if (span != null && span is HitTestTarget) {
           result.add(HitTestEntry(span as HitTestTarget));
-          hitText = true;
+          didHitChild = true;
         }
       }
 
-      return true; // !hitText; // Return false to stop the walk if hitText is true;
+      return true; // Keep walking the list of text renderers...
     });
 
     // Finally, hit test render object children.
@@ -352,29 +352,21 @@ class RenderFloatColumn extends RenderBox
           textParentData.scale,
           textParentData.scale,
         );
-      final hitChild = result.addWithPaintTransform(
-        transform: transform,
-        position: position,
-        hitTest: (result, transformed) {
-          assert(() {
-            final manualPosition =
-                (position - textParentData.offset) / textParentData.scale!;
-            return (transformed.dx - manualPosition.dx).abs() <
-                    precisionErrorTolerance &&
-                (transformed.dy - manualPosition.dy).abs() <
-                    precisionErrorTolerance;
-          }());
-          return child!.hitTest(result, position: transformed);
-        },
-      );
+      if (result.addWithPaintTransform(
+          transform: transform,
+          position: position,
+          hitTest: (result, transformed) =>
+              child!.hitTest(result, position: transformed))) {
+        didHitChild = true;
 
-      // Stop at the first child hit.
-      if (hitChild) return true;
+        // Stop at the first child hit.
+        break;
+      }
 
       child = childAfter(child);
     }
 
-    return hitText;
+    return didHitChild;
   }
 
   @override
