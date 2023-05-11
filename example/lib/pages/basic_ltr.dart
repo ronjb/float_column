@@ -44,7 +44,7 @@ class Img extends StatelessWidget {
         Container(
           color: Colors.black,
           padding: const EdgeInsets.all(4),
-          child: Image(image: AssetImage(assetName)),
+          child: Image(image: AssetImage(assetName), semanticLabel: title),
         ),
         if (title?.isNotEmpty ?? false)
           Text(

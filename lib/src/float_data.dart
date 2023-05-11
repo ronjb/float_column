@@ -3,7 +3,7 @@
 // LICENSE file.
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/painting.dart' show EdgeInsetsGeometry, EdgeInsets;
+import 'package:flutter/painting.dart' show EdgeInsets, EdgeInsetsGeometry;
 
 import 'floatable.dart';
 import 'shared.dart';

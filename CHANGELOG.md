@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [2.0.0] - May 11, 2023
+
+* Updated to support Dart 3 and Flutter 3.10.0.
+
 ## [1.4.1] - February 8, 2023
 
 * Updated how text renderers are cached for quicker access.

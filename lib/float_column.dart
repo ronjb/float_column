@@ -2,8 +2,6 @@
 // Use of this source code is governed by a license that can be found in the
 // LICENSE file.
 
-library float_column;
-
 export 'src/float_column.dart';
 export 'src/floatable.dart';
 export 'src/inline_span_ext.dart';
