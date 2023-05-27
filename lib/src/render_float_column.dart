@@ -858,7 +858,7 @@ class RenderFloatColumn extends RenderBox
                       subIndex == 0
                           ? 0
                           : wtr[subIndex - 1].nextPlaceholderIndex,
-                      null);
+                      textRenderer.maxLines);
                   wtr.subsAdd(part1);
 
                   // If [maxLines] was set, [remainingLines] needs to be set to

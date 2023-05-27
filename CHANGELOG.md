@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [2.0.1] - May 27, 2023
+
+* Fixed bug related to `maxLines` being set to a value greater than 1, and `overflow` being set to `TextOverflow.ellipsis`, where the text would not be layed out correctly.
+
 ## [2.0.0] - May 11, 2023
 
 * Updated to support Dart 3 and Flutter 3.10.0.
