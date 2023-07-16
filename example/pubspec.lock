@@ -87,7 +87,7 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "2.0.1"
+    version: "2.0.2"
   flutter:
     dependency: "direct main"
     description: flutter
@@ -105,10 +105,10 @@ packages:
     dependency: "direct dev"
     description:
       name: flutter_lints_plus
-      sha256: "008fd1f1494c4059f7b684439b589e005fb7f991358badbbb2341fe4f2ee3cf1"
+      sha256: "1fe596cfd38b8af8e9a94fa52e3b5cd5b3cbd99a5cf4841f949ef9d4b78d8cbe"
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.0"
+    version: "3.0.1"
   flutter_test:
     dependency: "direct dev"
     description: flutter
