@@ -6,6 +6,7 @@ import 'pages/indents.dart';
 import 'pages/inline_floats.dart';
 import 'pages/margins_and_padding.dart';
 import 'pages/nested.dart';
+import 'pages/sliver_list.dart';
 
 void main() {
   runApp(const MyApp());
@@ -36,6 +37,7 @@ class MyHomePage extends StatelessWidget {
       'Nested': Nested(),
       'Indents': Indents(),
       'Margins & Padding': MarginsAndPadding(),
+      'SliverList': SliverListPage(),
     };
 
     final tabsTitles = tabs.entries.map((e) => Tab(text: e.key)).toList();
