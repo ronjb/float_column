@@ -316,13 +316,14 @@ class TextRenderer with RenderTextMixin {
   }
 
   double placeholderScaleForWidgetIndex(int index) {
-    final i = index - startingPlaceholderIndex;
-    if ((_painter.inlinePlaceholderScales?.length ?? 0) > i) {
-      return _painter.inlinePlaceholderScales![i];
-    } else {
-      assert(false);
-      return 1.0;
-    }
+    return 1.0;
+    // final i = index - startingPlaceholderIndex;
+    // if ((_painter.inlinePlaceholderScales?.length ?? 0) > i) {
+    //   return _painter.inlinePlaceholderScales![i];
+    // } else {
+    //   assert(false);
+    //   return 1.0;
+    // }
   }
 
   /// Returns an estimate of the initial line height based on the initial font
