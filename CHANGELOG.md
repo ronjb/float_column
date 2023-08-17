@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [2.1.1] - August 17, 2023
+
+* Fixed bug where if a Widget in a WidgetSpan changes its size, FloatColumn was not updating properly.
+
 ## [2.1.0] - August 16, 2023
 
 * Updated so it builds with Flutter 3.13.0.

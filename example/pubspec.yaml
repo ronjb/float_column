@@ -12,6 +12,7 @@ dependencies:
     path: ../
   flutter:
     sdk: flutter
+  flutter_animate: ^4.2.0+1
   google_fonts: ^4.0.1
 
 dev_dependencies:

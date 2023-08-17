@@ -396,13 +396,9 @@ class TextRenderer with RenderTextMixin {
     double? baselineOffset;
     final Size childSize;
     if (!dry) {
-      if (!child.hasSize) {
-        // TODO(ron): Maybe call this every time in case constraints change?
-        child.layout(
-          constraints,
-          parentUsesSize: true,
-        );
-      }
+      // Layout the child, it may have changed size.
+      child.layout(constraints, parentUsesSize: true);
+
       childSize = child.size;
       switch (placeholderSpans[childIndex].alignment) {
         case ui.PlaceholderAlignment.baseline:
