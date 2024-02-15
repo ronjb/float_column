@@ -517,6 +517,30 @@ class SelectableFragment
     }
   }
 
+  List<Rect>? _cachedBoundingBoxes;
+  @override
+  List<Rect> get boundingBoxes {
+    if (_cachedBoundingBoxes == null) {
+      final boxes = paragraph.getBoxesForSelection(
+        TextSelection(baseOffset: range.start, extentOffset: range.end),
+      );
+      if (boxes.isNotEmpty) {
+        _cachedBoundingBoxes = <Rect>[];
+        for (final textBox in boxes) {
+          _cachedBoundingBoxes!.add(textBox.toRect());
+        }
+      } else {
+        final offset =
+            paragraph._getOffsetForPosition(TextPosition(offset: range.start));
+        final rect = Rect.fromPoints(offset,
+            offset.translate(0, -paragraph.textPainter.preferredLineHeight));
+        _cachedBoundingBoxes = <Rect>[rect];
+      }
+    }
+    return _cachedBoundingBoxes!;
+  }
+
+  Rect? _cachedRect;
   Rect get _rect {
     if (_cachedRect == null) {
       final boxes = paragraph.getBoxesForSelection(
@@ -537,8 +561,6 @@ class SelectableFragment
     }
     return _cachedRect!;
   }
-
-  Rect? _cachedRect;
 
   void didChangeParagraphLayout() {
     _cachedRect = null;

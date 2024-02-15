@@ -524,11 +524,7 @@ class TextRenderer with RenderTextMixin {
 
     // `_lastSelectableFragments` may hold references to this TextRenderer.
     // Release them manually to avoid retain cycles.
-    _disposeSelectableFragments();
-
-    // TODO(ron): [RenderParagraph] `dispose()` does not call
-    // `_disposeSelectableFragments()`, it just sets `_lastSelectableFragments`
-    // to `null`. Seems like a bug, but if we see problems, that may be why.
+    _lastSelectableFragments = null;
 
     _painter.dispose();
   }
