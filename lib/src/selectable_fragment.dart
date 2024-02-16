@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui show LineMetrics;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -21,6 +22,7 @@ import 'render_text.dart';
 class SelectableFragment
     with
         Selectable,
+        Diagnosticable,
         ChangeNotifier // ignore: prefer_mixin
     implements
         TextLayoutMetrics {
@@ -74,7 +76,6 @@ class SelectableFragment
         : paragraph._getOffsetForPosition(TextPosition(offset: selectionEnd));
     final flipHandles =
         isReversed != (TextDirection.rtl == paragraph.textDirection);
-    final paragraphToFragmentTransform = getTransformToParagraph()..invert();
     final selection = TextSelection(
       baseOffset: selectionStart,
       extentOffset: selectionEnd,
@@ -85,15 +86,13 @@ class SelectableFragment
     }
     return SelectionGeometry(
       startSelectionPoint: SelectionPoint(
-          localPosition: MatrixUtils.transformPoint(
-              paragraphToFragmentTransform, startOffsetInParagraphCoordinates),
+          localPosition: startOffsetInParagraphCoordinates,
           lineHeight: paragraph.textPainter.preferredLineHeight,
           handleType: flipHandles
               ? TextSelectionHandleType.right
               : TextSelectionHandleType.left),
       endSelectionPoint: SelectionPoint(
-        localPosition: MatrixUtils.transformPoint(
-            paragraphToFragmentTransform, endOffsetInParagraphCoordinates),
+        localPosition: endOffsetInParagraphCoordinates,
         lineHeight: paragraph.textPainter.preferredLineHeight,
         handleType: flipHandles
             ? TextSelectionHandleType.left
@@ -443,9 +442,20 @@ class SelectableFragment
     // we do not need to look up the word boundary for that position. This is to
     // maintain a selectables selection collapsed at 0 when the local position is
     // not located inside its rect.
-    final wordBoundary = !_rect.contains(localPosition)
-        ? null
-        : _getWordBoundaryAtPosition(position);
+    var wordBoundary = _rect.contains(localPosition)
+        ? _getWordBoundaryAtPosition(position)
+        : null;
+    if (wordBoundary != null &&
+        (wordBoundary.wordStart.offset < range.start &&
+                wordBoundary.wordEnd.offset <= range.start ||
+            wordBoundary.wordStart.offset >= range.end &&
+                wordBoundary.wordEnd.offset > range.end)) {
+      // When the position is located at a placeholder inside of the text, then we may compute
+      // a word boundary that does not belong to the current selectable fragment. In this case
+      // we should invalidate the word boundary so that it is not taken into account when
+      // computing the target position.
+      wordBoundary = null;
+    }
     final targetPosition = _clampTextPosition(isEnd
         ? _updateSelectionEndEdgeByWord(wordBoundary, position,
             existingSelectionStart, existingSelectionEnd)
@@ -512,10 +522,14 @@ class SelectableFragment
       return SelectionResult.end;
     }
     final wordBoundary = _getWordBoundaryAtPosition(position);
+    // This fragment may not contain the word, decide what direction the target
+    // fragment is located in. Because fragments are separated by placeholder
+    // spans, we also check if the beginning or end of the word is touching
+    // either edge of this fragment.
     if (wordBoundary.wordStart.offset < range.start &&
-        wordBoundary.wordEnd.offset < range.start) {
+        wordBoundary.wordEnd.offset <= range.start) {
       return SelectionResult.previous;
-    } else if (wordBoundary.wordStart.offset > range.end &&
+    } else if (wordBoundary.wordStart.offset >= range.end &&
         wordBoundary.wordEnd.offset > range.end) {
       return SelectionResult.next;
     }
@@ -525,6 +539,7 @@ class SelectableFragment
         wordBoundary.wordEnd.offset <= range.end);
     textSelectionStart = wordBoundary.wordStart;
     textSelectionEnd = wordBoundary.wordEnd;
+    _selectableContainsOriginWord = true;
     return SelectionResult.end;
   }
 
@@ -782,14 +797,9 @@ class SelectableFragment
     }
   }
 
-  Matrix4 getTransformToParagraph() {
-    return Matrix4.translationValues(_rect.left, _rect.top, 0.0);
-  }
-
   @override
   Matrix4 getTransformTo(RenderObject? ancestor) {
-    return getTransformToParagraph()
-      ..multiply(paragraph.getTransformTo(ancestor));
+    return paragraph.getTransformTo(ancestor);
   }
 
   @override
@@ -881,14 +891,11 @@ class SelectableFragment
             selectionPaint);
       }
     }
-    final transform = getTransformToParagraph();
     if (_startHandleLayerLink != null && value.startSelectionPoint != null) {
       context.pushLayer(
         LeaderLayer(
           link: _startHandleLayerLink!,
-          offset: offset +
-              MatrixUtils.transformPoint(
-                  transform, value.startSelectionPoint!.localPosition),
+          offset: offset + value.startSelectionPoint!.localPosition,
         ),
         (context, offset) {},
         Offset.zero,
@@ -898,9 +905,7 @@ class SelectableFragment
       context.pushLayer(
         LeaderLayer(
           link: _endHandleLayerLink!,
-          offset: offset +
-              MatrixUtils.transformPoint(
-                  transform, value.endSelectionPoint!.localPosition),
+          offset: offset + value.endSelectionPoint!.localPosition,
         ),
         (context, offset) {},
         Offset.zero,
@@ -911,10 +916,8 @@ class SelectableFragment
   @override
   TextSelection getLineAtOffset(TextPosition position) {
     final line = paragraph._getLineAtOffset(position);
-    final start =
-        line.start.clamp(range.start, range.end); // ignore_clamp_double_lint
-    final end =
-        line.end.clamp(range.start, range.end); // ignore_clamp_double_lint
+    final start = line.start.clamp(range.start, range.end);
+    final end = line.end.clamp(range.start, range.end);
     return TextSelection(baseOffset: start, extentOffset: end);
   }
 
@@ -931,6 +934,15 @@ class SelectableFragment
   @override
   TextRange getWordBoundary(TextPosition position) =>
       paragraph.getWordBoundary(position);
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<String>(
+        'textInsideRange', range.textInside(fullText)));
+    properties.add(DiagnosticsProperty<TextRange>('range', range));
+    properties.add(DiagnosticsProperty<String>('fullText', fullText));
+  }
 }
 
 extension on TextRenderer {
