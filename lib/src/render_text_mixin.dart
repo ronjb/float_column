@@ -52,11 +52,12 @@ mixin RenderTextMixin {
   ///
   /// The number of font pixels for each logical pixel.
   ///
-  /// For example, if the text scale factor is 1.5, text will be 50% larger than
-  /// the specified font size.
+  /// For example, if the text scale factor is 1.5, text will be 50% larger
+  /// than the specified font size.
   @Deprecated(
     'Use textScaler instead. '
-    'Use of textScaleFactor was deprecated in preparation for the upcoming nonlinear text scaling support. '
+    'Use of textScaleFactor was deprecated in preparation for the upcoming '
+    'nonlinear text scaling support. '
     'This feature was deprecated after Flutter v3.12.0-2.0.pre.',
   )
   double get textScaleFactor;

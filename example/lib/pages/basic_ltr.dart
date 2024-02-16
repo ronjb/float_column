@@ -101,7 +101,7 @@ TextSpan _text(BuildContext context, double textScaleFactor) => TextSpan(
         ),
         TextSpan(
           text: 'Love',
-          style: textStyleWithGoogleFont('Sevillana').copyWith(
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             color: Colors.deepPurple,
             decoration: TextDecoration.underline,

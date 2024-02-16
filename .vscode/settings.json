@@ -7,5 +7,9 @@
     },
     "editor.minimap.maxColumn": 80,
     "editor.wordWrapColumn": 80,
-    "html.format.wrapLineLength": 80
+    "html.format.wrapLineLength": 80,
+    "cSpell.words": [
+      "chunhtai",
+      "selectables"
+    ]
 }

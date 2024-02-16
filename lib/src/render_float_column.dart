@@ -379,7 +379,7 @@ class RenderFloatColumn extends RenderBox
   }
 
   @override
-  Size computeDryLayout(BoxConstraints constraints) {
+  Size computeDryLayout(covariant BoxConstraints constraints) {
     assert(debugCannotComputeDryLayout(
         reason: 'Dry layout cannot be efficiently computed.'));
     return Size.zero;
@@ -1395,7 +1395,7 @@ class RenderFloatColumn extends RenderBox
                   configuration.isHidden =
                       paintRect.isEmpty && !currentRect.isEmpty;
                 }
-                late final SemanticsNode newChild;
+                final SemanticsNode newChild;
                 if (_cachedChildNodes?.isNotEmpty ?? false) {
                   newChild =
                       _cachedChildNodes!.remove(_cachedChildNodes!.keys.first)!;

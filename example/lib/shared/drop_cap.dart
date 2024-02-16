@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class DropCap extends StatelessWidget {
   const DropCap(this.text, {super.key, this.size = 2.0, this.textScaleFactor});
@@ -24,7 +23,7 @@ class DropCap extends StatelessWidget {
           textScaler: textScaleFactor == null
               ? MediaQuery.textScalerOf(context)
               : TextScaler.linear(textScaleFactor!),
-          style: textStyleWithGoogleFont().copyWith(
+          style: style.copyWith(
               fontSize: (style.fontSize ?? 16.0) *
                   (style.height ?? 1.0) *
                   size *
@@ -36,6 +35,7 @@ class DropCap extends StatelessWidget {
   }
 }
 
+/*
 TextStyle textStyleWithGoogleFont([String? fontFamily]) {
   try {
     return GoogleFonts.getFont(fontFamily ?? _fonts[1]);
@@ -68,3 +68,4 @@ const _fonts = [
   'Akronim',
   'Ewert',
 ];
+*/

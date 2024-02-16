@@ -126,8 +126,10 @@ class SelectableFragment
                 isEnd: edgeUpdate.type == SelectionEventType.endEdgeUpdate);
           case TextGranularity.document:
           case TextGranularity.line:
-            assert(false,
-                'Moving the selection edge by line or document is not supported.');
+            assert(
+                false,
+                'Moving the selection edge by line or '
+                'document is not supported.');
         }
         break;
       case SelectionEventType.clear:
@@ -252,9 +254,9 @@ class SelectableFragment
           } else {
             targetPosition = wordBoundary.wordEnd;
           }
-          // When the selection is inverted by the new position it is necessary to
-          // swap the start edge (moving edge) with the end edge (static edge) to
-          // maintain the origin word within the selection.
+          // When the selection is inverted by the new position it is necessary
+          // to swap the start edge (moving edge) with the end edge (static
+          // edge) to maintain the origin word within the selection.
           final localWordBoundary =
               _getWordBoundaryAtPosition(existingSelectionEnd);
           assert(localWordBoundary.wordStart.offset >= range.start &&
@@ -270,14 +272,16 @@ class SelectableFragment
           } else if (position.offset > existingSelectionEnd.offset) {
             targetPosition = wordBoundary.wordEnd;
           } else {
-            // Keep the origin word in bounds when position is at the static edge.
+            // Keep the origin word in bounds when position is at the
+            // static edge.
             targetPosition = existingSelectionStart;
           }
         }
       } else {
         if (existingSelectionEnd != null) {
           // If the end edge exists and the start edge is being moved, then the
-          // start edge is moved to encompass the entire word at the new position.
+          // start edge is moved to encompass the entire word at the new
+          // position.
           if (position.offset < existingSelectionEnd.offset) {
             targetPosition = wordBoundary.wordStart;
           } else {
@@ -289,15 +293,16 @@ class SelectableFragment
         }
       }
     } else {
-      // The position is not contained within the current rect. The targetPosition
-      // will either be at the end or beginning of the current rect. See [SelectionUtils.adjustDragOffset]
-      // for a more in depth explanation on this adjustment.
+      // The position is not contained within the current rect. The
+      // targetPosition will either be at the end or beginning of the current
+      // rect. See [SelectionUtils.adjustDragOffset] for a more in depth
+      // explanation on this adjustment.
       if (_selectableContainsOriginWord &&
           existingSelectionStart != null &&
           existingSelectionEnd != null) {
-        // When the selection is inverted by the new position it is necessary to
-        // swap the start edge (moving edge) with the end edge (static edge) to
-        // maintain the origin word within the selection.
+        // When the selection is inverted by the new position it is necessary
+        // to swap the start edge (moving edge) with the end edge (static edge)
+        // to maintain the origin word within the selection.
         final isSamePosition = position.offset == existingSelectionEnd.offset;
         final isSelectionInverted =
             existingSelectionStart.offset > existingSelectionEnd.offset;
@@ -346,9 +351,9 @@ class SelectableFragment
           } else {
             targetPosition = wordBoundary.wordEnd;
           }
-          // When the selection is inverted by the new position it is necessary to
-          // swap the end edge (moving edge) with the start edge (static edge) to
-          // maintain the origin word within the selection.
+          // When the selection is inverted by the new position it is necessary
+          // to swap the end edge (moving edge) with the start edge (static
+          // edge) to maintain the origin word within the selection.
           final localWordBoundary =
               _getWordBoundaryAtPosition(existingSelectionStart);
           assert(localWordBoundary.wordStart.offset >= range.start &&
@@ -365,7 +370,8 @@ class SelectableFragment
           } else if (position.offset > existingSelectionStart.offset) {
             targetPosition = wordBoundary.wordEnd;
           } else {
-            // Keep the origin word in bounds when position is at the static edge.
+            // Keep the origin word in bounds when position is at the
+            // static edge.
             targetPosition = existingSelectionEnd;
           }
         }
@@ -384,15 +390,16 @@ class SelectableFragment
         }
       }
     } else {
-      // The position is not contained within the current rect. The targetPosition
-      // will either be at the end or beginning of the current rect. See [SelectionUtils.adjustDragOffset]
-      // for a more in depth explanation on this adjustment.
+      // The position is not contained within the current rect. The
+      // targetPosition will either be at the end or beginning of the current
+      // rect. See [SelectionUtils.adjustDragOffset] for a more in depth
+      // explanation on this adjustment.
       if (_selectableContainsOriginWord &&
           existingSelectionStart != null &&
           existingSelectionEnd != null) {
-        // When the selection is inverted by the new position it is necessary to
-        // swap the end edge (moving edge) with the start edge (static edge) to
-        // maintain the origin word within the selection.
+        // When the selection is inverted by the new position it is necessary
+        // to swap the end edge (moving edge) with the start edge (static edge)
+        // to maintain the origin word within the selection.
         final isSamePosition = position.offset == existingSelectionStart.offset;
         final isSelectionInverted =
             existingSelectionStart.offset > existingSelectionEnd.offset;
@@ -417,9 +424,10 @@ class SelectableFragment
 
   SelectionResult _updateSelectionEdgeByWord(Offset globalPosition,
       {required bool isEnd}) {
-    // When the start/end edges are swapped, i.e. the start is after the end, and
-    // the scrollable synthesizes an event for the opposite edge, this will potentially
-    // move the opposite edge outside of the origin word boundary and we are unable to recover.
+    // When the start/end edges are swapped, i.e. the start is after the end,
+    // and the scrollable synthesizes an event for the opposite edge, this will
+    // potentially move the opposite edge outside of the origin word boundary
+    // and we are unable to recover.
     final existingSelectionStart = textSelectionStart;
     final existingSelectionEnd = textSelectionEnd;
 
@@ -438,10 +446,10 @@ class SelectableFragment
 
     final position =
         paragraph.getPositionForOffset(adjustedOffset - paragraph.offset);
-    // Check if the original local position is within the rect, if it is not then
-    // we do not need to look up the word boundary for that position. This is to
-    // maintain a selectables selection collapsed at 0 when the local position is
-    // not located inside its rect.
+    // Check if the original local position is within the rect, if it is not
+    // then we do not need to look up the word boundary for that position. This
+    // is to maintain a selectables selection collapsed at 0 when the local
+    // position is not located inside its rect.
     var wordBoundary = _rect.contains(localPosition)
         ? _getWordBoundaryAtPosition(position)
         : null;
@@ -450,10 +458,11 @@ class SelectableFragment
                 wordBoundary.wordEnd.offset <= range.start ||
             wordBoundary.wordStart.offset >= range.end &&
                 wordBoundary.wordEnd.offset > range.end)) {
-      // When the position is located at a placeholder inside of the text, then we may compute
-      // a word boundary that does not belong to the current selectable fragment. In this case
-      // we should invalidate the word boundary so that it is not taken into account when
-      // computing the target position.
+      // When the position is located at a placeholder inside of the text, then
+      // we may compute a word boundary that does not belong to the current
+      // selectable fragment. In this case we should invalidate the word
+      // boundary so that it is not taken into account when computing the
+      // target position.
       wordBoundary = null;
     }
     final targetPosition = _clampTextPosition(isEnd
@@ -470,10 +479,10 @@ class SelectableFragment
     if (targetPosition.offset == range.start) {
       return SelectionResult.previous;
     }
-    // TO-DO(chunhtai): The geometry information should not be used to determine
-    // selection result. This is a workaround to RenderParagraph, where it does
-    // not have a way to get accurate text length if its text is truncated due to
-    // layout constraint.
+    // TO-DO(chunhtai): The geometry information should not be used to
+    // determine selection result. This is a workaround to RenderParagraph,
+    // where it does not have a way to get accurate text length if its text is
+    // truncated due to layout constraint.
     return SelectionUtils.getResultBasedOnRect(_rect, localPosition);
   }
 
@@ -673,10 +682,10 @@ class SelectableFragment
     return result;
   }
 
-  // Move **beyond** the local boundary of the given type (unless range.start or
-  // range.end is reached). Used for most TextGranularity types except for
-  // TextGranularity.line, to ensure the selection movement doesn't get stuck at
-  // a local fixed point.
+  // Move **beyond** the local boundary of the given type (unless range.start
+  // or range.end is reached). Used for most TextGranularity types except for
+  // TextGranularity.line, to ensure the selection movement doesn't get stuck
+  // at a local fixed point.
   TextPosition _moveBeyondTextBoundaryAtDirection(
       TextPosition end, bool forward, TextBoundary textBoundary) {
     final newOffset = forward
