@@ -467,11 +467,15 @@ class TextRenderer with RenderTextMixin {
     _removeSelectionRegistrarSubscription();
     _disposeSelectableFragments();
     _registrar = value;
+    _updateSelectionRegistrarSubscription();
+  }
 
-    if (registrar != null) {
-      _lastSelectableFragments ??= _getSelectableFragments();
-      _lastSelectableFragments!.forEach(registrar!.add);
+  void _updateSelectionRegistrarSubscription() {
+    if (_registrar == null) {
+      return;
     }
+    _lastSelectableFragments ??= _getSelectableFragments();
+    _lastSelectableFragments!.forEach(_registrar!.add);
   }
 
   void _removeSelectionRegistrarSubscription() {
@@ -629,13 +633,13 @@ class TextRenderer with RenderTextMixin {
 
   @override
   void paint(PaintingContext context, Offset offset) {
-    _painter.paint(context.canvas, this.offset + offset);
-
     if (_lastSelectableFragments != null) {
       for (final fragment in _lastSelectableFragments!) {
         fragment.paint(context, offset);
       }
     }
+
+    _painter.paint(context.canvas, this.offset + offset);
   }
 
   @override

@@ -71,6 +71,14 @@ class SelectableFragment
     final flipHandles =
         isReversed != (TextDirection.rtl == paragraph.textDirection);
     final paragraphToFragmentTransform = getTransformToParagraph()..invert();
+    final selection = TextSelection(
+      baseOffset: selectionStart,
+      extentOffset: selectionEnd,
+    );
+    final selectionRects = <Rect>[];
+    for (final textBox in paragraph.getBoxesForSelection(selection)) {
+      selectionRects.add(textBox.toRect().shift(paragraph.offset));
+    }
     return SelectionGeometry(
       startSelectionPoint: SelectionPoint(
           localPosition: MatrixUtils.transformPoint(
@@ -87,6 +95,7 @@ class SelectableFragment
             ? TextSelectionHandleType.left
             : TextSelectionHandleType.right,
       ),
+      selectionRects: selectionRects,
       status: textSelectionStart!.offset == textSelectionEnd!.offset
           ? SelectionStatus.collapsed
           : SelectionStatus.uncollapsed,
@@ -234,12 +243,17 @@ class SelectableFragment
     }
     final word = paragraph.getWordBoundary(position);
     assert(word.isNormalized);
+    if (word.start < range.start && word.end < range.start) {
+      return SelectionResult.previous;
+    } else if (word.start > range.end && word.end > range.end) {
+      return SelectionResult.next;
+    }
     // Fragments are separated by placeholder span, the word boundary shouldn't
     // expand across fragments.
     assert(word.start >= range.start && word.end <= range.end);
     late TextPosition start;
     late TextPosition end;
-    if (position.offset >= word.end) {
+    if (position.offset > word.end) {
       start = end = TextPosition(offset: position.offset);
     } else {
       start = TextPosition(offset: word.start);
@@ -527,7 +541,7 @@ class SelectableFragment
       if (boxes.isNotEmpty) {
         _cachedBoundingBoxes = <Rect>[];
         for (final textBox in boxes) {
-          _cachedBoundingBoxes!.add(textBox.toRect());
+          _cachedBoundingBoxes!.add(textBox.toRect().shift(paragraph.offset));
         }
       } else {
         final offset =
