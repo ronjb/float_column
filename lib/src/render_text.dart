@@ -628,7 +628,8 @@ class TextRenderer with RenderTextMixin {
   TextHeightBehavior? get textHeightBehavior => _painter.textHeightBehavior;
 
   @override
-  double get textScaleFactor => _painter.textScaler.scale(kDefaultFontSize);
+  // ignore: deprecated_member_use
+  double get textScaleFactor => _painter.textScaleFactor;
 
   @override
   TextScaler get textScaler => _painter.textScaler;

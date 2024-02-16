@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [2.1.3] - February 16, 2024
+
+* Updated to fix static analysis issue.
+
 ## [2.1.2] - February 16, 2024
 
 * Fixed compile issue with Flutter 3.19.0 and other bug fixes and updates.
