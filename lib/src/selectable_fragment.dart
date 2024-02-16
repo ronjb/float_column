@@ -615,6 +615,14 @@ class SelectableFragment
   }
 
   @override
+  List<Rect> get boundingBoxes => paragraph
+      .getBoxesForSelection(
+        TextSelection(baseOffset: range.start, extentOffset: range.end),
+      )
+      .map((box) => box.toRect())
+      .toList();
+
+  @override
   TextRange getWordBoundary(TextPosition position) =>
       paragraph.getWordBoundary(position);
 }
