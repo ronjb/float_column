@@ -26,7 +26,7 @@ Add this to your app's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  float_column: ^2.1.3
+  float_column: ^2.1.4
 ```
 
 ## Usage

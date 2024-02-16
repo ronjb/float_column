@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [2.1.4] - February 16, 2024
+
+* More updates to try to fix static analysis issues.
+
 ## [2.1.3] - February 16, 2024
 
 * Updated to fix static analysis issue.
