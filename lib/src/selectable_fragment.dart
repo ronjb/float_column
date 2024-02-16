@@ -13,9 +13,9 @@ import 'render_text.dart';
 
 /// A continuous, selectable piece of paragraph.
 ///
-/// Since the selections in PlaceHolderSpan are handled independently in its
+/// Since the selections in PlaceholderSpan are handled independently in its
 /// subtree, a selection in [TextRenderer] can't continue across a
-/// PlaceHolderSpan. The [TextRenderer] splits itself on PlaceHolderSpan
+/// PlaceholderSpan. The [TextRenderer] splits itself on PlaceholderSpan
 /// to create multiple `SelectableFragment`s so that they can be selected
 /// separately.
 class SelectableFragment
@@ -507,7 +507,8 @@ class SelectableFragment
 
     final position = paragraph.getPositionForOffset(
         paragraph.globalToLocal(globalPosition) - paragraph.offset);
-    if (_positionIsWithinCurrentSelection(position)) {
+    if (_positionIsWithinCurrentSelection(position) &&
+        textSelectionStart != textSelectionEnd) {
       return SelectionResult.end;
     }
     final wordBoundary = _getWordBoundaryAtPosition(position);

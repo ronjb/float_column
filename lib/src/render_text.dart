@@ -447,9 +447,7 @@ class TextRenderer with RenderTextMixin {
     final results = <TextSelection>[];
     for (final fragment in _lastSelectableFragments!) {
       if (fragment.textSelectionStart != null &&
-          fragment.textSelectionEnd != null &&
-          fragment.textSelectionStart!.offset !=
-              fragment.textSelectionEnd!.offset) {
+          fragment.textSelectionEnd != null) {
         results.add(TextSelection(
             baseOffset: fragment.textSelectionStart!.offset,
             extentOffset: fragment.textSelectionEnd!.offset));
