@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 
 import 'shared.dart';
 
+// ignore_for_file: deprecated_member_use_from_same_package
+
 /// An immutable span of inline content which forms a paragraph. Only useful as
 /// a child of a `FloatColumn`, which provides the capability of wrapping the
 /// paragraph around child widgets that "float" to the right or left.
@@ -16,19 +18,25 @@ class WrappableText {
   /// Creates a paragraph of rich text, that when used in a `FloatColumn` can
   /// wrap around floated siblings.
   ///
-  /// The [text], [clear], [textAlign], [indent], and [textScaleFactor]
-  /// arguments must not be null.
+  /// The [text], [clear], and [indent] arguments must not be null.
   ///
   /// The [textDirection], if null, defaults to the ambient `Directionality`,
   /// which in that case must not be null.
-  const WrappableText({
+  WrappableText({
     this.key,
     required this.text,
     this.clear = FCClear.none,
     this.textAlign,
     this.textDirection,
     this.overflow,
-    this.textScaleFactor,
+    @Deprecated(
+      'Use textScaler instead. '
+      'Use of textScaleFactor was deprecated in preparation for the upcoming '
+      'nonlinear text scaling support. '
+      'This feature was deprecated after v3.12.0-2.0.pre.',
+    )
+    double textScaleFactor = 1.0,
+    TextScaler textScaler = TextScaler.noScaling,
     this.maxLines,
     this.locale,
     this.strutStyle,
@@ -41,6 +49,11 @@ class WrappableText {
           text != null,
           'A non-null TextSpan must be provided to a WrappableText.',
         ),
+        assert(
+            textScaleFactor == 1.0 ||
+                identical(textScaler, TextScaler.noScaling),
+            'Use textScaler instead.'),
+        textScaler = _effectiveTextScalerFrom(textScaler, textScaleFactor),
         assert(maxLines == null || maxLines > 0);
 
   WrappableText.fromText(Text text)
@@ -53,7 +66,9 @@ class WrappableText {
         textAlign = text.textAlign,
         textDirection = text.textDirection,
         overflow = text.overflow,
-        textScaleFactor = text.textScaleFactor,
+        textScaler =
+            // ignore: deprecated_member_use
+            _effectiveTextScalerFrom(text.textScaler, text.textScaleFactor),
         maxLines = text.maxLines,
         locale = text.locale,
         strutStyle = text.strutStyle,
@@ -72,7 +87,9 @@ class WrappableText {
         textAlign = text.textAlign,
         textDirection = text.textDirection,
         overflow = text.overflow,
-        textScaleFactor = text.textScaleFactor,
+        textScaler =
+            // ignore: deprecated_member_use
+            _effectiveTextScalerFrom(text.textScaler, text.textScaleFactor),
         maxLines = text.maxLines,
         locale = text.locale,
         strutStyle = text.strutStyle,
@@ -80,6 +97,19 @@ class WrappableText {
         indent = 0.0,
         margin = EdgeInsets.zero,
         padding = EdgeInsets.zero;
+
+  static TextScaler _effectiveTextScalerFrom(
+      TextScaler? textScaler, double? textScaleFactor) {
+    return switch ((
+      textScaler ?? TextScaler.noScaling,
+      textScaleFactor ?? 1.0
+    )) {
+      (final TextScaler scaler, 1.0) => scaler,
+      (TextScaler.noScaling, final double textScaleFactor) =>
+        TextScaler.linear(textScaleFactor),
+      (final TextScaler scaler, _) => scaler,
+    };
+  }
 
   WrappableText copyWith({
     Key? key,
@@ -89,6 +119,7 @@ class WrappableText {
     TextDirection? textDirection,
     TextOverflow? overflow,
     double? textScaleFactor,
+    TextScaler? textScaler,
     int? maxLines,
     Locale? locale,
     StrutStyle? strutStyle,
@@ -104,7 +135,8 @@ class WrappableText {
         textAlign: textAlign ?? this.textAlign,
         textDirection: textDirection ?? this.textDirection,
         overflow: overflow ?? this.overflow,
-        textScaleFactor: textScaleFactor ?? this.textScaleFactor,
+        textScaleFactor: textScaleFactor ?? 1.0,
+        textScaler: textScaler ?? this.textScaler,
         maxLines: maxLines ?? this.maxLines,
         locale: locale ?? this.locale,
         strutStyle: strutStyle ?? this.strutStyle,
@@ -147,15 +179,8 @@ class WrappableText {
   /// How visual overflow should be handled.
   final TextOverflow? overflow;
 
-  /// The number of font pixels for each logical pixel.
-  ///
-  /// For example, if the text scale factor is 1.5, text will be 50% larger
-  /// than the specified font size.
-  ///
-  /// The value given to the constructor as textScaleFactor. If null, will
-  /// use the [MediaQueryData.textScaleFactor] obtained from the ambient
-  /// [MediaQuery], or 1.0 if there is no [MediaQuery] in scope.
-  final double? textScaleFactor;
+  /// {@macro flutter.painting.textPainter.textScaler}
+  final TextScaler textScaler;
 
   /// An optional maximum number of lines for the text to span, wrapping if
   /// necessary. If the text exceeds the given number of lines, it will be
@@ -201,7 +226,7 @@ class WrappableText {
         other.textAlign == textAlign &&
         other.textDirection == textDirection &&
         other.overflow == overflow &&
-        other.textScaleFactor == textScaleFactor &&
+        other.textScaler == textScaler &&
         other.maxLines == maxLines &&
         other.locale == locale &&
         other.strutStyle == strutStyle &&
@@ -219,7 +244,7 @@ class WrappableText {
       textAlign,
       textDirection,
       overflow,
-      textScaleFactor,
+      textScaler,
       maxLines,
       locale,
       strutStyle,

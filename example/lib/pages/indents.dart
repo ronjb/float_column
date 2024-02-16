@@ -44,7 +44,7 @@ class Indents extends StatelessWidget {
                           maxWidthPercentage: 0.333,
                           child: Container(
                               height: boxHeight, color: Colors.orange)),
-                      const WrappableText(
+                      WrappableText(
                         text: _text,
                         indent: 40,
                         textAlign: textAlign,
@@ -60,11 +60,11 @@ class Indents extends StatelessWidget {
                               color: Colors.blue,
                               margin:
                                   const EdgeInsetsDirectional.only(end: 8))),
-                      const WrappableText(
+                      WrappableText(
                         text: _text,
                         indent: -40,
                         textAlign: textAlign,
-                        padding: EdgeInsets.only(left: 40),
+                        padding: const EdgeInsets.only(left: 40),
                       ),
                       const SizedBox(height: 8),
                       const Heading(title: 'No Indent'),

@@ -70,7 +70,7 @@ class RenderFloatColumn extends RenderBox
     required CrossAxisAlignment crossAxisAlignment,
     required TextDirection textDirection,
     required DefaultTextStyle defaultTextStyle,
-    required double defaultTextScaleFactor,
+    required TextScaler defaultTextScaler,
     Clip clipBehavior = Clip.none,
     SelectionRegistrar? registrar,
     Color? selectionColor,
@@ -83,7 +83,7 @@ class RenderFloatColumn extends RenderBox
         _crossAxisAlignment = crossAxisAlignment,
         _textDirection = textDirection,
         _defaultTextStyle = defaultTextStyle,
-        _defaultTextScaleFactor = defaultTextScaleFactor,
+        _defaultTextScaler = defaultTextScaler,
         _clipBehavior = clipBehavior,
         _selectionColor = selectionColor {
     addAll(widgets);
@@ -158,11 +158,11 @@ class RenderFloatColumn extends RenderBox
         cacheIndex++;
 
         if (wtr == null) {
-          _cache.add(WrappableTextRenderer(this, el, textDirection,
-              defaultTextStyle, defaultTextScaleFactor, selectionColor));
+          _cache.add(WrappableTextRenderer(
+              this, el, textDirection, defaultTextStyle, selectionColor));
         } else {
-          final comparison = wtr.updateWith(el, this, textDirection,
-              defaultTextStyle, defaultTextScaleFactor, selectionColor);
+          final comparison = wtr.updateWith(
+              el, this, textDirection, defaultTextStyle, selectionColor);
 
           // If any text renderers need to layout or paint, clear some
           // semantic related caches.
@@ -234,11 +234,11 @@ class RenderFloatColumn extends RenderBox
     }
   }
 
-  double get defaultTextScaleFactor => _defaultTextScaleFactor;
-  double _defaultTextScaleFactor;
-  set defaultTextScaleFactor(double value) {
-    if (_defaultTextScaleFactor != value) {
-      _defaultTextScaleFactor = value;
+  TextScaler get defaultTextScaler => _defaultTextScaler;
+  TextScaler _defaultTextScaler;
+  set defaultTextScaler(TextScaler value) {
+    if (_defaultTextScaler != value) {
+      _defaultTextScaler = value;
       _updateCache();
     }
   }
@@ -728,8 +728,8 @@ class RenderFloatColumn extends RenderBox
       // called.
       if (wtr[subIndex].placeholderSpans.isNotEmpty) {
         assert(child != null);
-        hasFloatedChildren = wtr[subIndex].setPlaceholderDimensions(child,
-            subConstraints, wt.textScaleFactor ?? defaultTextScaleFactor);
+        hasFloatedChildren = wtr[subIndex]
+            .setPlaceholderDimensions(child, subConstraints, wt.textScaler);
       }
 
       // Layout the text and inline widget children.

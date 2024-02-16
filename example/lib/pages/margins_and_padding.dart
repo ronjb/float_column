@@ -65,11 +65,11 @@ class MarginsAndPadding extends StatelessWidget {
                           maxWidthPercentage: 0.333,
                           child: Container(
                               height: boxHeight, color: Colors.green)),
-                      const WrappableText(
+                      WrappableText(
                         text: _text,
                         textAlign: textAlign,
-                        margin: EdgeInsets.fromLTRB(10, 0, 10, 0),
-                        padding: EdgeInsets.fromLTRB(10, 0, 10, 0),
+                        margin: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+                        padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
                       ),
                     ],
                   ),

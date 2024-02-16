@@ -20,7 +20,8 @@ class BasicLtr extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: FloatColumn(
             children: [
-              Text.rich(_text(context, scale), textScaleFactor: scale),
+              Text.rich(_text(context, scale),
+                  textScaler: TextScaler.linear(scale)),
             ],
           ),
         ),

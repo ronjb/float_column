@@ -50,7 +50,8 @@ class BasicRtl extends StatelessWidget {
                       clearMinSpacing: 100,
                       maxWidthPercentage: 0.333,
                       child: Container(height: boxHeight, color: Colors.green)),
-                  WrappableText(text: _text, textScaleFactor: scale),
+                  WrappableText(
+                      text: _text, textScaler: TextScaler.linear(scale)),
                 ],
               ),
             ),

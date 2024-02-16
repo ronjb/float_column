@@ -138,7 +138,7 @@ class FloatColumn extends MultiChildRenderObjectWidget {
       crossAxisAlignment: crossAxisAlignment,
       textDirection: textDirection ?? Directionality.of(context),
       defaultTextStyle: DefaultTextStyle.of(context),
-      defaultTextScaleFactor: MediaQuery.textScaleFactorOf(context),
+      defaultTextScaler: MediaQuery.textScalerOf(context),
       clipBehavior: clipBehavior,
       registrar: registrar,
       selectionColor: registrar == null
@@ -158,7 +158,7 @@ class FloatColumn extends MultiChildRenderObjectWidget {
       ..crossAxisAlignment = crossAxisAlignment
       ..textDirection = textDirection ?? Directionality.of(context)
       ..defaultTextStyle = DefaultTextStyle.of(context)
-      ..defaultTextScaleFactor = MediaQuery.textScaleFactorOf(context)
+      ..defaultTextScaler = MediaQuery.textScalerOf(context)
       ..clipBehavior = clipBehavior
       ..registrar = registrar
       ..selectionColor = registrar == null

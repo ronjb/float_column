@@ -26,7 +26,6 @@ class WrappableTextRenderer {
     WrappableText wt,
     TextDirection defaultTextDirection,
     DefaultTextStyle defaultTextStyle,
-    double defaultTextScaleFactor,
     Color? selectionColor,
   ) : renderer = TextRenderer._(
           parent,
@@ -35,7 +34,7 @@ class WrappableTextRenderer {
             textAlign:
                 wt.textAlign ?? defaultTextStyle.textAlign ?? TextAlign.start,
             textDirection: wt.textDirection ?? defaultTextDirection,
-            textScaleFactor: wt.textScaleFactor ?? defaultTextScaleFactor,
+            textScaler: wt.textScaler,
             maxLines: wt.maxLines ?? defaultTextStyle.maxLines,
             ellipsis: (wt.overflow ?? defaultTextStyle.overflow) ==
                     TextOverflow.ellipsis
@@ -111,7 +110,6 @@ class WrappableTextRenderer {
     RenderBox parent,
     TextDirection defaultTextDirection,
     DefaultTextStyle defaultTextStyle,
-    double defaultTextScaleFactor,
     Color? selectionColor,
   ) {
     var needsPaint = false;
@@ -161,9 +159,9 @@ class WrappableTextRenderer {
       needsLayout = true;
     }
 
-    final textScaleFactor = wt.textScaleFactor ?? defaultTextScaleFactor;
-    if (renderer._painter.textScaleFactor != textScaleFactor) {
-      renderer._painter.textScaleFactor = textScaleFactor;
+    final textScaler = wt.textScaler;
+    if (renderer._painter.textScaler != textScaler) {
+      renderer._painter.textScaler = textScaler;
       needsLayout = true;
     }
 
@@ -293,7 +291,7 @@ class TextRenderer with RenderTextMixin {
           text: text,
           textAlign: _painter.textAlign,
           textDirection: _painter.textDirection,
-          textScaleFactor: _painter.textScaleFactor,
+          textScaler: _painter.textScaler,
           maxLines: maxLines,
           ellipsis: _painter.ellipsis,
           locale: _painter.locale,
@@ -331,12 +329,12 @@ class TextRenderer with RenderTextMixin {
   double initialLineHeight() {
     final fontSize = _painter.text!.initialFontSize(14.0);
     final lineHeightScale = _painter.text!.initialLineHeightScale(1.12);
-    return fontSize * lineHeightScale * _painter.textScaleFactor;
+    return _painter.textScaler.scale(fontSize * lineHeightScale);
   }
 
   double initialScaledFontSize() {
     final fontSize = _painter.text!.initialFontSize(14.0);
-    return fontSize * _painter.textScaleFactor;
+    return _painter.textScaler.scale(fontSize);
   }
 
   /// Sets the placeholder dimensions for this paragraph's inline widget
@@ -344,7 +342,7 @@ class TextRenderer with RenderTextMixin {
   bool setPlaceholderDimensions(
     RenderBox? firstChild,
     BoxConstraints constraints,
-    double textScaleFactor,
+    TextScaler textScaler,
   ) {
     if (firstChild == null) return false;
 
@@ -623,7 +621,10 @@ class TextRenderer with RenderTextMixin {
   TextHeightBehavior? get textHeightBehavior => _painter.textHeightBehavior;
 
   @override
-  double get textScaleFactor => _painter.textScaleFactor;
+  double get textScaleFactor => _painter.textScaler.scale(kDefaultFontSize);
+
+  @override
+  TextScaler get textScaler => _painter.textScaler;
 
   @override
   Size get textSize => _painter.size;

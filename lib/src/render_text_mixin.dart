@@ -47,11 +47,22 @@ mixin RenderTextMixin {
   /// effects.
   bool get softWrap;
 
+  /// Deprecated. Will be removed in a future version of Flutter. Use
+  /// [textScaler] instead.
+  ///
   /// The number of font pixels for each logical pixel.
   ///
-  /// For example, if the text scale factor is 1.5, text will be 50% larger
-  /// than the specified font size.
+  /// For example, if the text scale factor is 1.5, text will be 50% larger than
+  /// the specified font size.
+  @Deprecated(
+    'Use textScaler instead. '
+    'Use of textScaleFactor was deprecated in preparation for the upcoming nonlinear text scaling support. '
+    'This feature was deprecated after Flutter v3.12.0-2.0.pre.',
+  )
   double get textScaleFactor;
+
+  /// {@macro flutter.painting.textPainter.textScaler}
+  TextScaler get textScaler;
 
   /// An optional maximum number of lines for the text to span, wrapping if
   /// necessary. If the text exceeds the given number of lines, it will be
@@ -215,7 +226,11 @@ class RenderParagraphAdapter with RenderTextMixin {
   TextHeightBehavior? get textHeightBehavior => rp.textHeightBehavior;
 
   @override
+  // ignore: deprecated_member_use
   double get textScaleFactor => rp.textScaleFactor;
+
+  @override
+  TextScaler get textScaler => rp.textScaler;
 
   @override
   Size get textSize => rp.textSize;

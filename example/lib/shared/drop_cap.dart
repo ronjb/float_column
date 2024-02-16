@@ -21,8 +21,9 @@ class DropCap extends StatelessWidget {
         // color: Colors.yellow,
         child: Text(
           text,
-          textScaleFactor:
-              textScaleFactor ?? MediaQuery.of(context).textScaleFactor,
+          textScaler: textScaleFactor == null
+              ? MediaQuery.textScalerOf(context)
+              : TextScaler.linear(textScaleFactor!),
           style: textStyleWithGoogleFont().copyWith(
               fontSize: (style.fontSize ?? 16.0) *
                   (style.height ?? 1.0) *
