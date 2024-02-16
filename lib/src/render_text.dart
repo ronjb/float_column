@@ -49,6 +49,9 @@ class WrappableTextRenderer {
           selectionColor,
         );
 
+  bool get alwaysNeedsCompositing =>
+      renderers.any((tr) => tr._lastSelectableFragments?.isNotEmpty ?? false);
+
   void dispose() {
     subsClearAndDispose();
     renderer.dispose();
@@ -474,6 +477,9 @@ class TextRenderer with RenderTextMixin {
     }
     _lastSelectableFragments ??= _getSelectableFragments();
     _lastSelectableFragments!.forEach(_registrar!.add);
+    if (_lastSelectableFragments!.isNotEmpty) {
+      _parent.markNeedsCompositingBitsUpdate();
+    }
   }
 
   void _removeSelectionRegistrarSubscription() {
@@ -523,6 +529,9 @@ class TextRenderer with RenderTextMixin {
 
   void dispose() {
     _removeSelectionRegistrarSubscription();
+
+    // TODO(ron): Do this instead of `_lastSelectableFragments = null;`?
+    // _disposeSelectableFragments();
 
     // `_lastSelectableFragments` may hold references to this TextRenderer.
     // Release them manually to avoid retain cycles.

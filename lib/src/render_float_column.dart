@@ -303,6 +303,10 @@ class RenderFloatColumn extends RenderBox
   var _needsLayout = true;
 
   @override
+  bool get alwaysNeedsCompositing =>
+      _cache.any((wtr) => wtr.alwaysNeedsCompositing);
+
+  @override
   void markNeedsLayout() {
     _needsLayout = true;
     _overflow = 0.0;
