@@ -1,11 +1,11 @@
 name: float_column
 description: Flutter FloatColumn widget for building a vertical column of widgets and text where the text wraps around floated widgets, similar to how CSS float works.
-version: 2.1.4
+version: 2.1.6
 repository: https://github.com/ronjb/float_column
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
-  flutter: '>=3.19.0'
+  flutter: '>=3.19.0-0.4.pre'
 
 dependencies:
   flutter:

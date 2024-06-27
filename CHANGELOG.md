@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [2.1.6] - June 27, 2024
+
+* Updated TextRenderer to handle the case where `_painter.text` is null to avoid a possible exception.
+
+## [2.1.5] - February 16, 2024
+
+* Another update to try to fix static analysis issues.
+
 ## [2.1.4] - February 16, 2024
 
 * More updates to try to fix static analysis issues.

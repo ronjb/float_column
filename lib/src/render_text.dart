@@ -120,7 +120,8 @@ class WrappableTextRenderer {
 
     final textSpan =
         TextSpan(style: defaultTextStyle.style, children: [wt.text]);
-    final comparison = renderer._painter.text!.compareTo(textSpan);
+    final comparison =
+        renderer._painter.text?.compareTo(textSpan) ?? RenderComparison.layout;
     switch (comparison) {
       case RenderComparison.identical:
       case RenderComparison.metadata:
@@ -266,7 +267,7 @@ class TextRenderer with RenderTextMixin {
   List<PlaceholderSpan> get placeholderSpans {
     if (_placeholderSpans == null) {
       _placeholderSpans = <PlaceholderSpan>[];
-      _painter.text!.visitChildren((span) {
+      text.visitChildren((span) {
         if (span is PlaceholderSpan) _placeholderSpans!.add(span);
         return true;
       });
@@ -330,13 +331,13 @@ class TextRenderer with RenderTextMixin {
   /// Returns an estimate of the initial line height based on the initial font
   /// size, initial line height scale, and the text scale factor.
   double initialLineHeight() {
-    final fontSize = _painter.text!.initialFontSize(14.0);
-    final lineHeightScale = _painter.text!.initialLineHeightScale(1.12);
+    final fontSize = text.initialFontSize(14.0);
+    final lineHeightScale = text.initialLineHeightScale(1.12);
     return _painter.textScaler.scale(fontSize * lineHeightScale);
   }
 
   double initialScaledFontSize() {
-    final fontSize = _painter.text!.initialFontSize(14.0);
+    final fontSize = text.initialFontSize(14.0);
     return _painter.textScaler.scale(fontSize);
   }
 
@@ -613,7 +614,7 @@ class TextRenderer with RenderTextMixin {
   StrutStyle? get strutStyle => _painter.strutStyle;
 
   @override
-  InlineSpan get text => _painter.text!;
+  InlineSpan get text => _painter.text ?? const TextSpan(text: '');
 
   @override
   TextAlign get textAlign => _painter.textAlign;
