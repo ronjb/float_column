@@ -121,6 +121,7 @@ class SelectableFragment
           case TextGranularity.character:
             result = _updateSelectionEdge(edgeUpdate.globalPosition,
                 isEnd: edgeUpdate.type == SelectionEventType.endEdgeUpdate);
+          case TextGranularity.paragraph: // TODO(ron): Implement this.
           case TextGranularity.word:
             result = _updateSelectionEdgeByWord(edgeUpdate.globalPosition,
                 isEnd: edgeUpdate.type == SelectionEventType.endEdgeUpdate);
@@ -138,6 +139,7 @@ class SelectableFragment
       case SelectionEventType.selectAll:
         result = _handleSelectAll();
         break;
+      case SelectionEventType.selectParagraph: // TODO(ron): Implement this.
       case SelectionEventType.selectWord:
         final selectWord = event as SelectWordSelectionEvent;
         result = _handleSelectWord(selectWord.globalPosition);
@@ -648,6 +650,7 @@ class SelectableFragment
             targetedEdge, forward, CharacterBoundary(text));
         result = SelectionResult.end;
         break;
+      case TextGranularity.paragraph: // TODO(ron): Implement this.
       case TextGranularity.word:
         final textBoundary =
             paragraph.textPainter.wordBoundaries.moveByWordBoundary;

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [2.1.7] - August 7, 2024
+
+* Updated to compile with Flutter 3.24.0
+
 ## [2.1.6] - June 27, 2024
 
 * Updated TextRenderer to handle the case where `_painter.text` is null to avoid a possible exception.
