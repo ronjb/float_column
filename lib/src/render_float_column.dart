@@ -75,12 +75,7 @@ class RenderFloatColumn extends RenderBox
     SelectionRegistrar? registrar,
     Color? selectionColor,
     List<RenderBox>? widgets,
-  })  :
-        // ignore: unnecessary_null_comparison
-        assert(crossAxisAlignment != null),
-        // ignore: unnecessary_null_comparison
-        assert(clipBehavior != null),
-        _crossAxisAlignment = crossAxisAlignment,
+  })  : _crossAxisAlignment = crossAxisAlignment,
         _textDirection = textDirection,
         _defaultTextStyle = defaultTextStyle,
         _defaultTextScaler = defaultTextScaler,
@@ -91,11 +86,9 @@ class RenderFloatColumn extends RenderBox
     this.registrar = registrar;
   }
 
-  // List<Object> get textAndWidgets => _textAndWidgets;
+  List<Object> get textAndWidgets => _textAndWidgets;
   List<Object> _textAndWidgets;
-  // ignore: avoid_setters_without_getters
   set textAndWidgets(List<Object> value) {
-    assert(value != null); // ignore: unnecessary_null_comparison
     if (_textAndWidgets != value) {
       _textAndWidgets = value;
       _updateCache();
@@ -204,7 +197,6 @@ class RenderFloatColumn extends RenderBox
   CrossAxisAlignment get crossAxisAlignment => _crossAxisAlignment;
   CrossAxisAlignment _crossAxisAlignment;
   set crossAxisAlignment(CrossAxisAlignment value) {
-    assert(value != null); // ignore: unnecessary_null_comparison
     if (_crossAxisAlignment != value) {
       _crossAxisAlignment = value;
       markNeedsLayout();
@@ -267,18 +259,6 @@ class RenderFloatColumn extends RenderBox
     _updateCache();
   }
 
-  bool get _debugHasNecessaryDirections {
-    assert(crossAxisAlignment != null); // ignore: unnecessary_null_comparison
-    if (crossAxisAlignment == CrossAxisAlignment.start ||
-        crossAxisAlignment == CrossAxisAlignment.end) {
-      assert(
-          textDirection != null, // ignore: unnecessary_null_comparison
-          '$runtimeType has a null textDirection, so the alignment cannot be '
-          'resolved.');
-    }
-    return true;
-  }
-
   // Set during layout if overflow occurred on the main axis.
   double _overflow = 0.0;
 
@@ -292,7 +272,6 @@ class RenderFloatColumn extends RenderBox
   Clip get clipBehavior => _clipBehavior;
   Clip _clipBehavior = Clip.none;
   set clipBehavior(Clip value) {
-    assert(value != null); // ignore: unnecessary_null_comparison
     if (value != _clipBehavior) {
       _clipBehavior = value;
       markNeedsPaint();
@@ -387,8 +366,6 @@ class RenderFloatColumn extends RenderBox
 
   @override
   void performLayout() {
-    assert(_debugHasNecessaryDirections);
-
     _cachedCombinedSemanticsInfos = null;
 
     final constraints = this.constraints;
@@ -1251,6 +1228,8 @@ class RenderFloatColumn extends RenderBox
     var currentDirection = textDirection;
     var ordinal = 0.0;
     var semanticsChildIndex = 0;
+
+    // We need a LinkedHashMap.
     // ignore: prefer_collection_literals
     final newChildCache = LinkedHashMap<Key, SemanticsNode>();
 

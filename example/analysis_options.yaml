@@ -14,3 +14,4 @@ analyzer:
 # Linter rules (see: http://dart-lang.github.io/linter/lints/)
 linter:
   rules:
+    document_ignores: false

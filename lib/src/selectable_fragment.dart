@@ -8,6 +8,7 @@ import 'package:flutter/widgets.dart';
 
 import 'render_text.dart';
 
+// The source code ignores the following lint rules:
 // ignore_for_file: cascade_invocations
 
 // Based on _SelectableFragment in flutter/lib/src/rendering/paragraph.dart
@@ -20,12 +21,8 @@ import 'render_text.dart';
 /// to create multiple `SelectableFragment`s so that they can be selected
 /// separately.
 class SelectableFragment
-    with
-        Selectable,
-        Diagnosticable,
-        ChangeNotifier // ignore: prefer_mixin
-    implements
-        TextLayoutMetrics {
+    with Selectable, Diagnosticable, ChangeNotifier
+    implements TextLayoutMetrics {
   SelectableFragment({
     required this.paragraph,
     required this.fullText,

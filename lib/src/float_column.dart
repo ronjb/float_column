@@ -37,13 +37,7 @@ class FloatColumn extends MultiChildRenderObjectWidget {
     this.selectionRegistrar,
     this.selectionColor,
     List<Object> children = const <Object>[],
-  })  :
-        // ignore: unnecessary_null_comparison
-        assert(crossAxisAlignment != CrossAxisAlignment.baseline),
-        // ignore: unnecessary_null_comparison
-        assert(clipBehavior != null),
-        // ignore: unnecessary_null_comparison
-        assert(children != null),
+  })  : assert(crossAxisAlignment != CrossAxisAlignment.baseline),
         super(children: _extractWidgets(children)) {
     _textAndWidgets = children.map((e) {
       if (e is WrappableText) return e;

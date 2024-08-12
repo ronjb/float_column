@@ -270,5 +270,5 @@ V? valueOfFirstDescendantOf<T, V>(
     }
   }
 
-  return null; // ignore: avoid_returning_null
+  return null;
 }

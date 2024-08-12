@@ -1,6 +1,4 @@
-import 'package:float_column/float_column.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 
 import 'pages/basic_ltr.dart';
 import 'pages/basic_rtl.dart';
@@ -9,8 +7,6 @@ import 'pages/inline_floats.dart';
 import 'pages/margins_and_padding.dart';
 import 'pages/nested.dart';
 import 'pages/sliver_list.dart';
-
-// ignore_for_file: unused_import
 
 void main() {
   runApp(const MyApp());

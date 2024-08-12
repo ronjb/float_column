@@ -252,7 +252,6 @@ class TextRenderer with RenderTextMixin {
 
   String toPlainText() => text.toPlainText(includeSemanticsLabels: false);
 
-  // ignore: use_late_for_private_fields_and_variables
   Offset? _offset;
   set offset(Offset value) => _offset = value;
 
@@ -605,7 +604,7 @@ class TextRenderer with RenderTextMixin {
   int? get maxLines => _painter.maxLines;
 
   @override
-  Offset get offset => _offset!;
+  Offset get offset => _offset ?? Offset.zero;
 
   @override
   RenderBox get renderBox => _parent;
@@ -629,6 +628,7 @@ class TextRenderer with RenderTextMixin {
   TextHeightBehavior? get textHeightBehavior => _painter.textHeightBehavior;
 
   @override
+  // For backward compatibility with deprecated [textScaleFactor].
   // ignore: deprecated_member_use
   double get textScaleFactor => _painter.textScaleFactor;
 

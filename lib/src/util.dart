@@ -12,6 +12,7 @@ import 'shared.dart';
 /// Iff kDebugMode is true, prints a string representation of the object
 /// to the console.
 void dmPrint(Object object) {
+  // Using `print` only in debug mode.
   if (kDebugMode) print(object); // ignore: avoid_print
 }
 
@@ -41,7 +42,7 @@ FCClear resolveClear(FCClear clear, {required ui.TextDirection withDir}) {
 
 bool _isLTR(ui.TextDirection direction) => direction == ui.TextDirection.ltr;
 
-/// List<Rect> extensions
+/// `List<Rect>` extensions
 extension FloatColumnExtOnListOfRect on List<ui.Rect> {
   /// Returns the `bottom` of the bottom-most rectangle in this list that is
   /// greater than [startY], or [startY] if there is none.

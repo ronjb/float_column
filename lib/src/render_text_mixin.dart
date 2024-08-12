@@ -6,8 +6,6 @@ import 'dart:ui' as ui show BoxHeightStyle, BoxWidthStyle;
 
 import 'package:flutter/rendering.dart';
 
-// ignore_for_file: comment_references
-
 /// Mix this into classes that should mirror the functionality of
 /// RenderParagraph.
 mixin RenderTextMixin {
@@ -43,8 +41,7 @@ mixin RenderTextMixin {
   /// If false, the glyphs in the text will be positioned as if there was
   /// unlimited horizontal space.
   ///
-  /// If [softWrap] is false, [overflow] and [textAlign] may have unexpected
-  /// effects.
+  /// If [softWrap] is false, [textAlign] may have unexpected effects.
   bool get softWrap;
 
   /// Deprecated. Will be removed in a future version of Flutter. Use
@@ -67,7 +64,7 @@ mixin RenderTextMixin {
 
   /// An optional maximum number of lines for the text to span, wrapping if
   /// necessary. If the text exceeds the given number of lines, it will be
-  /// truncated according to `overflow` and `softWrap`.
+  /// truncated according to `softWrap`.
   int? get maxLines;
 
   /// Used by this paragraph's internal [TextPainter] to select a
@@ -109,7 +106,7 @@ mixin RenderTextMixin {
   /// contains multiple [InlineSpan]s or bidirectional text, because logically
   /// contiguous text might not be visually contiguous.
   ///
-  /// Valid only after [layout].
+  /// Valid only after layout.
   ///
   /// See also:
   ///
@@ -227,6 +224,7 @@ class RenderParagraphAdapter with RenderTextMixin {
   TextHeightBehavior? get textHeightBehavior => rp.textHeightBehavior;
 
   @override
+  // For backward compatibility with deprecated [textScaleFactor].
   // ignore: deprecated_member_use
   double get textScaleFactor => rp.textScaleFactor;
 

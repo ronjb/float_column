@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 
 import 'shared.dart';
 
+// Ignoring deprecated members from the same package.
 // ignore_for_file: deprecated_member_use_from_same_package
 
 /// An immutable span of inline content which forms a paragraph. Only useful as
@@ -45,11 +46,6 @@ class WrappableText {
     this.margin = EdgeInsets.zero,
     this.padding = EdgeInsets.zero,
   })  : assert(
-          // ignore: unnecessary_null_comparison
-          text != null,
-          'A non-null TextSpan must be provided to a WrappableText.',
-        ),
-        assert(
             textScaleFactor == 1.0 ||
                 identical(textScaler, TextScaler.noScaling),
             'Use textScaler instead.'),
@@ -57,16 +53,14 @@ class WrappableText {
         assert(maxLines == null || maxLines > 0);
 
   WrappableText.fromText(Text text)
-      :
-        // ignore: unnecessary_null_comparison
-        assert(text != null),
-        key = text.key,
+      : key = text.key,
         text = _textSpanFrom(text.textSpan, text.data, text.style),
         clear = FCClear.none,
         textAlign = text.textAlign,
         textDirection = text.textDirection,
         overflow = text.overflow,
         textScaler =
+            // For backward compatibility...
             // ignore: deprecated_member_use
             _effectiveTextScalerFrom(text.textScaler, text.textScaleFactor),
         maxLines = text.maxLines,
@@ -78,16 +72,14 @@ class WrappableText {
         padding = EdgeInsets.zero;
 
   WrappableText.fromRichText(RichText text)
-      :
-        // ignore: unnecessary_null_comparison
-        assert(text != null),
-        key = text.key,
+      : key = text.key,
         text = _textSpanFrom(text.text, null, null),
         clear = FCClear.none,
         textAlign = text.textAlign,
         textDirection = text.textDirection,
         overflow = text.overflow,
         textScaler =
+            // For backward compatibility...
             // ignore: deprecated_member_use
             _effectiveTextScalerFrom(text.textScaler, text.textScaleFactor),
         maxLines = text.maxLines,
