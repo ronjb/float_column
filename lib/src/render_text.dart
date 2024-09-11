@@ -318,6 +318,13 @@ class TextRenderer with RenderTextMixin {
 
   double placeholderScaleForWidgetIndex(int index) {
     return 1.0;
+    // `inlinePlaceholderScales` was removed in commit
+    // b5df180a6f0d4754b7e82f36cae89033d46ddbbf on Fri, May 26, 2023, with
+    // comment:
+    // - Removed `TextPainter.inlinePlaceholderScales`. I'm going to deprecate
+    //   the `scale` argument in `TextPainter.addPlaceholder` next, as scaling
+    //   is now done at the widget level.
+    //
     // final i = index - startingPlaceholderIndex;
     // if ((_painter.inlinePlaceholderScales?.length ?? 0) > i) {
     //   return _painter.inlinePlaceholderScales![i];
