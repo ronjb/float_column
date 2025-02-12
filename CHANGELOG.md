@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [3.0.0] - February 12, 2025
+
+* Added two new required methods to SelectableFragment class: `int get contentLength` and `SelectedContentRange? getSelection()`. These two new methods are defined in Flutter 3.29.0, so it is a breaking change.
+* Updated pubspec.yaml to depend on `flutter: '>=3.29.0'`.
+
 ## [2.1.8] - August 7, 2024
 
 * Updated pubspec.yaml to use `flutter: '>=3.24.0'`.

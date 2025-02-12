@@ -952,6 +952,12 @@ class SelectableFragment
     properties.add(DiagnosticsProperty<TextRange>('range', range));
     properties.add(DiagnosticsProperty<String>('fullText', fullText));
   }
+
+  @override
+  int get contentLength => fullText.length;
+
+  @override
+  SelectedContentRange? getSelection() => null;
 }
 
 extension on TextRenderer {
