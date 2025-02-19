@@ -5,126 +5,96 @@ extension on RenderFloatColumn {
   bool get isRTL => textDirection == TextDirection.rtl;
 
   Size _performLayout() {
-    _cachedCombinedSemanticsInfos = null;
-
     final constraints = this.constraints;
-    final maxWidth = constraints.maxWidth;
 
     final BoxConstraints childConstraints;
     if (crossAxisAlignment == CrossAxisAlignment.stretch) {
-      childConstraints = BoxConstraints.tightFor(width: maxWidth);
+      childConstraints = BoxConstraints.tightFor(width: constraints.maxWidth);
     } else {
-      childConstraints = BoxConstraints(maxWidth: maxWidth);
+      childConstraints = BoxConstraints(maxWidth: constraints.maxWidth);
     }
 
-    // These will hold the rectangles of widgets that are floated to the left
-    // or right.
-    final floatL = <Rect>[];
-    final floatR = <Rect>[];
-
-    var child = firstChild;
-    var textIndex = 0;
-
-    // This gets updated to the y position for the next child.
-    var yPosNext = 0.0;
+    final rc = _RenderCursor(firstChild);
 
     // This gets updated to the previous non-floated child's bottom margin.
     var prevBottomMargin = 0.0;
 
-    var i = 0;
-    for (final el in _textAndWidgets) {
+    for (var i = 0; i < childManager.textAndWidgets.length; i++) {
+      assert(rc.index == i);
+      rc.index = i;
+      final el = childManager.textAndWidgets[i];
+
+      // Update the associated widget and update the render object.
+      childManager.childWidgets[i] =
+          el is Widget ? el : (el as WrappableText).toWidget();
+      rc.maybeChild = _addOrUpdateChild(i, after: rc.previousChild);
+      if (rc.maybeChild == null) {
+        assert(false);
+        continue;
+      }
+
       // If it is a Widget...
       if (el is Widget) {
-        final floatData = child!.floatData;
-        assert(floatData.index == i && floatData.placeholderIndex == 0);
+        final floatData = FloatData(i, 0, el);
 
-        // If not floated, resolve the margin and update `yPosNext` and
+        // If not floated, resolve the margin and update `rc.y` and
         // `prevBottomMargin`.
         if (floatData.float == FCFloat.none) {
           final margin = floatData.margin.resolve(textDirection);
           final topMargin = math.max(prevBottomMargin, margin.top);
-          yPosNext += topMargin;
+          rc.y += topMargin;
           prevBottomMargin = margin.bottom;
         }
 
-        final childParentData = child.parentData! as FloatColumnParentData;
-
-        yPosNext = _layoutWidget(child, childParentData, childConstraints,
-            yPosNext, maxWidth, floatData, floatL, floatR);
-
-        assert(child.parentData == childParentData);
-        child = childParentData.nextSibling;
+        _layoutWidget(rc, childConstraints, floatData);
       }
 
       // Else, if it is a WrappableText...
       else if (el is WrappableText) {
-        final wtr = _cache[textIndex];
-        textIndex++;
-        assert(wtr.renderer.placeholderSpans.isEmpty ||
-            (child != null && child.floatData.index == i));
-
-        // Resolve the margin and update `yPosNext` and `prevBottomMargin`.
-        final margin = el.margin.resolve(wtr.textDirection);
+        // Resolve the margin and update `rc.y` and `prevBottomMargin`.
+        final textDirection = el.textDirection ?? this.textDirection;
+        final margin = el.margin.resolve(textDirection);
         final topMargin = math.max(prevBottomMargin, margin.top);
-        yPosNext += topMargin;
+        rc.y += topMargin;
         prevBottomMargin = margin.bottom;
 
-        yPosNext = _layoutWrappableText(el, wtr, child, childConstraints,
-            yPosNext, maxWidth, floatL, floatR);
-
-        // If this paragraph has inline widget children, set the `offset` and
-        // `scale` for each.
-        if (child != null && child.floatData.index == i) {
-          var widgetIndex = 0;
-          while (child != null && child.floatData.index == i) {
-            assert(child.floatData.placeholderIndex == widgetIndex);
-            final childParentData = child.parentData! as FloatColumnParentData;
-            if (child.floatData.float == FCFloat.none) {
-              final renderer = wtr.rendererWithPlaceholder(widgetIndex);
-              final box = renderer.placeholderBoxForWidgetIndex(widgetIndex);
-              childParentData.offset = Offset(
-                  box.left + renderer.offset.dx, box.top + renderer.offset.dy);
-            }
-            child = childParentData.nextSibling;
-            widgetIndex++;
-          }
-        }
+        _layoutWrappableText(el, rc, childConstraints, textDirection);
       } else {
         assert(false);
       }
 
-      i++;
+      rc.moveNext();
     }
 
-    yPosNext += prevBottomMargin;
+    // Remove any extra children.
+    while (rc.maybeChild != null) {
+      final childParentData = rc.child.parentData! as FloatColumnParentData;
+      final nextChild = childParentData.nextSibling;
+      _removeChild(rc.child);
+      rc.maybeChild = nextChild;
+    }
+
+    rc.y += prevBottomMargin;
     final totalHeight =
-        math.max(floatL.maxYBelow(yPosNext), floatR.maxYBelow(yPosNext));
+        math.max(rc.floatL.maxYBelow(rc.y), rc.floatR.maxYBelow(rc.y));
     _overflow = totalHeight > constraints.maxHeight
         ? totalHeight - constraints.maxHeight
         : 0.0;
-    final newSize = constraints.constrain(Size(maxWidth, totalHeight));
-
-    // Now that `performLayout` is finished...
-    _needsLayout = false;
-    _updateEveryTextRendererWith(registrar);
+    final newSize =
+        constraints.constrain(Size(constraints.maxWidth, totalHeight));
 
     return newSize;
   }
 
-  /// Lays out the given [child] widget, and returns the y position for the
-  /// next child.
-  double _layoutWidget(
-    RenderBox child,
-    FloatColumnParentData parentData,
+  /// Lays out child widget.
+  void _layoutWidget(
+    _RenderCursor rc,
     BoxConstraints childConstraints,
-    double yPos,
-    double maxWidth,
     FloatData floatData,
-    List<Rect> floatL,
-    List<Rect> floatR,
   ) {
     final margin = floatData.margin.resolve(textDirection);
     final padding = floatData.padding.resolve(textDirection);
+    final maxWidth = childConstraints.maxWidth;
 
     final maxWidthMinusPadding = math.max(0.0,
         maxWidth - margin.left - margin.right - padding.left - padding.right);
@@ -139,7 +109,7 @@ extension on RenderFloatColumn {
       );
     }
 
-    child.layout(layoutConstraints, parentUsesSize: true);
+    rc.child.layout(layoutConstraints, parentUsesSize: true);
 
     var alignment = crossAxisAlignment;
 
@@ -149,27 +119,27 @@ extension on RenderFloatColumn {
       final float = resolveFloat(floatData.float, withDir: textDirection);
       assert(float == FCFloat.left || float == FCFloat.right);
       if (float == FCFloat.left) {
-        addToFloatRects = floatL;
+        addToFloatRects = rc.floatL;
         alignment = isLTR ? CrossAxisAlignment.start : CrossAxisAlignment.end;
       } else {
-        addToFloatRects = floatR;
+        addToFloatRects = rc.floatR;
         alignment = isRTL ? CrossAxisAlignment.start : CrossAxisAlignment.end;
       }
     }
 
-    var yPosNext = yPos;
+    var yPosNext = rc.y;
 
     // Check for `clear` and adjust `yPosNext` accordingly.
     final clear = resolveClear(floatData.clear, withDir: textDirection);
     final spacing = floatData.clearMinSpacing;
     if (clear == FCClear.left || clear == FCClear.both) {
-      yPosNext = floatL.nextY(yPosNext, spacing);
+      yPosNext = rc.floatL.nextY(yPosNext, spacing);
     }
     if (clear == FCClear.right || clear == FCClear.both) {
-      yPosNext = floatR.nextY(yPosNext, spacing);
+      yPosNext = rc.floatR.nextY(yPosNext, spacing);
     }
 
-    final totalMinWidth = child.size.width + padding.left + padding.right;
+    final totalMinWidth = rc.child.size.width + padding.left + padding.right;
     final minX = margin.left;
     final maxX = math.max(minX + totalMinWidth, maxWidth - margin.right);
 
@@ -177,11 +147,11 @@ extension on RenderFloatColumn {
     var rect = findSpaceFor(
       startY: yPosNext,
       width: math.min(maxWidth, totalMinWidth),
-      height: child.size.height + padding.top + padding.bottom,
+      height: rc.child.size.height + padding.top + padding.bottom,
       minX: minX,
       maxX: maxX,
-      floatL: floatL,
-      floatR: floatR,
+      floatL: rc.floatL,
+      floatR: rc.floatR,
     );
 
     // Adjust rect for padding.
@@ -195,115 +165,100 @@ extension on RenderFloatColumn {
     }
 
     // Calculate `xPos` based on alignment and available space.
-    final xPos = xPosForChildWithWidth(
-        child.size.width, alignment, rect.left, rect.right);
-    parentData.offset = Offset(xPos, rect.top);
+    final xPos = _xPosForChildWithWidth(
+        rc.child.size.width, alignment, rect.left, rect.right);
+    (rc.child.parentData! as FloatColumnParentData).offset =
+        Offset(xPos, rect.top);
 
     if (addToFloatRects != null) {
       // Include padding for the floated rect.
       addToFloatRects.add(Rect.fromLTRB(
         xPos - padding.left,
         rect.top - padding.top,
-        xPos + child.size.width + padding.right,
-        rect.top + child.size.height + padding.bottom,
+        xPos + rc.child.size.width + padding.right,
+        rect.top + rc.child.size.height + padding.bottom,
       ));
-      // This widget was floated, so set `yPosNext` back to `yPos`.
-      yPosNext = yPos;
+      // This widget was floated, so set `yPosNext` back to `rc.y`.
+      yPosNext = rc.y;
     } else {
-      yPosNext = rect.top + child.size.height + padding.bottom;
+      yPosNext = rect.top + rc.child.size.height + padding.bottom;
     }
 
-    return yPosNext;
+    rc.y = yPosNext;
   }
 
   /// Lays out the given WrappableText object, and returns the y position for
   /// the next child.
-  double _layoutWrappableText(
+  void _layoutWrappableText(
     WrappableText wt,
-    WrappableTextRenderer wtr,
-    RenderBox? child,
+    _RenderCursor rc,
     BoxConstraints childConstraints,
-    double yPos,
-    double maxWidth,
-    List<Rect> floatL,
-    List<Rect> floatR,
+    TextDirection textDirection,
   ) {
-    final margin = wt.margin.resolve(wtr.textDirection);
-    final padding = wt.padding.resolve(wtr.textDirection);
+    final margin = wt.margin.resolve(textDirection);
+    final padding = wt.padding.resolve(textDirection);
+    final maxWidth = childConstraints.maxWidth;
 
-    var yPosNext = yPos + padding.top;
+    var yPosNext = rc.y + padding.top;
 
     // Check for `clear` and adjust `yPosNext` accordingly.
-    final clear = resolveClear(wt.clear, withDir: wtr.textDirection);
+    final clear = resolveClear(wt.clear, withDir: textDirection);
     if (clear == FCClear.left || clear == FCClear.both) {
-      yPosNext = floatL.maxYBelow(yPosNext);
+      yPosNext = rc.floatL.maxYBelow(yPosNext);
     }
     if (clear == FCClear.right || clear == FCClear.both) {
-      yPosNext = floatR.maxYBelow(yPosNext);
+      yPosNext = rc.floatR.maxYBelow(yPosNext);
     }
-
-    // Clear the sub-paragraph renderers for wrapping text.
-    wtr.subsClearAndDispose();
 
     // Keep track of the indices of the floated inline widget children that
     // have already been laid out, because they can only be laid out once.
-    final laidOutFloaterIndices = <int>{};
+    // final laidOutFloaterIndices = <int>{};
 
-    TextRenderer? rendererBeforeSplit;
-    TextRenderer? removedSubTextRenderer;
+    // RenderParagraph? rendererBeforeSplit;
+    // RenderParagraph? removedSubTextRenderer;
 
-    // Loop over this WrappableText's renderers. It starts out with the default
-    // text renderer which includes all the text, but if the text needs to be
-    // split because the available width and/or x position changes (because of
-    // floated widgets), the text is split into two new renderers that replace
-    // the current renderer, and the loop is run again. This continues until
-    // all the text is laid out, using as many renderers as necessary to wrap
-    // around floated widgets.
-
-    var subIndex = -1;
-    while (subIndex < wtr.subsLength) {
+    final textPieces = <_Text>[];
+    var maxLines = wt.maxLines;
+    TextSpan? remainingText = wt.text;
+    while (remainingText != null) {
       // Get the estimated line height for the first line. We want to find
       // space for at least the first line of text.
-      final estLineHeight = wtr[subIndex].initialLineHeight();
+      final estLineHeight = remainingText.initialLineHeight(wt.textScaler);
 
       // If the text starts with a line feed, remove the line feed, add the
       // line height to `yPosNext`, and re-run the loop.
-      final initialText = wtr[subIndex].text.initialText();
+      final initialText = remainingText.initialText();
       if (initialText.isNotEmpty &&
           initialText.codeUnitAt(0) == 0x0a &&
-          (wtr[subIndex].maxLines == null || wtr[subIndex].maxLines! > 1)) {
-        final textRenderer = wtr[subIndex];
-        final split = textRenderer.text
-            .splitAtCharacterIndex(1, ignoreFloatedWidgetSpans: true);
+          (maxLines == null || maxLines > 1)) {
+        final split = remainingText.splitAtCharacterIndex(1,
+            ignoreFloatedWidgetSpans: true);
         if (split.length == 2) {
-          TextRenderer? removedSub;
-          if (subIndex == -1) {
-            subIndex = 0;
-          } else {
-            removedSub = wtr.subsRemoveAt(subIndex, dispose: false);
-          }
+          assert(split.first is TextSpan && split.last is TextSpan);
+          if (maxLines != null) maxLines -= 1;
 
-          final maxLines =
-              textRenderer.maxLines == null ? null : textRenderer.maxLines! - 1;
-
-          wtr.subsAdd(textRenderer.copyWith(
-              split.last,
-              subIndex == 0 ? 0 : wtr[subIndex - 1].nextPlaceholderIndex,
-              maxLines));
-
-          removedSub?.dispose();
+          remainingText = split.last as TextSpan;
+          childManager.childWidgets[rc.index] = wt
+              .copyWith(
+                  text: remainingText,
+                  maxLines: maxLines,
+                  clearKey: textPieces.isNotEmpty)
+              .toWidget();
+          rc.maybeChild = _addOrUpdateChild(rc.index, after: rc.previousChild);
 
           yPosNext += estLineHeight;
 
-          // Re-run the loop, keeping the index the same.
+          // Re-run the loop...
           continue; //-------------------------------------------->
         }
       }
 
-      final estScaledFontSize = wtr[subIndex].initialScaledFontSize();
+      final estScaledFontSize =
+          remainingText.initialScaledFontSize(wt.textScaler);
 
       // Adjust the left padding based on indent value.
-      final paddingLeft = padding.left + (subIndex <= 0 ? wt.indent : 0.0);
+      final indent = textPieces.isEmpty ? wt.indent : 0.0;
+      final paddingLeft = padding.left + indent;
 
       final lineMinWidth =
           estScaledFontSize * 4.0 + paddingLeft + padding.right;
@@ -321,8 +276,8 @@ extension on RenderFloatColumn {
           height: estLineHeight,
           minX: lineMinX,
           maxX: lineMaxX,
-          floatL: floatL,
-          floatR: floatR);
+          floatL: rc.floatL,
+          floatR: rc.floatR);
 
       // Adjust rect for padding.
       rect = Rect.fromLTRB(
@@ -332,173 +287,150 @@ extension on RenderFloatColumn {
         rect.bottom,
       );
 
-      // dmPrint('findSpaceFor $yPosNext, estLineHeight $estLineHeight: $rect');
-
       final subConstraints = childConstraints.copyWith(
         maxWidth: rect.width,
         minWidth: math.min(childConstraints.minWidth, rect.width),
       );
 
-      var hasFloatedChildren = false;
-
-      // If the sub-renderer has inline widget children, set placeholder
-      // dimensions, which MUST be done before `wtr[subIndex].layout` is
-      // called.
-      if (wtr[subIndex].placeholderSpans.isNotEmpty) {
-        assert(child != null);
-        hasFloatedChildren = wtr[subIndex]
-            .setPlaceholderDimensions(child, subConstraints, wt.textScaler);
-      }
-
       // Layout the text and inline widget children.
-      wtr[subIndex].layout(subConstraints);
+      rc.child.layout(subConstraints, parentUsesSize: true);
 
-      // If this is the default (-1) or last renderer, check to see if it needs
-      // to be split.
-      if (subIndex == -1 || subIndex == wtr.subsLength - 1) {
-        // TODO(ron): It is possible that the estimated line height is less
-        // than the actual first line height, which could cause the text in the
-        // line to overlap floated widgets below it. This could be fixed by
-        // using `painter.computeLineMetrics` to check, and then call
-        // `findSpaceFor` again, if necessary, with the actual first line
-        // height.
+      // If this is the first line of the paragraph, and the indent value is
+      // not zero, the second line has a different left padding, so it needs
+      // to be laid out separately, so set the `bottom` value accordingly.
+      final bottom = math.min(rect.bottom,
+          indent == 0.0 ? rect.bottom : rect.top + estLineHeight / 2.0);
 
-        // If this is the first line of the paragraph, and the indent value is
-        // not zero, the second line has a different left padding, so it needs
-        // to be laid out separately, so set the `bottom` value accordingly.
-        final bottom = math.min(
-            rect.bottom,
-            subIndex > 0 || wt.indent == 0.0
-                ? rect.bottom
-                : rect.top + estLineHeight / 2.0);
+      // `findSpaceFor` just checked for space for the first line of text.
+      // Now that the text has been laid out, we need to see if the available
+      // space extends to the full height of the text.
+      final startY = rect.top + estLineHeight;
+      final nextFloatTop = math.min(
+        rc.floatL.topOfTopMostRectAtOrBelow(startY),
+        rc.floatR.topOfTopMostRectAtOrBelow(startY),
+      );
+      final nextChangeY = math.min(bottom, nextFloatTop);
 
-        // `findSpaceFor` just checked for space for the first line of text.
-        // Now that the text has been laid out, we need to see if the available
-        // space extends the full height of the text.
-        final startY = rect.top + estLineHeight;
-        final nextFloatTop = math.min(
-          floatL.topOfTopMostRectAtOrBelow(startY),
-          floatR.topOfTopMostRectAtOrBelow(startY),
-        );
-        final nextChangeY = math.min(bottom, nextFloatTop);
+      // If the text extends past `nextChangeY`, we need to split the text,
+      // and layout each part individually...
+      if (rect.top + rc.child.size.height > nextChangeY) {
+        final span = remainingText;
+        //
+        // Calculate the approximate x, y to split the text at, which
+        // depends on the text direction.
+        //
+        // ⦿ Shows the x, y offsets the text should be split at:
+        //
+        // LTR example:
+        //  | This is what you   ┌──────────┐
+        //  | shall do; Love the ⦿          │
+        //  ├────────┐ earth and ⦿──────────┤
+        //  │        │ sun and the animals, |
+        //  ├────────┘ despise riches, give ⦿
+        //  │ alms to every one that asks...|
+        //
+        // RTL example:
+        //  |   you what is This ┌──────────┐
+        //  ⦿ the Love ;do shall │          │
+        //  ├────────⦿ and earth └──────────┤
+        //  │        │ ,animals the and sun |
+        //  ├────────⦿ give ,riches despise |
+        //  │...asks that one every to alms |
+        //
 
-        // If the text extends past `nextChangeY`, we need to split the text,
-        // and layout each part individually...
-        if (rect.top + wtr[subIndex].height > nextChangeY) {
-          final span = wtr[subIndex].text;
-          if (span is TextSpan) {
-            //
-            // Calculate the approximate x, y to split the text at, which
-            // depends on the text direction.
-            //
-            // ⦿ Shows the x, y offsets the text should be split at:
-            //
-            // RTL example:
-            //  | This is what you   ┌──────────┐
-            //  | shall do; Love the ⦿          │
-            //  ├────────┐ earth and ⦿──────────┤
-            //  │        │ sun and the animals, |
-            //  ├────────┘ despise riches, give ⦿
-            //  │ alms to every one that asks...|
-            //
-            // LTR example:
-            //  |   you what is This ┌──────────┐
-            //  ⦿ the Love ;do shall │          │
-            //  ├────────⦿ and earth └──────────┤
-            //  │        │ ,animals the and sun |
-            //  ├────────⦿ give ,riches despise |
-            //  │...asks that one every to alms |
-            //
-            final dir = wtr[subIndex].textDirection;
-            final x = dir == TextDirection.ltr ? rect.width : 0.0;
-            final y =
-                math.min(nextChangeY, nextFloatTop - estLineHeight) - rect.top;
+        final x = textDirection == TextDirection.ltr ? rect.width : 0.0;
+        final y =
+            math.min(nextChangeY, nextFloatTop - estLineHeight) - rect.top;
 
-            // Get the character index in the text from the point offset.
-            var charIndex =
-                wtr[subIndex].getPositionForOffset(Offset(x, y)).offset;
-            if (charIndex > 0) {
-              final text = span.toPlainText(includeSemanticsLabels: false);
-              if (charIndex < text.length - 1) {
-                // Skip trailing spaces.
-                final codeUnits = text.codeUnits;
-                while (charIndex < codeUnits.length - 1 &&
-                    codeUnits[charIndex] == 0x0020) {
-                  charIndex++;
+        final renderParagraph = rc.child is RenderParagraph
+            ? rc.child as RenderParagraph
+            : rc.child.firstDescendantOfType<RenderParagraph>();
+
+        if (renderParagraph == null) {
+          assert(false);
+        } else {
+          // Get the character index in the text from the point offset.
+          var charIndex =
+              renderParagraph.getPositionForOffset(Offset(x, y)).offset;
+          if (charIndex > 0) {
+            final text = span.toPlainText(includeSemanticsLabels: false);
+            if (charIndex < text.length - 1) {
+              // Skip trailing spaces.
+              final codeUnits = text.codeUnits;
+              while (charIndex < codeUnits.length - 1 &&
+                  codeUnits[charIndex] == 0x0020) {
+                charIndex++;
+              }
+
+              // Split the TextSpan at `charIndex`.
+              final split = span.splitAtCharacterIndex(charIndex,
+                  ignoreFloatedWidgetSpans: true);
+
+              // If it was split into two spans...
+              if (split.length == 2) {
+                //
+                // This fixes a bug where, if a span is split right before a
+                // line feed, and we don't remove the line feed, it is
+                // rendered like two line feeds.
+                //
+                // If the second span starts with a '\n' (line feed), remove
+                // the '\n'.
+                if (text.codeUnitAt(charIndex) == 0x0a) {
+                  final s2 = split.last
+                      .splitAtCharacterIndex(1, ignoreFloatedWidgetSpans: true);
+                  if (s2.length == 2) {
+                    assert(
+                        s2.first.toPlainText(includeSemanticsLabels: false) ==
+                            '\n');
+                    split[1] = s2.last;
+                  }
                 }
 
-                // final str1 = text.substring(0, charIndex);
-                // dmPrint('Splitting at ${Offset(x, y)} after "$str1"');
+                final part1 = wt.copyWith(
+                    text: split.first as TextSpan,
+                    maxLines: indent == 0.0 ? maxLines : 1,
+                    overflow: indent == 0.0 ? null : TextOverflow.ellipsis,
+                    clearKey: textPieces.isNotEmpty);
 
-                // Split the TextSpan at `charIndex`.
-                final split = span.splitAtCharacterIndex(charIndex,
-                    ignoreFloatedWidgetSpans: true);
+                childManager.childWidgets[rc.index] = part1.toWidget();
+                rc.maybeChild =
+                    _addOrUpdateChild(rc.index, after: rc.previousChild);
+                rc.child.layout(subConstraints, parentUsesSize: true);
 
-                // If it was split into two spans...
-                if (split.length == 2) {
-                  //
-                  // This fixes a bug where, if a span is split right before a
-                  // line feed, and we don't remove the line feed, it is
-                  // rendered like two line feeds.
-                  //
-                  // If the second span starts with a '\n' (line feed), remove
-                  // the '\n'.
-                  if (text.codeUnitAt(charIndex) == 0x0a) {
-                    final s2 = split.last.splitAtCharacterIndex(1,
-                        ignoreFloatedWidgetSpans: true);
-                    if (s2.length == 2) {
-                      assert(
-                          s2.first.toPlainText(includeSemanticsLabels: false) ==
-                              '\n');
-                      split[1] = s2.last;
-                    }
+                // If [maxLines] was set, [remainingLines] needs to be set to
+                // [maxLines] minus the number of lines in [part1].
+                int? remainingLines;
+                if (maxLines != null) {
+                  // Estimate the number of lines in [part1].
+                  final lines = (rc.child.size.height / estLineHeight).round();
+                  remainingLines = maxLines - lines;
+                }
+
+                // Only add [part2] if [remainingLines] is null or greater
+                // than zero.
+                if (remainingLines == null || remainingLines > 0) {
+                  // Calculate `xPos` based on alignment and available space.
+                  final xPos = _xPosForChildWithWidth(rc.child.size.width,
+                      _alignment(wt.textAlign), rect.left, rect.right);
+                  yPosNext += rc.child.size.height;
+
+                  if (textPieces.isEmpty) {
+                    rc.moveNext();
                   }
+                  textPieces.add(
+                      _Text(xPos, rect.top, subConstraints.maxWidth, part1));
 
-                  final textRenderer = rendererBeforeSplit = wtr[subIndex];
+                  remainingText = split.last as TextSpan;
+                  childManager.childWidgets[rc.index] = wt
+                      .copyWith(
+                          text: remainingText,
+                          maxLines: maxLines,
+                          clearKey: textPieces.isNotEmpty)
+                      .toWidget();
+                  rc.maybeChild =
+                      _addOrUpdateChild(rc.index, after: rc.previousChild);
 
-                  if (removedSubTextRenderer != null) {
-                    if (removedSubTextRenderer == textRenderer) {
-                      assert(false);
-                    } else {
-                      removedSubTextRenderer.dispose();
-                    }
-                    removedSubTextRenderer = null;
-                  }
-
-                  if (subIndex == -1) {
-                    subIndex = 0;
-                  } else {
-                    removedSubTextRenderer = wtr.subsRemoveLast(dispose: false);
-                  }
-
-                  final part1 = textRenderer.copyWith(
-                      split.first,
-                      subIndex == 0
-                          ? 0
-                          : wtr[subIndex - 1].nextPlaceholderIndex,
-                      textRenderer.maxLines);
-                  wtr.subsAdd(part1);
-
-                  // If [maxLines] was set, [remainingLines] needs to be set to
-                  // [maxLines] minus the number of lines in [part1].
-                  int? remainingLines;
-                  if (textRenderer.maxLines != null) {
-                    // Need to layout [part1] and call `computeLineMetrics` to
-                    // know how many lines it has.
-                    part1.layout(subConstraints);
-                    final lineMetrics = part1.textPainter.computeLineMetrics();
-                    remainingLines =
-                        textRenderer.maxLines! - lineMetrics.length;
-                  }
-
-                  // Only add [part2] if [remainingLines] is null or greater
-                  // than zero.
-                  if (remainingLines == null || remainingLines > 0) {
-                    wtr.subsAdd(textRenderer.copyWith(split.last,
-                        wtr[subIndex].nextPlaceholderIndex, remainingLines));
-                  }
-
-                  // Re-run the loop, keeping the index the same.
+                  // Re-run the loop...
                   continue; //------------------------------------>
                 }
               }
@@ -507,8 +439,11 @@ extension on RenderFloatColumn {
         }
       }
 
+      /*
       // At this point renderer wtr[subIndex] has gone through its final
       // layout, so we can now layout its floated widget children, if any.
+
+      var hasFloatedChildren = false;
 
       if (hasFloatedChildren) {
         /// Local func that lays out the first floated child that has not
@@ -579,49 +514,49 @@ extension on RenderFloatColumn {
             removedSubTextRenderer = null;
           }
 
-          // Re-run the loop, keeping the index the same.
+          // Re-run the loop...
           continue; //-------------------------------------------->
         }
       }
+      */
 
-      // Clear these before the next loop.
-      rendererBeforeSplit = null;
-      removedSubTextRenderer?.dispose();
-      removedSubTextRenderer = null;
+      final double xPos;
+      if (textPieces.isNotEmpty) {
+        // Calculate `xPos` based on alignment and available space.
+        final x = _xPosForChildWithWidth(rc.child.size.width,
+            _alignment(wt.textAlign), rect.left, rect.right);
+        textPieces.add(_Text(x, rect.top, subConstraints.maxWidth,
+            wt.copyWith(text: remainingText)));
 
-      CrossAxisAlignment alignment() {
-        switch (wtr[subIndex].textAlign) {
-          case TextAlign.left:
-            return isLTR ? CrossAxisAlignment.start : CrossAxisAlignment.end;
-          case TextAlign.right:
-            return isRTL ? CrossAxisAlignment.start : CrossAxisAlignment.end;
-          case TextAlign.center:
-            return CrossAxisAlignment.center;
-          case TextAlign.justify:
-            return CrossAxisAlignment.stretch;
-          case TextAlign.start:
-            return CrossAxisAlignment.start;
-          case TextAlign.end:
-            return CrossAxisAlignment.end;
-        }
+        rc.movePrevious();
+        childManager.childWidgets[rc.index] = textPieces.toWidget();
+        rc.maybeChild = _addOrUpdateChild(rc.index, after: rc.previousChild);
+        rc.child.layout(childConstraints, parentUsesSize: true);
+        final top = textPieces.first.y;
+        rect = Rect.fromLTWH(
+            0, top, childConstraints.maxWidth, top + rc.child.size.height);
+
+        xPos = 0.0;
+      } else {
+        // Calculate `xPos` based on alignment and available space.
+        xPos = _xPosForChildWithWidth(rc.child.size.width,
+            _alignment(wt.textAlign), rect.left, rect.right);
       }
 
-      // Calculate `xPos` based on alignment and available space.
-      final xPos = xPosForChildWithWidth(
-          wtr[subIndex].width, alignment(), rect.left, rect.right);
+      remainingText = null;
 
-      wtr[subIndex].offset = Offset(xPos, rect.top);
-      yPosNext = rect.top + wtr[subIndex].height;
+      (rc.child.parentData! as FloatColumnParentData).offset =
+          Offset(xPos, rect.top);
 
-      subIndex++;
-    } // while (subIndex < wtr.subs.length)
+      yPosNext = rect.top + rc.child.size.height;
+    }
 
-    return yPosNext + padding.bottom;
+    rc.y = yPosNext + padding.bottom;
   }
 
   /// Given a child's [width] and [alignment], and the [minX] and [maxX],
   /// returns the x position for the child.
-  double xPosForChildWithWidth(
+  double _xPosForChildWithWidth(
       double width, CrossAxisAlignment alignment, double minX, double maxX) {
     final double childCrossPosition;
     switch (alignment) {
@@ -640,5 +575,102 @@ extension on RenderFloatColumn {
         break;
     }
     return childCrossPosition;
+  }
+
+  CrossAxisAlignment _alignment(TextAlign? textAlign) {
+    switch (textAlign ?? defaultTextStyle.textAlign ?? TextAlign.start) {
+      case TextAlign.left:
+        return isLTR ? CrossAxisAlignment.start : CrossAxisAlignment.end;
+      case TextAlign.right:
+        return isRTL ? CrossAxisAlignment.start : CrossAxisAlignment.end;
+      case TextAlign.center:
+        return CrossAxisAlignment.center;
+      case TextAlign.justify:
+        return CrossAxisAlignment.stretch;
+      case TextAlign.start:
+        return CrossAxisAlignment.start;
+      case TextAlign.end:
+        return CrossAxisAlignment.end;
+    }
+  }
+}
+
+class _RenderCursor {
+  _RenderCursor(this.maybeChild);
+
+  int index = 0;
+  RenderBox? previousChild;
+  RenderBox? maybeChild;
+  double y = 0.0;
+
+  // The rectangles of widgets that are floated to the left or right.
+  final floatL = <Rect>[];
+  final floatR = <Rect>[];
+
+  RenderBox get child => maybeChild!;
+
+  void moveNext() {
+    previousChild = child;
+    maybeChild = (child.parentData! as FloatColumnParentData).nextSibling;
+    index++;
+  }
+
+  void movePrevious() {
+    maybeChild = previousChild;
+    previousChild =
+        (previousChild!.parentData! as FloatColumnParentData).previousSibling;
+    index--;
+  }
+}
+
+@immutable
+class _Text {
+  const _Text(this.x, this.y, this.width, this.text);
+
+  final double x;
+  final double y;
+  final double width;
+  final WrappableText text;
+
+  _Text copyWith({double? x, double? y, double? width, WrappableText? text}) {
+    return _Text(
+        x ?? this.x, y ?? this.y, width ?? this.width, text ?? this.text);
+  }
+}
+
+extension on List<_Text> {
+  Widget toWidget() {
+    dmPrint('widgets:');
+    for (final t in this) {
+      dmPrint('object: ${t.x}, ${t.width}, ${t.text.toWidget()}');
+    }
+    dmPrint('------------------------------------');
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final t in this)
+          Padding(
+            padding: EdgeInsetsDirectional.only(start: t.x),
+            child: SizedBox(
+              width: t.width,
+              child: t.text.toWidget(),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+extension on TextSpan {
+  double initialLineHeight(TextScaler textScaler) {
+    final fontSize = initialFontSize(14.0);
+    final lineHeightScale = initialLineHeightScale(1.12);
+    return textScaler.scale(fontSize * lineHeightScale);
+  }
+
+  double initialScaledFontSize(TextScaler textScaler) {
+    final fontSize = initialFontSize(14.0);
+    return textScaler.scale(fontSize);
   }
 }

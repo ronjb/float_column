@@ -2,11 +2,11 @@
 // Use of this source code is governed by a license that can be found in the
 // LICENSE file.
 
+import 'dart:collection';
+
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
-import 'float_column_semantics_tag.dart';
-import 'float_data.dart';
 import 'floatable.dart';
 import 'render_float_column.dart';
 import 'wrappable_text.dart';
@@ -14,7 +14,7 @@ import 'wrappable_text.dart';
 /// A vertical column of widgets and text with the ability to "float" child
 /// widgets to the left or right, allowing the text to wrap around them —
 /// similar to the functionality of the CSS `float` and `clear` properties.
-class FloatColumn extends MultiChildRenderObjectWidget {
+class FloatColumn extends RenderObjectWidget {
   /// Creates a [FloatColumn] — a vertical column of widgets and text with the
   /// ability to "float" child widgets to the left or right, allowing the text
   /// to wrap around them — similar to the functionality of the CSS `float`
@@ -34,11 +34,8 @@ class FloatColumn extends MultiChildRenderObjectWidget {
     this.crossAxisAlignment = CrossAxisAlignment.start,
     this.textDirection,
     this.clipBehavior = Clip.none,
-    this.selectionRegistrar,
-    this.selectionColor,
     List<Object> children = const <Object>[],
-  })  : assert(crossAxisAlignment != CrossAxisAlignment.baseline),
-        super(children: _extractWidgets(children)) {
+  }) : assert(crossAxisAlignment != CrossAxisAlignment.baseline) {
     _textAndWidgets = children.map((e) {
       if (e is WrappableText) return e;
       if (e is TextSpan) return WrappableText(text: e);
@@ -51,37 +48,6 @@ class FloatColumn extends MultiChildRenderObjectWidget {
 
   /// The list of WrappableText and Widget children.
   late final List<Object> _textAndWidgets;
-
-  static List<Widget> _extractWidgets(List<Object> list) {
-    var index = 0;
-    final result = <Widget>[];
-    for (final child in list) {
-      if (child is WrappableText) {
-        result._addWidgetSpanChildrenOf(child.text, index);
-      } else if (child is TextSpan) {
-        result._addWidgetSpanChildrenOf(child, index);
-      } else if (child is Text) {
-        result._addWidgetSpanChildrenOf(child.textSpan, index);
-      } else if (child is RichText) {
-        result._addWidgetSpanChildrenOf(child.text, index);
-      } else if (child is Widget) {
-        result.add(
-          MetaData(
-            metaData: FloatData(index, 0, child),
-            child: Semantics(
-              tagForChildren: FloatColumnPlaceholderSpanSemanticsTag(index, 0),
-              child: child,
-            ),
-          ),
-        );
-      } else {
-        throw ArgumentError(_errorMsgWithUnsupportedObject(child));
-      }
-      index++;
-    }
-
-    return result;
-  }
 
   /// How the children should be placed along the cross axis.
   ///
@@ -111,55 +77,38 @@ class FloatColumn extends MultiChildRenderObjectWidget {
   /// Defaults to [Clip.none].
   final Clip clipBehavior;
 
-  /// The [SelectionRegistrar] this [FloatColumn] is subscribed to.
+  /// The value to pass to [RenderFloatColumn.textDirection].
   ///
-  /// If this is `null`, `SelectionContainer.maybeOf(context)` is used to
-  /// get the [SelectionRegistrar] from the context.
-  final SelectionRegistrar? selectionRegistrar;
-
-  /// The color to use when painting the selection.
-  ///
-  /// This is ignored if `SelectionContainer.maybeOf(context)` and
-  /// [selectionRegistrar] are null.
-  final Color? selectionColor;
+  /// This value is derived from the [textDirection] property and the ambient
+  /// [Directionality].
+  @protected
+  TextDirection getEffectiveTextDirection(BuildContext context) {
+    return textDirection ?? Directionality.of(context);
+  }
 
   @override
   RenderFloatColumn createRenderObject(BuildContext context) {
     assert(textDirection != null || debugCheckHasDirectionality(context));
-    final registrar = selectionRegistrar ?? SelectionContainer.maybeOf(context);
+    final childManager = context as _FloatColumnElement;
     return RenderFloatColumn(
-      _textAndWidgets,
+      childManager: childManager,
       crossAxisAlignment: crossAxisAlignment,
-      textDirection: textDirection ?? Directionality.of(context),
+      textDirection: getEffectiveTextDirection(context),
       defaultTextStyle: DefaultTextStyle.of(context),
       defaultTextScaler: MediaQuery.textScalerOf(context),
       clipBehavior: clipBehavior,
-      registrar: registrar,
-      selectionColor: registrar == null
-          ? null
-          : selectionColor ??
-              DefaultSelectionStyle.of(context).selectionColor ??
-              DefaultSelectionStyle.defaultColor,
     );
   }
 
   @override
   void updateRenderObject(
       BuildContext context, covariant RenderFloatColumn renderObject) {
-    final registrar = selectionRegistrar ?? SelectionContainer.maybeOf(context);
     renderObject
-      ..textAndWidgets = _textAndWidgets
       ..crossAxisAlignment = crossAxisAlignment
-      ..textDirection = textDirection ?? Directionality.of(context)
+      ..textDirection = getEffectiveTextDirection(context)
       ..defaultTextStyle = DefaultTextStyle.of(context)
       ..defaultTextScaler = MediaQuery.textScalerOf(context)
-      ..clipBehavior = clipBehavior
-      ..registrar = registrar
-      ..selectionColor = registrar == null
-          ? null
-          : selectionColor ??
-              DefaultSelectionStyle.of(context).selectionColor ??
-              DefaultSelectionStyle.defaultColor;
+      ..clipBehavior = clipBehavior;
   }
 
   @override
@@ -171,34 +120,161 @@ class FloatColumn extends MultiChildRenderObjectWidget {
       ..add(EnumProperty<TextDirection>('textDirection', textDirection,
           defaultValue: null));
   }
+
+  @override
+  // _FloatColumnElement should be private.
+  // ignore: library_private_types_in_public_api
+  _FloatColumnElement createElement() => _FloatColumnElement(this);
 }
 
 String _errorMsgWithUnsupportedObject(Object object) =>
     'FloatColumn does not support children of type ${object.runtimeType}. '
     'It supports TextSpan, Text, RichText, WrappableText, and Widget children.';
 
-extension on List<Widget> {
-  void _addWidgetSpanChildrenOf(InlineSpan? inlineSpan, int index) {
-    if (inlineSpan == null) return;
+///
+/// _FloatColumnElement
+///
+class _FloatColumnElement extends RenderObjectElement
+    implements FloatColumnChildManager {
+  _FloatColumnElement(FloatColumn super.widget);
 
-    // Traverses the child's InlineSpan tree and depth-first collects
-    // the list of child widgets that are created in WidgetSpans.
-    var placeholderIndex = 0;
-    inlineSpan.visitChildren((span) {
-      if (span is WidgetSpan) {
-        add(
-          MetaData(
-            metaData: FloatData(index, placeholderIndex, span.child),
-            child: Semantics(
-              tagForChildren: FloatColumnPlaceholderSpanSemanticsTag(
-                  index, placeholderIndex),
-              child: span.child,
-            ),
-          ),
-        );
-        placeholderIndex++;
+  @override
+  RenderFloatColumn get renderObject => super.renderObject as RenderFloatColumn;
+
+  // We call `updateChild` at two different times:
+  //  1. When we ourselves are told to rebuild (see performRebuild).
+  //  2. When our render object needs a new child (see createChild).
+  // In both cases, we cache the results of calling into our delegate to get
+  // the child widget, so that if we do case 2 later, we don't call the builder
+  // again. Any time we do case 1, though, we reset the cache.
+
+  /// A cache of widgets so that we don't have to rebuild every time.
+  @override
+  final HashMap<int, Widget?> childWidgets = HashMap<int, Widget?>();
+
+  /// The map containing all active child elements. SplayTreeMap is used so that
+  /// we have all elements ordered and iterable by their keys.
+  final SplayTreeMap<int, Element> _childElements =
+      SplayTreeMap<int, Element>();
+
+  @override
+  void update(FloatColumn newWidget) {
+    // dmPrint('_FloatColumnElement update');
+    final oldWidget = widget as FloatColumn;
+    super.update(newWidget);
+    if (newWidget._textAndWidgets != oldWidget._textAndWidgets) {
+      performRebuild();
+      renderObject.markNeedsLayout();
+    }
+  }
+
+  @override
+  void performRebuild() {
+    // dmPrint('_FloatColumnElement performRebuild');
+    childWidgets.clear();
+    super.performRebuild();
+  }
+
+  @override
+  Element? updateChild(Element? child, Widget? newWidget, Object? newSlot) {
+    // dmPrint('_FloatColumnElement updateChild');
+    final oldParentData =
+        child?.renderObject?.parentData as FloatColumnParentData?;
+    final newChild = super.updateChild(child, newWidget, newSlot);
+    final newParentData =
+        newChild?.renderObject?.parentData as FloatColumnParentData?;
+    if (newParentData != null) {
+      newParentData.index = newSlot! as int;
+      if (oldParentData != null) {
+        newParentData.offset = oldParentData.offset;
       }
-      return true;
+    }
+
+    return newChild;
+  }
+
+  @override
+  void insertRenderObjectChild(RenderObject child, int slot) {
+    // dmPrint('_FloatColumnElement insertRenderObjectChild');
+    final renderObject = this.renderObject;
+    assert(renderObject.debugValidateChild(child));
+    renderObject.insert(child as RenderBox,
+        after: _childElements[slot - 1]?.renderObject as RenderBox?);
+    assert(renderObject == this.renderObject);
+  }
+
+  @override
+  void moveRenderObjectChild(RenderObject child, int oldSlot, int newSlot) {
+    // dmPrint('_FloatColumnElement moveRenderObjectChild');
+    const moveChildRenderObjectErrorMessage =
+        'Currently we maintain the list in contiguous increasing order, so '
+        'moving children around is not allowed.';
+    assert(false, moveChildRenderObjectErrorMessage);
+  }
+
+  @override
+  void removeRenderObjectChild(RenderObject child, int slot) {
+    // dmPrint('_FloatColumnElement removeRenderObjectChild');
+    assert(child.parent == renderObject);
+    renderObject.remove(child as RenderBox);
+  }
+
+  @override
+  void visitChildren(ElementVisitor visitor) {
+    // dmPrint('_FloatColumnElement visitChildren');
+    _childElements.forEach((key, child) {
+      visitor(child);
+    });
+  }
+
+  @override
+  void forgetChild(Element child) {
+    // dmPrint('_FloatColumnElement forgetChild');
+    _childElements.remove(child.slot);
+    super.forgetChild(child);
+  }
+
+  //
+  // FloatColumnChildManager
+  //
+
+  @override
+  List<Object> get textAndWidgets => (widget as FloatColumn)._textAndWidgets;
+
+  @override
+  bool childExistsAt(int index) => childWidgets[index] != null;
+
+  @override
+  RenderBox? addOrUpdateChild(int index, {required RenderBox? after}) {
+    // dmPrint('_FloatColumnElement createChild');
+    RenderBox? child;
+    owner!.buildScope(this, () {
+      final insertFirst = after == null;
+      assert(insertFirst || _childElements[index - 1] != null);
+      final newChild =
+          updateChild(_childElements[index], childWidgets[index], index);
+      if (newChild != null) {
+        child = newChild.renderObject == null
+            ? null
+            : newChild.renderObject! as RenderBox;
+        _childElements[index] = newChild;
+      } else {
+        _childElements.remove(index);
+      }
+    });
+    return child;
+  }
+
+  @override
+  void removeChild(RenderBox child) {
+    // dmPrint('_FloatColumnElement removeChild');
+    final index = renderObject.indexOf(child);
+    owner!.buildScope(this, () {
+      assert(_childElements.containsKey(index));
+      final result = updateChild(_childElements[index], null, index);
+      assert(result == null);
+      _childElements.remove(index);
+      assert(!_childElements.containsKey(index));
     });
   }
 }

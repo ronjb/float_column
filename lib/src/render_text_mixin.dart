@@ -8,6 +8,10 @@ import 'package:flutter/rendering.dart';
 
 /// Mix this into classes that should mirror the functionality of
 /// RenderParagraph.
+@Deprecated(
+  'This is no longer used and will be removed in a future update. '
+  'This was deprecated after float_column 3.0.0',
+)
 mixin RenderTextMixin {
   /// The render box containing this text.
   RenderBox get renderBox;
@@ -160,7 +164,13 @@ mixin RenderTextMixin {
 }
 
 /// Adapts a [RenderParagraph] to support [RenderTextMixin].
+@Deprecated(
+  'Use RenderParagraph directly instead. '
+  'This was deprecated after float_column 3.0.0',
+)
 class RenderParagraphAdapter with RenderTextMixin {
+  //
+  // ignore: deprecated_consistency
   RenderParagraphAdapter(this.rp);
 
   final RenderParagraph rp;

@@ -31,12 +31,12 @@ class MyHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const tabs = <String, Widget>{
-      'Basic LTR': BasicLtr(),
-      'Basic RTL': BasicRtl(),
-      'Inline': InlineFloats(),
-      'Nested': Nested(),
       'Indents': Indents(),
       'Margins & Padding': MarginsAndPadding(),
+      'Basic LTR': BasicLtr(),
+      'Basic RTL': BasicRtl(),
+      'Nested': Nested(),
+      'Inline': InlineFloats(),
       'SliverList': SliverListPage(),
     };
 

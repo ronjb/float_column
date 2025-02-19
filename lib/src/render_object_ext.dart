@@ -16,7 +16,18 @@ extension FloatColumnExtOnRenderObject on RenderObject {
   /// calling [visitor] for each child.
   ///
   /// If [visitor] returns true, the walk continues, otherwise it is canceled.
-  bool visitChildrenAndTextRenderers(CancelableObjectVisitor visitor) {
+  @Deprecated(
+    'Use visitDescendants instead. '
+    'This feature was deprecated after float_column 3.0.0',
+  )
+  bool visitChildrenAndTextRenderers(CancelableObjectVisitor visitor) =>
+      visitDescendants(visitor);
+
+  /// Walks this [RenderObject] tree in a depth-first pre-order traversal,
+  /// calling [visitor] for each child.
+  ///
+  /// If [visitor] returns true, the walk continues, otherwise it is canceled.
+  bool visitDescendants(CancelableObjectVisitor visitor) {
     var canceled = false;
 
     late void Function(Object object) visitChildrenRecursively;
@@ -47,6 +58,20 @@ extension FloatColumnExtOnRenderObject on RenderObject {
 
     visitChildrenRecursively(this);
     return !canceled;
+  }
+
+  /// Returns the first descendant of this [RenderObject] that is of type [T].
+  T? firstDescendantOfType<T>() {
+    T? descendantOfType;
+    visitDescendants((object) {
+      if (object is T) {
+        descendantOfType = object as T;
+        return false;
+      }
+      return true;
+    });
+
+    return descendantOfType;
   }
 }
 

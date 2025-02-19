@@ -119,9 +119,10 @@ class WrappableText {
     double? indent,
     EdgeInsetsGeometry? margin,
     EdgeInsetsGeometry? padding,
+    bool clearKey = false,
   }) =>
       WrappableText(
-        key: key ?? this.key,
+        key: key ?? (clearKey ? null : this.key),
         text: text ?? this.text,
         clear: clear ?? this.clear,
         textAlign: textAlign ?? this.textAlign,
@@ -244,6 +245,19 @@ class WrappableText {
       indent,
       margin,
       padding);
+
+  Widget toWidget() => Text.rich(
+        text,
+        key: key,
+        textAlign: textAlign ?? TextAlign.start,
+        textDirection: textDirection,
+        overflow: overflow ?? TextOverflow.clip,
+        textScaler: textScaler,
+        maxLines: maxLines,
+        locale: locale,
+        strutStyle: strutStyle,
+        textHeightBehavior: textHeightBehavior,
+      );
 }
 
 TextSpan _textSpanFrom(InlineSpan? span, String? data, TextStyle? style) {
