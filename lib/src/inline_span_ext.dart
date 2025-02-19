@@ -14,6 +14,17 @@ import 'shared.dart';
 import 'splittable_mixin.dart';
 
 extension FCInlineSpanExt on InlineSpan {
+  double initialLineHeight(TextScaler textScaler) {
+    final fontSize = initialFontSize(14.0);
+    final lineHeightScale = initialLineHeightScale(1.12);
+    return textScaler.scale(fontSize * lineHeightScale);
+  }
+
+  double initialScaledFontSize(TextScaler textScaler) {
+    final fontSize = initialFontSize(14.0);
+    return textScaler.scale(fontSize);
+  }
+
   /// Returns the font size of the first non-empty text in the span, or
   /// [defaultValue] if none.
   double initialFontSize(double defaultValue) {

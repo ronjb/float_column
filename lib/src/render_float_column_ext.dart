@@ -219,11 +219,13 @@ extension on RenderFloatColumn {
 
     final textPieces = <_TextPiece>[];
     var maxLines = wt.maxLines;
-    TextSpan? remainingText = wt.text;
+    TextSpan? remainingText =
+        TextSpan(style: defaultTextStyle.style, children: [wt.text]);
     while (remainingText != null) {
       // Get the estimated line height for the first line. We want to find
       // space for at least the first line of text.
-      final estLineHeight = remainingText.initialLineHeight(wt.textScaler);
+      final estLineHeight =
+          remainingText.initialLineHeight(wt.textScaler ?? defaultTextScaler);
 
       // If the text starts with a line feed, remove the line feed, add the
       // line height to `yPosNext`, and re-run the loop.
@@ -253,8 +255,8 @@ extension on RenderFloatColumn {
         }
       }
 
-      final estScaledFontSize =
-          remainingText.initialScaledFontSize(wt.textScaler);
+      final estScaledFontSize = remainingText
+          .initialScaledFontSize(wt.textScaler ?? defaultTextScaler);
 
       // Adjust the left padding based on indent value.
       final indent = textPieces.isEmpty ? wt.indent : 0.0;
@@ -286,6 +288,8 @@ extension on RenderFloatColumn {
         rect.right - padding.right,
         rect.bottom,
       );
+
+      // dmPrint('findSpaceFor $yPosNext, estLineHeight $estLineHeight: $rect');
 
       final subConstraints = childConstraints.copyWith(
         maxWidth: rect.width,
@@ -658,18 +662,5 @@ extension on List<_TextPiece> {
           ),
       ],
     );
-  }
-}
-
-extension on TextSpan {
-  double initialLineHeight(TextScaler textScaler) {
-    final fontSize = initialFontSize(14.0);
-    final lineHeightScale = initialLineHeightScale(1.12);
-    return textScaler.scale(fontSize * lineHeightScale);
-  }
-
-  double initialScaledFontSize(TextScaler textScaler) {
-    final fontSize = initialFontSize(14.0);
-    return textScaler.scale(fontSize);
   }
 }

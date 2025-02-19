@@ -36,8 +36,8 @@ class WrappableText {
       'nonlinear text scaling support. '
       'This feature was deprecated after v3.12.0-2.0.pre.',
     )
-    double textScaleFactor = 1.0,
-    TextScaler textScaler = TextScaler.noScaling,
+    double? textScaleFactor,
+    TextScaler? textScaler,
     this.maxLines,
     this.locale,
     this.strutStyle,
@@ -46,8 +46,9 @@ class WrappableText {
     this.margin = EdgeInsets.zero,
     this.padding = EdgeInsets.zero,
   })  : assert(
-            textScaleFactor == 1.0 ||
-                identical(textScaler, TextScaler.noScaling),
+            textScaleFactor == null ||
+                textScaleFactor == 1.0 ||
+                textScaler == null,
             'Use textScaler instead.'),
         textScaler = _effectiveTextScalerFrom(textScaler, textScaleFactor),
         assert(maxLines == null || maxLines > 0);
@@ -90,14 +91,12 @@ class WrappableText {
         margin = EdgeInsets.zero,
         padding = EdgeInsets.zero;
 
-  static TextScaler _effectiveTextScalerFrom(
+  static TextScaler? _effectiveTextScalerFrom(
       TextScaler? textScaler, double? textScaleFactor) {
-    return switch ((
-      textScaler ?? TextScaler.noScaling,
-      textScaleFactor ?? 1.0
-    )) {
-      (final TextScaler scaler, 1.0) => scaler,
-      (TextScaler.noScaling, final double textScaleFactor) =>
+    return switch ((textScaler, textScaleFactor)) {
+      (null, null) => null,
+      (final TextScaler scaler, null || 1.0) => scaler,
+      (null || TextScaler.noScaling, final double textScaleFactor) =>
         TextScaler.linear(textScaleFactor),
       (final TextScaler scaler, _) => scaler,
     };
@@ -173,7 +172,7 @@ class WrappableText {
   final TextOverflow? overflow;
 
   /// {@macro flutter.painting.textPainter.textScaler}
-  final TextScaler textScaler;
+  final TextScaler? textScaler;
 
   /// An optional maximum number of lines for the text to span, wrapping if
   /// necessary. If the text exceeds the given number of lines, it will be
