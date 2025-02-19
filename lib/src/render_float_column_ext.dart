@@ -217,7 +217,7 @@ extension on RenderFloatColumn {
     // RenderParagraph? rendererBeforeSplit;
     // RenderParagraph? removedSubTextRenderer;
 
-    final textPieces = <_Text>[];
+    final textPieces = <_TextPiece>[];
     var maxLines = wt.maxLines;
     TextSpan? remainingText = wt.text;
     while (remainingText != null) {
@@ -413,12 +413,13 @@ extension on RenderFloatColumn {
                   final xPos = _xPosForChildWithWidth(rc.child.size.width,
                       _alignment(wt.textAlign), rect.left, rect.right);
                   yPosNext += rc.child.size.height;
+                  final textPiece = _TextPiece(
+                      Rect.fromLTWH(xPos, rect.top, rc.child.size.width,
+                          rc.child.size.height),
+                      part1);
 
-                  if (textPieces.isEmpty) {
-                    rc.moveNext();
-                  }
-                  textPieces.add(
-                      _Text(xPos, rect.top, subConstraints.maxWidth, part1));
+                  if (textPieces.isEmpty) rc.moveNext();
+                  textPieces.add(textPiece);
 
                   remainingText = split.last as TextSpan;
                   childManager.childWidgets[rc.index] = wt
@@ -525,14 +526,17 @@ extension on RenderFloatColumn {
         // Calculate `xPos` based on alignment and available space.
         final x = _xPosForChildWithWidth(rc.child.size.width,
             _alignment(wt.textAlign), rect.left, rect.right);
-        textPieces.add(_Text(x, rect.top, subConstraints.maxWidth,
+        textPieces.add(_TextPiece(
+            Rect.fromLTWH(
+                x, rect.top, rc.child.size.width, rc.child.size.height),
             wt.copyWith(text: remainingText)));
 
         rc.movePrevious();
-        childManager.childWidgets[rc.index] = textPieces.toWidget();
+        childManager.childWidgets[rc.index] =
+            textPieces.toWidget(childConstraints.maxWidth);
         rc.maybeChild = _addOrUpdateChild(rc.index, after: rc.previousChild);
         rc.child.layout(childConstraints, parentUsesSize: true);
-        final top = textPieces.first.y;
+        final top = textPieces.first.rect.top;
         rect = Rect.fromLTWH(
             0, top, childConstraints.maxWidth, top + rc.child.size.height);
 
@@ -624,36 +628,31 @@ class _RenderCursor {
 }
 
 @immutable
-class _Text {
-  const _Text(this.x, this.y, this.width, this.text);
-
-  final double x;
-  final double y;
-  final double width;
+class _TextPiece {
+  const _TextPiece(this.rect, this.text);
+  final Rect rect;
   final WrappableText text;
-
-  _Text copyWith({double? x, double? y, double? width, WrappableText? text}) {
-    return _Text(
-        x ?? this.x, y ?? this.y, width ?? this.width, text ?? this.text);
-  }
 }
 
-extension on List<_Text> {
-  Widget toWidget() {
-    dmPrint('widgets:');
-    for (final t in this) {
-      dmPrint('object: ${t.x}, ${t.width}, ${t.text.toWidget()}');
-    }
-    dmPrint('------------------------------------');
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
+extension on List<_TextPiece> {
+  Widget toWidget(double width) {
+    // dmPrint('widgets:');
+    // for (final t in this) {
+    //   dmPrint('object: ${t.x}, ${t.width}, ${t.text.toWidget()}');
+    // }
+    // dmPrint('------------------------------------');
+    final top = isEmpty ? 0.0 : first.rect.top;
+    final height = isEmpty ? 0.0 : last.rect.bottom - top;
+    return Stack(
+      clipBehavior: Clip.none,
       children: [
+        SizedBox(width: width, height: height),
         for (final t in this)
-          Padding(
-            padding: EdgeInsetsDirectional.only(start: t.x),
+          Positioned(
+            left: t.rect.left,
+            top: t.rect.top - top,
             child: SizedBox(
-              width: t.width,
+              width: t.rect.width,
               child: t.text.toWidget(),
             ),
           ),

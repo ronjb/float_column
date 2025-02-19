@@ -16,6 +16,17 @@ void dmPrint(Object object) {
   if (kDebugMode) print(object); // ignore: avoid_print
 }
 
+/// Calls the given function [f] and returns its value, and in debug mode
+/// prints the time it took to execute the function.
+T dmTime<T>(T Function() f, {String? title}) {
+  if (!kDebugMode) return f();
+  final sw = Stopwatch()..start();
+  final result = f();
+  sw.stop();
+  dmPrint('${title ?? 'Time:'} ${sw.elapsedMilliseconds} ms');
+  return result;
+}
+
 /// If float is `start` or `end`, returns `left` or `right` depending on the
 /// text direction.
 FCFloat resolveFloat(FCFloat float, {required ui.TextDirection withDir}) {

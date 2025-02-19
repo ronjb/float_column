@@ -200,7 +200,7 @@ class RenderFloatColumn extends RenderBox
   @override
   void performLayout() {
     // dmPrint('RenderFloatColumn.performLayout()');
-    size = _performLayout();
+    size = dmTime(_performLayout, title: 'RenderFloatColumn.performLayout()');
 
     /* 
     final constraints = this.constraints;
