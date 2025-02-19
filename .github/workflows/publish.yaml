@@ -10,19 +10,22 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - uses: subosito/flutter-action@v2  # Use v2 for the latest updates
+      - uses: subosito/flutter-action@v2
         with:
           flutter-version: "stable"
 
       - name: Install dependencies
         run: flutter pub get
-        working-directory: example  # Ensure pub dependencies are fetched
+        working-directory: example
 
       - name: Build Web
         run: flutter build web --release
-        working-directory: example  # Ensures the build happens inside `example/`
+        working-directory: example
 
+      - name: Verify Build Directory
+        run: ls -l example/build/web
+        
       - name: Deploy to GitHub Pages
         uses: bluefireteam/flutter-gh-pages@v7
         with:
-          workingDir: example
+          working-directory: example
