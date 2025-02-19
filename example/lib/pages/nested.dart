@@ -71,22 +71,22 @@ class Nested extends StatelessWidget {
                                 padding: const EdgeInsets.only(right: 8),
                                 child: _Box(
                                   FloatColumn(
-                                    children: [
-                                      const Floatable(
+                                    children: const [
+                                      Floatable(
                                         float: FCFloat.start,
                                         clear: FCClear.both,
                                         padding: EdgeInsets.only(right: 8),
                                         child: _Box(Text('c1')),
                                       ),
-                                      const Floatable(
+                                      Floatable(
                                         float: FCFloat.end,
                                         clear: FCClear.both,
                                         clearMinSpacing: 20,
                                         padding: EdgeInsets.only(left: 8),
                                         child: _Box(Text('c2')),
                                       ),
-                                      RichText(
-                                        text: _t3,
+                                      Text.rich(
+                                        _t3,
                                         textAlign: textAlign ?? TextAlign.start,
                                         overflow: TextOverflow.ellipsis,
                                         maxLines: 5,

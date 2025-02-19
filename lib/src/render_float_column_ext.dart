@@ -217,37 +217,31 @@ extension on RenderFloatColumn {
     // RenderParagraph? rendererBeforeSplit;
     // RenderParagraph? removedSubTextRenderer;
 
-    final textPieces = <_TextPiece>[];
-    var maxLines = wt.maxLines;
-    TextSpan? remainingText =
-        TextSpan(style: defaultTextStyle.style, children: [wt.text]);
-    while (remainingText != null) {
+    final textChunks = <_TextChunk>[];
+    WrappableText? remaining = wt.copyWith(
+        text: TextSpan(style: defaultTextStyle.style, children: [wt.text]));
+    while (remaining != null) {
       // Get the estimated line height for the first line. We want to find
       // space for at least the first line of text.
       final estLineHeight =
-          remainingText.initialLineHeight(wt.textScaler ?? defaultTextScaler);
+          remaining.text.initialLineHeight(wt.textScaler ?? defaultTextScaler);
 
       // If the text starts with a line feed, remove the line feed, add the
       // line height to `yPosNext`, and re-run the loop.
-      final initialText = remainingText.initialText();
+      final initialText = remaining.text.initialText();
       if (initialText.isNotEmpty &&
           initialText.codeUnitAt(0) == 0x0a &&
-          (maxLines == null || maxLines > 1)) {
-        final split = remainingText.splitAtCharacterIndex(1,
-            ignoreFloatedWidgetSpans: true);
+          (remaining.maxLines == null || remaining.maxLines! > 1)) {
+        final split = remaining.text
+            .splitAtCharacterIndex(1, ignoreFloatedWidgetSpans: true);
         if (split.length == 2) {
           assert(split.first is TextSpan && split.last is TextSpan);
-          if (maxLines != null) maxLines -= 1;
-
-          remainingText = split.last as TextSpan;
-          childManager.childWidgets[rc.index] = wt
-              .copyWith(
-                  text: remainingText,
-                  maxLines: maxLines,
-                  clearKey: textPieces.isNotEmpty)
-              .toWidget();
+          remaining = remaining.copyWith(
+              text: split.last as TextSpan,
+              maxLines:
+                  remaining.maxLines == null ? null : remaining.maxLines! - 1);
+          childManager.childWidgets[rc.index] = remaining.toWidget();
           rc.maybeChild = _addOrUpdateChild(rc.index, after: rc.previousChild);
-
           yPosNext += estLineHeight;
 
           // Re-run the loop...
@@ -255,11 +249,11 @@ extension on RenderFloatColumn {
         }
       }
 
-      final estScaledFontSize = remainingText
+      final estScaledFontSize = remaining.text
           .initialScaledFontSize(wt.textScaler ?? defaultTextScaler);
 
       // Adjust the left padding based on indent value.
-      final indent = textPieces.isEmpty ? wt.indent : 0.0;
+      final indent = textChunks.isEmpty ? wt.indent : 0.0;
       final paddingLeft = padding.left + indent;
 
       final lineMinWidth =
@@ -318,7 +312,7 @@ extension on RenderFloatColumn {
       // If the text extends past `nextChangeY`, we need to split the text,
       // and layout each part individually...
       if (rect.top + rc.child.size.height > nextChangeY) {
-        final span = remainingText;
+        final span = remaining.text;
         //
         // Calculate the approximate x, y to split the text at, which
         // depends on the text direction.
@@ -390,11 +384,11 @@ extension on RenderFloatColumn {
                   }
                 }
 
-                final part1 = wt.copyWith(
+                final part1 = remaining.copyWith(
                     text: split.first as TextSpan,
-                    maxLines: indent == 0.0 ? maxLines : 1,
-                    overflow: indent == 0.0 ? null : TextOverflow.ellipsis,
-                    clearKey: textPieces.isNotEmpty);
+                    // maxLines: indent == 0.0 ? remaining.maxLines : 1,
+                    // overflow: indent == 0.0 ? null : TextOverflow.ellipsis,
+                    clearKey: textChunks.isNotEmpty);
 
                 childManager.childWidgets[rc.index] = part1.toWidget();
                 rc.maybeChild =
@@ -404,10 +398,10 @@ extension on RenderFloatColumn {
                 // If [maxLines] was set, [remainingLines] needs to be set to
                 // [maxLines] minus the number of lines in [part1].
                 int? remainingLines;
-                if (maxLines != null) {
+                if (remaining.maxLines != null) {
                   // Estimate the number of lines in [part1].
                   final lines = (rc.child.size.height / estLineHeight).round();
-                  remainingLines = maxLines - lines;
+                  remainingLines = remaining.maxLines! - lines;
                 }
 
                 // Only add [part2] if [remainingLines] is null or greater
@@ -416,22 +410,21 @@ extension on RenderFloatColumn {
                   // Calculate `xPos` based on alignment and available space.
                   final xPos = _xPosForChildWithWidth(rc.child.size.width,
                       _alignment(wt.textAlign), rect.left, rect.right);
-                  yPosNext += rc.child.size.height;
-                  final textPiece = _TextPiece(
+                  yPosNext = rect.top + rc.child.size.height;
+                  final textChunk = _TextChunk(
                       Rect.fromLTWH(xPos, rect.top, rc.child.size.width,
                           rc.child.size.height),
                       part1);
 
-                  if (textPieces.isEmpty) rc.moveNext();
-                  textPieces.add(textPiece);
+                  if (textChunks.isEmpty) rc.moveNext();
+                  textChunks.add(textChunk);
 
-                  remainingText = split.last as TextSpan;
-                  childManager.childWidgets[rc.index] = wt
-                      .copyWith(
-                          text: remainingText,
-                          maxLines: maxLines,
-                          clearKey: textPieces.isNotEmpty)
-                      .toWidget();
+                  remaining = remaining.copyWith(
+                      text: split.last as TextSpan,
+                      maxLines: remainingLines,
+                      clearKey: textChunks.isNotEmpty);
+
+                  childManager.childWidgets[rc.index] = remaining.toWidget();
                   rc.maybeChild =
                       _addOrUpdateChild(rc.index, after: rc.previousChild);
 
@@ -526,21 +519,21 @@ extension on RenderFloatColumn {
       */
 
       final double xPos;
-      if (textPieces.isNotEmpty) {
+      if (textChunks.isNotEmpty) {
         // Calculate `xPos` based on alignment and available space.
         final x = _xPosForChildWithWidth(rc.child.size.width,
             _alignment(wt.textAlign), rect.left, rect.right);
-        textPieces.add(_TextPiece(
+        textChunks.add(_TextChunk(
             Rect.fromLTWH(
                 x, rect.top, rc.child.size.width, rc.child.size.height),
-            wt.copyWith(text: remainingText)));
+            remaining));
 
         rc.movePrevious();
         childManager.childWidgets[rc.index] =
-            textPieces.toWidget(childConstraints.maxWidth);
+            textChunks.toWidget(childConstraints.maxWidth);
         rc.maybeChild = _addOrUpdateChild(rc.index, after: rc.previousChild);
         rc.child.layout(childConstraints, parentUsesSize: true);
-        final top = textPieces.first.rect.top;
+        final top = textChunks.first.rect.top;
         rect = Rect.fromLTWH(
             0, top, childConstraints.maxWidth, top + rc.child.size.height);
 
@@ -551,7 +544,7 @@ extension on RenderFloatColumn {
             _alignment(wt.textAlign), rect.left, rect.right);
       }
 
-      remainingText = null;
+      remaining = null;
 
       (rc.child.parentData! as FloatColumnParentData).offset =
           Offset(xPos, rect.top);
@@ -632,13 +625,13 @@ class _RenderCursor {
 }
 
 @immutable
-class _TextPiece {
-  const _TextPiece(this.rect, this.text);
+class _TextChunk {
+  const _TextChunk(this.rect, this.text);
   final Rect rect;
   final WrappableText text;
 }
 
-extension on List<_TextPiece> {
+extension on List<_TextChunk> {
   Widget toWidget(double width) {
     // dmPrint('widgets:');
     // for (final t in this) {
