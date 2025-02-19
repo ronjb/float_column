@@ -30,6 +30,7 @@
 .pub-cache/
 .pub/
 /build/
+/test/
 
 # Web related
 lib/generated_plugin_registrant.dart
@@ -44,3 +45,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Platform folders
+/android/
+/ios/
+/linux/
+/macos/
+/windows/
