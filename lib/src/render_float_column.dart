@@ -199,68 +199,14 @@ class RenderFloatColumn extends RenderBox
 
   @override
   void performLayout() {
-    // dmPrint('RenderFloatColumn.performLayout()');
-    size = dmTime(_performLayout, title: 'RenderFloatColumn.performLayout()');
+    // final layoutSize = _performLayout();
+    final layoutSize =
+        dmTime(_performLayout, title: 'RenderFloatColumn.performLayout()');
 
-    /* 
-    final constraints = this.constraints;
-    final childConstraints = BoxConstraints(maxWidth: constraints.maxWidth);
-    var accumulatedSize = _AxisSize.empty;
-
-    RenderBox? previousChild;
-    var child = firstChild;
-
-    for (var i = 0; i < childManager.textAndWidgets.length; i++) {
-      // First, update the associated widget.
-      final textOrWidget = childManager.textAndWidgets[i];
-      var updatedWidget = false;
-      if (childManager.childWidgets[i] == null) {
-        childManager.childWidgets[i] = textOrWidget is Widget
-            ? textOrWidget
-            : Text.rich((textOrWidget as WrappableText).text);
-        updatedWidget = true;
-      }
-
-      // Then create or update the render object.
-      if (child == null || updatedWidget) {
-        child = _addOrUpdateChild(i, after: previousChild);
-      }
-
-      if (child != null) {
-        var childSize = _AxisSize.fromSize(
-            size: ChildLayoutHelper.layoutChild(child, childConstraints),
-            direction: Axis.vertical);
-
-        if (i == 0) {
-          childManager.childWidgets[i] = Text.rich('ABC'.textSpanReplacing(
-              'B', const [Icon(Icons.people_outlined, size: 20)]));
-          // ignore: unnecessary_null_checks
-          child = _addOrUpdateChild(i, after: previousChild)!;
-          childSize = _AxisSize.fromSize(
-              size: ChildLayoutHelper.layoutChild(child, childConstraints),
-              direction: Axis.vertical);
-        }
-
-        accumulatedSize += childSize;
-
-        final childParentData = child.parentData! as FloatColumnParentData;
-        previousChild = child;
-        child = childParentData.nextSibling;
-      }
-    }
-
-    // Remove any remaining children.
-    while (child != null) {
-      final childParentData = child.parentData! as FloatColumnParentData;
-      final nextChild = childParentData.nextSibling;
-      _removeChild(child);
-      child = nextChild;
-    }
-
-    final idealMainSize = accumulatedSize.mainAxisExtent;
-
+    final accumulatedSize =
+        _AxisSize.fromSize(size: layoutSize, direction: Axis.vertical);
     final constrainedSize = _AxisSize(
-            mainAxisExtent: idealMainSize,
+            mainAxisExtent: accumulatedSize.mainAxisExtent,
             crossAxisExtent: accumulatedSize.crossAxisExtent)
         .applyConstraints(constraints, Axis.vertical);
     final sizes = _LayoutSizes(
@@ -269,27 +215,8 @@ class RenderFloatColumn extends RenderBox
           constrainedSize.mainAxisExtent - accumulatedSize.mainAxisExtent,
     );
 
-    final crossAxisExtent = sizes.axisSize.crossAxisExtent;
     size = sizes.axisSize.toSize(Axis.vertical);
     _overflow = math.max(0.0, -sizes.mainAxisFreeSpace);
-
-    final flipCrossAxis = firstChild != null &&
-        switch (textDirection) {
-          TextDirection.ltr => false,
-          TextDirection.rtl => true,
-        };
-
-    // Position all children in visual order: starting from the top-left child and
-    // work towards the child that's farthest away from the origin.
-    var childMainPosition = 0.0;
-    for (var child = firstChild; child != null; child = childAfter(child)) {
-      final childCrossPosition =
-          flipCrossAxis ? crossAxisExtent - child.size.width : 0.0;
-      (child.parentData! as FloatColumnParentData).offset =
-          Offset(childCrossPosition, childMainPosition);
-      childMainPosition += child.size.height;
-    }
-    */
   }
 
   @override
@@ -408,7 +335,6 @@ class RenderFloatColumn extends RenderBox
   }
 }
 
-/*
 // A 2D vector that uses a [RenderFloatColumn]'s main axis and cross axis as
 // its first and second coordinate axes. It represents the same vector as
 // (double mainAxisExtent, double crossAxisExtent).
@@ -417,8 +343,6 @@ extension type const _AxisSize._(Size _size) {
       : this._(Size(mainAxisExtent, crossAxisExtent));
   _AxisSize.fromSize({required Size size, required Axis direction})
       : this._(_convert(size, direction));
-
-  static const _AxisSize empty = _AxisSize._(Size.zero);
 
   static Size _convert(Size size, Axis direction) {
     return switch (direction) {
@@ -459,26 +383,3 @@ class _LayoutSizes {
   // negative value indicates the RenderFloatColumn overflows along the main axis.
   final double mainAxisFreeSpace;
 }
-
-extension CommonUtilityExtOnTextSpan on String {
-  /// Returns a [TextSpan] with each occurrence of [pattern] replaced with a
-  /// [WidgetSpan] wrapping the next widget from [widgets].
-  TextSpan textSpanReplacing(
-    Pattern pattern,
-    List<Widget> widgets, {
-    PlaceholderAlignment? alignment,
-  }) {
-    final parts = split(pattern);
-    final spans = <InlineSpan>[];
-    for (var i = 0; i < parts.length; i++) {
-      if (i > 0 && i - 1 < widgets.length) {
-        spans.add(WidgetSpan(
-            child: MediaQuery.withNoTextScaling(child: widgets[i - 1]),
-            alignment: alignment ?? PlaceholderAlignment.middle));
-      }
-      spans.add(TextSpan(text: parts[i]));
-    }
-    return TextSpan(children: spans);
-  }
-}
-*/

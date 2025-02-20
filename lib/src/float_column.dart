@@ -242,9 +242,6 @@ class _FloatColumnElement extends RenderObjectElement
   List<Object> get textAndWidgets => (widget as FloatColumn)._textAndWidgets;
 
   @override
-  bool childExistsAt(int index) => childWidgets[index] != null;
-
-  @override
   RenderBox? addOrUpdateChild(int index, {required RenderBox? after}) {
     // dmPrint('_FloatColumnElement createChild');
     RenderBox? child;

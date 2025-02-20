@@ -14,7 +14,7 @@ extension on RenderFloatColumn {
       childConstraints = BoxConstraints(maxWidth: constraints.maxWidth);
     }
 
-    final rc = _RenderCursor(firstChild);
+    final rc = _RenderCursor(this, firstChild);
 
     // This gets updated to the previous non-floated child's bottom margin.
     var prevBottomMargin = 0.0;
@@ -24,10 +24,9 @@ extension on RenderFloatColumn {
       rc.index = i;
       final el = childManager.textAndWidgets[i];
 
-      // Update the associated widget and update the render object.
-      childManager.childWidgets[i] =
-          el is Widget ? el : (el as WrappableText).toWidget();
-      rc.maybeChild = _addOrUpdateChild(i, after: rc.previousChild);
+      // Update the current child's widget and associated element.
+      rc.updateCurrentChildsWidget(
+          el is Widget ? el : (el as WrappableText).toWidget());
       if (rc.maybeChild == null) {
         assert(false);
         continue;
@@ -77,13 +76,7 @@ extension on RenderFloatColumn {
     rc.y += prevBottomMargin;
     final totalHeight =
         math.max(rc.floatL.maxYBelow(rc.y), rc.floatR.maxYBelow(rc.y));
-    _overflow = totalHeight > constraints.maxHeight
-        ? totalHeight - constraints.maxHeight
-        : 0.0;
-    final newSize =
-        constraints.constrain(Size(constraints.maxWidth, totalHeight));
-
-    return newSize;
+    return Size(constraints.maxWidth, totalHeight);
   }
 
   /// Lays out child widget.
@@ -101,15 +94,15 @@ extension on RenderFloatColumn {
     final childMaxWidth =
         math.min(maxWidthMinusPadding, maxWidth * floatData.maxWidthPercentage);
 
-    var layoutConstraints = childConstraints;
+    var widgetConstraints = childConstraints;
     if (childMaxWidth != childConstraints.maxWidth) {
-      layoutConstraints = childConstraints.copyWith(
+      widgetConstraints = childConstraints.copyWith(
         maxWidth: childMaxWidth,
-        minWidth: math.min(layoutConstraints.minWidth, childMaxWidth),
+        minWidth: math.min(widgetConstraints.minWidth, childMaxWidth),
       );
     }
 
-    rc.child.layout(layoutConstraints, parentUsesSize: true);
+    rc.child.layout(widgetConstraints, parentUsesSize: true);
 
     var alignment = crossAxisAlignment;
 
@@ -237,9 +230,8 @@ extension on RenderFloatColumn {
           yPosNext += estLineHeight;
         } while (remaining.text.initialText().startsWith('\n'));
 
-        // Re-run the loop...
-        childManager.childWidgets[rc.index] = remaining.toWidget();
-        rc.maybeChild = _addOrUpdateChild(rc.index, after: rc.previousChild);
+        // Update the widget, and re-run the loop...
+        rc.updateCurrentChildsWidget(remaining.toWidget());
         continue; //-------------------------------------------->
       }
 
@@ -327,7 +319,6 @@ extension on RenderFloatColumn {
 
           final x = textDirection == TextDirection.ltr ? rect.width : 0.0;
           final y = math.min(yChange, nextFloatTop - estLineHeight) - rect.top;
-
           final parts = remaining.text.splitAt(
               renderParagraph.getPositionForOffset(Offset(x, y)).offset);
 
@@ -336,9 +327,8 @@ extension on RenderFloatColumn {
             final part1 = remaining.copyWith(
                 text: parts.first, clearKey: textChunks.isNotEmpty);
 
-            childManager.childWidgets[rc.index] = part1.toWidget();
-            rc.maybeChild =
-                _addOrUpdateChild(rc.index, after: rc.previousChild);
+            // Update the current child's widget and re-layout it.
+            rc.updateCurrentChildsWidget(part1.toWidget());
             rc.child.layout(subConstraints, parentUsesSize: true);
 
             // If [maxLines] was set, [remainingLines] needs to be set to
@@ -370,9 +360,7 @@ extension on RenderFloatColumn {
                   maxLines: remainingLines,
                   clearKey: textChunks.isNotEmpty);
 
-              childManager.childWidgets[rc.index] = remaining.toWidget();
-              rc.maybeChild =
-                  _addOrUpdateChild(rc.index, after: rc.previousChild);
+              rc.updateCurrentChildsWidget(remaining.toWidget());
 
               // Re-run the loop...
               continue; //------------------------------------>
@@ -468,19 +456,19 @@ extension on RenderFloatColumn {
         final x = _xPosForChildWithWidth(rc.child.size.width,
             _alignment(wt.textAlign), rect.left, rect.right);
         textChunks.add(_TextChunk(
-            Rect.fromLTWH(
-                x, rect.top, rc.child.size.width, rc.child.size.height),
-            remaining));
+          Rect.fromLTWH(x, rect.top, rc.child.size.width, rc.child.size.height),
+          remaining,
+        ));
 
-        rc.movePrevious();
-        childManager.childWidgets[rc.index] =
-            textChunks.toWidget(childConstraints.maxWidth);
-        rc.maybeChild = _addOrUpdateChild(rc.index, after: rc.previousChild);
+        rc
+          ..movePrevious()
+          ..updateCurrentChildsWidget(
+              textChunks.toWidget(childConstraints.maxWidth));
         rc.child.layout(childConstraints, parentUsesSize: true);
+
         final top = textChunks.first.rect.top;
         rect = Rect.fromLTWH(
             0, top, childConstraints.maxWidth, top + rc.child.size.height);
-
         xPos = 0.0;
       } else {
         // Calculate `xPos` based on alignment and available space.
@@ -541,7 +529,9 @@ extension on RenderFloatColumn {
 }
 
 class _RenderCursor {
-  _RenderCursor(this.maybeChild);
+  _RenderCursor(this.rfc, this.maybeChild);
+
+  RenderFloatColumn rfc;
 
   int index = 0;
   RenderBox? previousChild;
@@ -554,17 +544,25 @@ class _RenderCursor {
 
   RenderBox get child => maybeChild!;
 
+  /// Moves to the next child.
   void moveNext() {
     previousChild = child;
     maybeChild = (child.parentData! as FloatColumnParentData).nextSibling;
     index++;
   }
 
+  /// Moves to the previous child.
   void movePrevious() {
     maybeChild = previousChild;
     previousChild =
         (previousChild!.parentData! as FloatColumnParentData).previousSibling;
     index--;
+  }
+
+  /// Updates the current child's widget and associated element.
+  void updateCurrentChildsWidget(Widget widget) {
+    rfc.childManager.childWidgets[index] = widget;
+    maybeChild = rfc._addOrUpdateChild(index, after: previousChild);
   }
 }
 
