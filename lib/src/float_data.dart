@@ -10,7 +10,8 @@ import 'shared.dart';
 
 @immutable
 class FloatData {
-  FloatData(this.index, this.placeholderIndex, Object child)
+  FloatData(
+      this.index, this.wrappableTextIndex, this.placeholderIndex, Object child)
       : float = child is Floatable ? child.float : FCFloat.none,
         clear = child is Floatable ? child.clear : FCClear.none,
         clearMinSpacing = child is Floatable ? child.clearMinSpacing : 0.0,
@@ -22,8 +23,10 @@ class FloatData {
   /// The index of the child.
   final int index;
 
-  /// Index of the placeholder span in the child `WrappableText`, or 0 for
-  /// child `Widget`s.
+  /// Index of the associated WrappableText child, or null if none.
+  final int? wrappableTextIndex;
+
+  /// Index of the placeholder span in the associated WrappableText child.
   final int placeholderIndex;
 
   /// Should the child float to the `left`, `right`, `start`, or `end`? The
@@ -56,6 +59,7 @@ class FloatData {
   bool operator ==(Object other) {
     return other is FloatData &&
         other.index == index &&
+        wrappableTextIndex == other.wrappableTextIndex &&
         other.placeholderIndex == placeholderIndex &&
         other.float == float &&
         other.clear == clear &&
@@ -66,6 +70,23 @@ class FloatData {
   }
 
   @override
-  int get hashCode => Object.hash(FloatData, index, placeholderIndex, float,
-      clear, clearMinSpacing, margin, padding, maxWidthPercentage);
+  int get hashCode => Object.hash(
+      FloatData,
+      index,
+      wrappableTextIndex,
+      placeholderIndex,
+      float,
+      clear,
+      clearMinSpacing,
+      margin,
+      padding,
+      maxWidthPercentage);
+
+  @override
+  String toString() {
+    return 'FloatData(index: $index, wrappableTextIndex: $wrappableTextIndex, '
+        'placeholderIndex: $placeholderIndex, float: $float, clear: $clear, '
+        'clearMinSpacing: $clearMinSpacing, margin: $margin, padding: $padding, '
+        'maxWidthPercentage: $maxWidthPercentage)';
+  }
 }

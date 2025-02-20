@@ -25,7 +25,7 @@ extension on RenderFloatColumn {
       final el = childManager.textAndWidgets[i];
 
       // Update the current child's widget and associated element.
-      rc.updateCurrentChildsWidget(
+      rc.updateCurrentChildWidget(
           el is Widget ? el : (el as WrappableText).toWidget());
       if (rc.maybeChild == null) {
         assert(false);
@@ -34,7 +34,8 @@ extension on RenderFloatColumn {
 
       // If it is a Widget...
       if (el is Widget) {
-        final floatData = FloatData(i, 0, el);
+        // All widgets are wrapped in a MetaData widget with FloatData.
+        final floatData = ((rc.child as RenderMetaData).metaData as FloatData);
 
         // If not floated, resolve the margin and update `rc.y` and
         // `prevBottomMargin`.
@@ -203,13 +204,6 @@ extension on RenderFloatColumn {
       yPosNext = rc.floatR.maxYBelow(yPosNext);
     }
 
-    // Keep track of the indices of the floated inline widget children that
-    // have already been laid out, because they can only be laid out once.
-    // final laidOutFloaterIndices = <int>{};
-
-    // RenderParagraph? rendererBeforeSplit;
-    // RenderParagraph? removedSubTextRenderer;
-
     final textChunks = <_TextChunk>[];
     WrappableText? remaining = wt.copyWith(
         text: TextSpan(style: defaultTextStyle.style, children: [wt.text]));
@@ -231,7 +225,7 @@ extension on RenderFloatColumn {
         } while (remaining.text.initialText().startsWith('\n'));
 
         // Update the widget, and re-run the loop...
-        rc.updateCurrentChildsWidget(remaining.toWidget());
+        rc.updateCurrentChildWidget(remaining.toWidget());
         continue; //-------------------------------------------->
       }
 
@@ -328,7 +322,7 @@ extension on RenderFloatColumn {
                 text: parts.first, clearKey: textChunks.isNotEmpty);
 
             // Update the current child's widget and re-layout it.
-            rc.updateCurrentChildsWidget(part1.toWidget());
+            rc.updateCurrentChildWidget(part1.toWidget());
             rc.child.layout(subConstraints, parentUsesSize: true);
 
             // If [maxLines] was set, [remainingLines] needs to be set to
@@ -360,7 +354,7 @@ extension on RenderFloatColumn {
                   maxLines: remainingLines,
                   clearKey: textChunks.isNotEmpty);
 
-              rc.updateCurrentChildsWidget(remaining.toWidget());
+              rc.updateCurrentChildWidget(remaining.toWidget());
 
               // Re-run the loop...
               continue; //------------------------------------>
@@ -368,87 +362,6 @@ extension on RenderFloatColumn {
           }
         }
       }
-
-      /*
-      // At this point renderer wtr[subIndex] has gone through its final
-      // layout, so we can now layout its floated widget children, if any.
-
-      var hasFloatedChildren = false;
-
-      if (hasFloatedChildren) {
-        /// Local func that lays out the first floated child that has not
-        /// already been laid out, if any, and returns true iff a child was
-        /// laid out.
-        ///
-        /// The floated children need to be laid out one at a time because
-        /// each time one is laid out the positions of subsequent floated
-        /// children will likely be affected.
-        bool layoutFloatedChildren(
-            TextRenderer renderer, RenderBox? firstChild) {
-          if (firstChild == null) return false;
-          RenderBox? child = firstChild;
-          final paragraphIndex = firstChild.floatData.index;
-          while (child != null && child.floatData.index == paragraphIndex) {
-            final childParentData = child.parentData! as FloatColumnParentData;
-            final i = child.floatData.placeholderIndex -
-                renderer.startingPlaceholderIndex;
-            if (i >= 0 && i < renderer.placeholderSpans.length) {
-              final ctpIndex = child.floatData.placeholderIndex;
-              // If this child is floated...
-              if (child.floatData.float != FCFloat.none &&
-                  !laidOutFloaterIndices.contains(ctpIndex)) {
-                laidOutFloaterIndices.add(ctpIndex);
-                final boxTop =
-                    renderer.placeholderBoxForWidgetIndex(ctpIndex).top;
-                _layoutWidget(
-                    child,
-                    childParentData,
-                    childConstraints,
-                    boxTop + rect.top - estLineHeight,
-                    maxWidth,
-                    child.floatData,
-                    floatL,
-                    floatR);
-                return true;
-              }
-            }
-            child = childParentData.nextSibling;
-          }
-          return false;
-        }
-
-        final rerunLoop = layoutFloatedChildren(wtr[subIndex], child);
-        if (rerunLoop) {
-          // If the original renderer was split, undo the split because it
-          // will likely need to be re-split differently.
-          if (rendererBeforeSplit != null) {
-            if (wtr.subsLength == subIndex + 2 ||
-                (rendererBeforeSplit.maxLines != null &&
-                    wtr.subsLength == subIndex + 1)) {
-              while (wtr.subsLength > subIndex) {
-                wtr.subsRemoveLast();
-              }
-
-              // If `rendererBeforeSplit` is the base renderer, we don't want
-              // to add it as a sub-renderer, so just set `subIndex` back to -1.
-              if (rendererBeforeSplit == wtr.renderer) {
-                assert(wtr.subsLength == 0 && subIndex == 0);
-                subIndex = -1;
-              } else {
-                wtr.subsAdd(rendererBeforeSplit);
-              }
-            } else {
-              assert(false);
-            }
-            rendererBeforeSplit = null;
-            removedSubTextRenderer = null;
-          }
-
-          // Re-run the loop...
-          continue; //-------------------------------------------->
-        }
-      }
-      */
 
       final double xPos;
       if (textChunks.isNotEmpty) {
@@ -462,7 +375,7 @@ extension on RenderFloatColumn {
 
         rc
           ..movePrevious()
-          ..updateCurrentChildsWidget(
+          ..updateCurrentChildWidget(
               textChunks.toWidget(childConstraints.maxWidth));
         rc.child.layout(childConstraints, parentUsesSize: true);
 
@@ -560,7 +473,7 @@ class _RenderCursor {
   }
 
   /// Updates the current child's widget and associated element.
-  void updateCurrentChildsWidget(Widget widget) {
+  void updateCurrentChildWidget(Widget widget) {
     rfc.childManager.childWidgets[index] = widget;
     maybeChild = rfc._addOrUpdateChild(index, after: previousChild);
   }
