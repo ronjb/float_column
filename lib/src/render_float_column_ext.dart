@@ -226,41 +226,28 @@ extension on RenderFloatColumn {
       final estLineHeight =
           remaining.text.initialLineHeight(wt.textScaler ?? defaultTextScaler);
 
-      // If the text starts with a line feed, remove the line feed, add the
-      // line height to `yPosNext`, and re-run the loop.
-      final initialText = remaining.text.initialText();
-      if (initialText.isNotEmpty &&
-          initialText.codeUnitAt(0) == 0x0a &&
-          (remaining.maxLines == null || remaining.maxLines! > 1)) {
-        final split = remaining.text
-            .splitAtCharacterIndex(1, ignoreFloatedWidgetSpans: true);
-        if (split.length == 2) {
-          assert(split.first is TextSpan && split.last is TextSpan);
-          remaining = remaining.copyWith(
-              text: split.last as TextSpan,
+      // While the text starts with a line feed, remove the line feed, add the
+      // line height to `yPosNext`, then re-run the loop.
+      if (remaining.text.initialText().startsWith('\n')) {
+        do {
+          remaining = remaining!.copyWith(
+              text: remaining.text.skipChars(1),
               maxLines:
                   remaining.maxLines == null ? null : remaining.maxLines! - 1);
-          childManager.childWidgets[rc.index] = remaining.toWidget();
-          rc.maybeChild = _addOrUpdateChild(rc.index, after: rc.previousChild);
           yPosNext += estLineHeight;
+        } while (remaining.text.initialText().startsWith('\n'));
 
-          // Re-run the loop...
-          continue; //-------------------------------------------->
-        }
+        // Re-run the loop...
+        childManager.childWidgets[rc.index] = remaining.toWidget();
+        rc.maybeChild = _addOrUpdateChild(rc.index, after: rc.previousChild);
+        continue; //-------------------------------------------->
       }
 
+      final indent = textChunks.isEmpty ? wt.indent : 0.0;
       final estScaledFontSize = remaining.text
           .initialScaledFontSize(wt.textScaler ?? defaultTextScaler);
-
-      // Adjust the left padding based on indent value.
-      final indent = textChunks.isEmpty ? wt.indent : 0.0;
-      final paddingLeft = padding.left + indent;
-
       final lineMinWidth =
-          estScaledFontSize * 4.0 + paddingLeft + padding.right;
-      final lineMinX = margin.left;
-      final lineMaxX =
-          math.max(lineMinX + lineMinWidth, maxWidth - margin.right);
+          estScaledFontSize * 4.0 + padding.left + indent + padding.right;
 
       // Find space for a width of at least `estLineHeight * 4.0`. This may
       // need to be tweaked, or it could be an option passed in, or we could
@@ -270,20 +257,18 @@ extension on RenderFloatColumn {
           startY: yPosNext,
           width: lineMinWidth,
           height: estLineHeight,
-          minX: lineMinX,
-          maxX: lineMaxX,
+          minX: margin.left,
+          maxX: math.max(margin.left + lineMinWidth, maxWidth - margin.right),
           floatL: rc.floatL,
           floatR: rc.floatR);
 
       // Adjust rect for padding.
       rect = Rect.fromLTRB(
-        rect.left + paddingLeft,
+        rect.left + padding.left + indent,
         rect.top,
         rect.right - padding.right,
         rect.bottom,
       );
-
-      // dmPrint('findSpaceFor $yPosNext, estLineHeight $estLineHeight: $rect');
 
       final subConstraints = childConstraints.copyWith(
         maxWidth: rect.width,
@@ -294,8 +279,8 @@ extension on RenderFloatColumn {
       rc.child.layout(subConstraints, parentUsesSize: true);
 
       // If this is the first line of the paragraph, and the indent value is
-      // not zero, the second line has a different left padding, so it needs
-      // to be laid out separately, so set the `bottom` value accordingly.
+      // not zero, the second line has a different width and needs to be
+      // laid out separately, so set the `bottom` value accordingly.
       final bottom = math.min(rect.bottom,
           indent == 0.0 ? rect.bottom : rect.top + estLineHeight / 2.0);
 
@@ -307,131 +292,90 @@ extension on RenderFloatColumn {
         rc.floatL.topOfTopMostRectAtOrBelow(startY),
         rc.floatR.topOfTopMostRectAtOrBelow(startY),
       );
-      final nextChangeY = math.min(bottom, nextFloatTop);
+      final yChange = math.min(bottom, nextFloatTop);
 
-      // If the text extends past `nextChangeY`, we need to split the text,
+      // If the text extends past `yChange`, we need to split the text
       // and layout each part individually...
-      if (rect.top + rc.child.size.height > nextChangeY) {
-        final span = remaining.text;
-        //
-        // Calculate the approximate x, y to split the text at, which
-        // depends on the text direction.
-        //
-        // ⦿ Shows the x, y offsets the text should be split at:
-        //
-        // LTR example:
-        //  | This is what you   ┌──────────┐
-        //  | shall do; Love the ⦿          │
-        //  ├────────┐ earth and ⦿──────────┤
-        //  │        │ sun and the animals, |
-        //  ├────────┘ despise riches, give ⦿
-        //  │ alms to every one that asks...|
-        //
-        // RTL example:
-        //  |   you what is This ┌──────────┐
-        //  ⦿ the Love ;do shall │          │
-        //  ├────────⦿ and earth └──────────┤
-        //  │        │ ,animals the and sun |
-        //  ├────────⦿ give ,riches despise |
-        //  │...asks that one every to alms |
-        //
-
-        final x = textDirection == TextDirection.ltr ? rect.width : 0.0;
-        final y =
-            math.min(nextChangeY, nextFloatTop - estLineHeight) - rect.top;
-
+      if (rect.top + rc.child.size.height > yChange) {
         final renderParagraph = rc.child is RenderParagraph
             ? rc.child as RenderParagraph
             : rc.child.firstDescendantOfType<RenderParagraph>();
-
         if (renderParagraph == null) {
           assert(false);
         } else {
-          // Get the character index in the text from the point offset.
-          var charIndex =
-              renderParagraph.getPositionForOffset(Offset(x, y)).offset;
-          if (charIndex > 0) {
-            final text = span.toPlainText(includeSemanticsLabels: false);
-            if (charIndex < text.length - 1) {
-              // Skip trailing spaces.
-              final codeUnits = text.codeUnits;
-              while (charIndex < codeUnits.length - 1 &&
-                  codeUnits[charIndex] == 0x0020) {
-                charIndex++;
-              }
+          // Calculate the approximate x, y to split the text at, which
+          // depends on the text direction.
+          //
+          // ⦿ Shows the x, y offsets the text should be split at:
+          //
+          // LTR example:
+          //  | This is what you   ┌──────────┐
+          //  | shall do; Love the ⦿          │
+          //  ├────────┐ earth and ⦿──────────┤
+          //  │        │ sun and the animals, |
+          //  ├────────┘ despise riches, give ⦿
+          //  │ alms to every one that asks...|
+          //
+          // RTL example:
+          //  |   you what is This ┌──────────┐
+          //  ⦿ the Love ;do shall │          │
+          //  ├────────⦿ and earth └──────────┤
+          //  │        │ ,animals the and sun |
+          //  ├────────⦿ give ,riches despise |
+          //  │...asks that one every to alms |
+          //
 
-              // Split the TextSpan at `charIndex`.
-              final split = span.splitAtCharacterIndex(charIndex,
-                  ignoreFloatedWidgetSpans: true);
+          final x = textDirection == TextDirection.ltr ? rect.width : 0.0;
+          final y = math.min(yChange, nextFloatTop - estLineHeight) - rect.top;
 
-              // If it was split into two spans...
-              if (split.length == 2) {
-                //
-                // This fixes a bug where, if a span is split right before a
-                // line feed, and we don't remove the line feed, it is
-                // rendered like two line feeds.
-                //
-                // If the second span starts with a '\n' (line feed), remove
-                // the '\n'.
-                if (text.codeUnitAt(charIndex) == 0x0a) {
-                  final s2 = split.last
-                      .splitAtCharacterIndex(1, ignoreFloatedWidgetSpans: true);
-                  if (s2.length == 2) {
-                    assert(
-                        s2.first.toPlainText(includeSemanticsLabels: false) ==
-                            '\n');
-                    split[1] = s2.last;
-                  }
-                }
+          final parts = remaining.text.splitAt(
+              renderParagraph.getPositionForOffset(Offset(x, y)).offset);
 
-                final part1 = remaining.copyWith(
-                    text: split.first as TextSpan,
-                    // maxLines: indent == 0.0 ? remaining.maxLines : 1,
-                    // overflow: indent == 0.0 ? null : TextOverflow.ellipsis,
-                    clearKey: textChunks.isNotEmpty);
+          // If it was split into two spans...
+          if (parts.length == 2) {
+            final part1 = remaining.copyWith(
+                text: parts.first, clearKey: textChunks.isNotEmpty);
 
-                childManager.childWidgets[rc.index] = part1.toWidget();
-                rc.maybeChild =
-                    _addOrUpdateChild(rc.index, after: rc.previousChild);
-                rc.child.layout(subConstraints, parentUsesSize: true);
+            childManager.childWidgets[rc.index] = part1.toWidget();
+            rc.maybeChild =
+                _addOrUpdateChild(rc.index, after: rc.previousChild);
+            rc.child.layout(subConstraints, parentUsesSize: true);
 
-                // If [maxLines] was set, [remainingLines] needs to be set to
-                // [maxLines] minus the number of lines in [part1].
-                int? remainingLines;
-                if (remaining.maxLines != null) {
-                  // Estimate the number of lines in [part1].
-                  final lines = (rc.child.size.height / estLineHeight).round();
-                  remainingLines = remaining.maxLines! - lines;
-                }
+            // If [maxLines] was set, [remainingLines] needs to be set to
+            // [maxLines] minus the number of lines in [part1].
+            int? remainingLines;
+            if (remaining.maxLines != null) {
+              // Estimate the number of lines in [part1].
+              final lines = (rc.child.size.height / estLineHeight).round();
+              remainingLines = remaining.maxLines! - lines;
+            }
 
-                // Only add [part2] if [remainingLines] is null or greater
-                // than zero.
-                if (remainingLines == null || remainingLines > 0) {
-                  // Calculate `xPos` based on alignment and available space.
-                  final xPos = _xPosForChildWithWidth(rc.child.size.width,
-                      _alignment(wt.textAlign), rect.left, rect.right);
-                  yPosNext = rect.top + rc.child.size.height;
-                  final textChunk = _TextChunk(
-                      Rect.fromLTWH(xPos, rect.top, rc.child.size.width,
-                          rc.child.size.height),
-                      part1);
+            // Only add [part2] if [remainingLines] is null or greater
+            // than zero.
+            if (remainingLines == null || remainingLines > 0) {
+              // Calculate `xPos` based on alignment and available space.
+              final xPos = _xPosForChildWithWidth(rc.child.size.width,
+                  _alignment(wt.textAlign), rect.left, rect.right);
+              yPosNext = rect.top + rc.child.size.height;
+              final textChunk = _TextChunk(
+                  Rect.fromLTWH(xPos, rect.top, rc.child.size.width,
+                      rc.child.size.height),
+                  part1);
 
-                  if (textChunks.isEmpty) rc.moveNext();
-                  textChunks.add(textChunk);
+              if (textChunks.isEmpty) rc.moveNext();
+              textChunks.add(textChunk);
 
-                  remaining = remaining.copyWith(
-                      text: split.last as TextSpan,
-                      maxLines: remainingLines,
-                      clearKey: textChunks.isNotEmpty);
+              remaining = remaining.copyWith(
+                  text: parts.last,
+                  maxLines: remainingLines,
+                  clearKey: textChunks.isNotEmpty);
 
-                  childManager.childWidgets[rc.index] = remaining.toWidget();
-                  rc.maybeChild =
-                      _addOrUpdateChild(rc.index, after: rc.previousChild);
+              childManager.childWidgets[rc.index] = remaining.toWidget();
+              rc.maybeChild =
+                  _addOrUpdateChild(rc.index, after: rc.previousChild);
 
-                  // Re-run the loop...
-                  continue; //------------------------------------>
-                }
-              }
+              // Re-run the loop...
+              continue; //------------------------------------>
             }
           }
         }
@@ -655,5 +599,49 @@ extension on List<_TextChunk> {
           ),
       ],
     );
+  }
+}
+
+extension on TextSpan {
+  List<TextSpan> splitAt(int index) {
+    var i = index;
+
+    if (i > 0) {
+      final text = toPlainText(includeSemanticsLabels: false);
+      if (i < text.length - 1) {
+        // Skip trailing spaces.
+        final codeUnits = text.codeUnits;
+        while (i < codeUnits.length - 1 && codeUnits[i] == 0x0020) {
+          i++;
+        }
+
+        // Split the TextSpan at `i`.
+        final split = splitAtCharacterIndex(i, ignoreFloatedWidgetSpans: true);
+
+        // If it was split into two spans...
+        if (split.length == 2) {
+          //
+          // This fixes a bug where, if a span is split right before a
+          // line feed, and we don't remove the line feed, it is
+          // rendered like two line feeds.
+          //
+          // If the second span starts with a '\n' (line feed), remove
+          // the '\n'.
+          if (text.codeUnitAt(i) == 0x0a) {
+            final s2 = split.last
+                .splitAtCharacterIndex(1, ignoreFloatedWidgetSpans: true);
+            if (s2.length == 2) {
+              assert(
+                  s2.first.toPlainText(includeSemanticsLabels: false) == '\n');
+              split[1] = s2.last;
+            }
+          }
+
+          return [split.first as TextSpan, split.last as TextSpan];
+        }
+      }
+    }
+
+    return [this];
   }
 }

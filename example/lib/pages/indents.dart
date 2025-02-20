@@ -75,7 +75,7 @@ class Indents extends StatelessWidget {
                           maxWidthPercentage: 0.333,
                           child: Container(
                               height: boxHeight, color: Colors.green)),
-                      _text,
+                      const TextSpan(children: [TextSpan(text: ''), _text]),
                     ],
                   ),
                 ],

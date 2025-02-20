@@ -14,14 +14,18 @@ import 'shared.dart';
 import 'splittable_mixin.dart';
 
 extension FCInlineSpanExt on InlineSpan {
-  double initialLineHeight(TextScaler textScaler) {
-    final fontSize = initialFontSize(14.0);
+  /// Returns the scaled line height of the first non-empty text in the span.
+  double initialLineHeight(TextScaler textScaler,
+      {double defaultFontSize = 14.0}) {
+    final fontSize = initialFontSize(defaultFontSize);
     final lineHeightScale = initialLineHeightScale(1.12);
     return textScaler.scale(fontSize * lineHeightScale);
   }
 
-  double initialScaledFontSize(TextScaler textScaler) {
-    final fontSize = initialFontSize(14.0);
+  /// Returns the scaled font size of the first non-empty text in the span.
+  double initialScaledFontSize(TextScaler textScaler,
+      {double defaultFontSize = 14.0}) {
+    final fontSize = initialFontSize(defaultFontSize);
     return textScaler.scale(fontSize);
   }
 
@@ -77,8 +81,7 @@ extension FCInlineSpanExt on InlineSpan {
   /// Splits this span at the given character [index] and returns a list of one
   /// or two spans. If [index] is zero, or if [index] is greater than the
   /// number of characters in this span, a list containing just this span is
-  /// returned. If this span was split, a list of two spans is returned,
-  /// containing the two new spans.
+  /// returned. If this span was split, a list of two TextSpan is returned.
   List<InlineSpan> splitAtCharacterIndex(
     int index, {
     bool ignoreFloatedWidgetSpans = false,
@@ -240,6 +243,21 @@ extension FCTextSpanExt on TextSpan {
         locale: locale ?? this.locale,
         spellOut: spellOut ?? this.spellOut,
       );
+
+  /// Returns a TextSpan that skips the first [count] characters of this span.
+  /// If [count] is zero, this span is returned. If [count] is greater than the
+  /// number of characters in this span, a TextSpan with an empty string is
+  /// returned.
+  TextSpan skipChars(int count, {bool ignoreFloatedWidgetSpans = true}) {
+    if (count == 0) return this;
+    final split = splitAtCharacterIndex(count,
+        ignoreFloatedWidgetSpans: ignoreFloatedWidgetSpans);
+    if (split.length == 2) {
+      assert(split.first is TextSpan && split.last is TextSpan);
+      return split.last as TextSpan;
+    }
+    return const TextSpan(text: '');
+  }
 }
 
 /// Walks the given [node] and its descendants in pre-order and returns the
