@@ -250,6 +250,12 @@ class _FloatColumnElement extends RenderObjectElement
   List<Object> get textAndWidgets => (widget as FloatColumn)._textAndWidgets;
 
   @override
+  RenderBox? childAt(int index) {
+    // dmPrint('_FloatColumnElement childAt');
+    return _childElements[index]?.renderObject as RenderBox?;
+  }
+
+  @override
   RenderBox? addOrUpdateChild(int index, {required RenderBox? after}) {
     // dmPrint('_FloatColumnElement createChild');
     RenderBox? child;

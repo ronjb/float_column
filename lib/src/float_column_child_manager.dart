@@ -9,6 +9,9 @@ abstract class FloatColumnChildManager {
   /// The resulting child widgets, built from `textAndWidgets`.
   HashMap<int, Widget?> get childWidgets;
 
+  /// Returns the child RenderBox at the given index.
+  RenderBox? childAt(int index);
+
   /// Adds or updates the child element at the given index.
   RenderBox? addOrUpdateChild(int index, {required RenderBox? after});
 

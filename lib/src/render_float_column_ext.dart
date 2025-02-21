@@ -472,6 +472,17 @@ class _RenderCursor {
     index--;
   }
 
+  /// Jumps to the child at the given index, if it exists.
+  bool jumpToIndex(int index) {
+    final newChild = rfc.childManager.childAt(index);
+    if (newChild == null) return false;
+    maybeChild = newChild;
+    previousChild =
+        (previousChild!.parentData! as FloatColumnParentData).previousSibling;
+    this.index = index;
+    return true;
+  }
+
   /// Updates the current child's widget and associated element.
   void updateCurrentChildWidget(Widget widget) {
     rfc.childManager.childWidgets[index] = widget;
