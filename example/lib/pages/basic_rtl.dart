@@ -13,8 +13,6 @@ class BasicRtl extends StatelessWidget {
     // const crossAxisAlignment = CrossAxisAlignment.stretch;
 
     const boxHeight = 40.0;
-    final scale =
-        (((MediaQuery.of(context).size.width / 600.0) - 1.0) * 0.6) + 1.0;
 
     return DefaultTextStyle(
       style: const TextStyle(fontSize: 18, color: Colors.black, height: 1.5),
@@ -50,8 +48,7 @@ class BasicRtl extends StatelessWidget {
                       clearMinSpacing: 100,
                       maxWidthPercentage: 0.333,
                       child: Container(height: boxHeight, color: Colors.green)),
-                  WrappableText(
-                      text: _text, textScaler: TextScaler.linear(scale)),
+                  WrappableText(text: _text),
                 ],
               ),
             ),

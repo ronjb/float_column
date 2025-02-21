@@ -11,7 +11,7 @@ class BasicLtr extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scale =
-        (((MediaQuery.of(context).size.width / 600.0) - 1.0) * 0.6) + 1.0;
+        (((MediaQuery.of(context).size.width / 600.0) - 1.0) * 0.3) + 1.0;
 
     return DefaultTextStyle(
       style: const TextStyle(fontSize: 18, color: Colors.black, height: 1.5),
@@ -76,8 +76,8 @@ TextSpan _text(BuildContext context, double textScaleFactor) => TextSpan(
           child: Floatable(
             float: FCFloat.end,
             clear: FCClear.both,
-            clearMinSpacing: 16,
-            maxWidthPercentage: 0.33,
+            clearMinSpacing: -50 * textScaleFactor,
+            maxWidthPercentage: 0.33 / textScaleFactor,
             padding: const EdgeInsetsDirectional.only(start: 8),
             child: Img(
                 assetName: _name('walt_whitman.jpg'), title: 'Walt Whitman'),
@@ -87,7 +87,7 @@ TextSpan _text(BuildContext context, double textScaleFactor) => TextSpan(
           child: Floatable(
             float: FCFloat.start,
             clear: FCClear.start,
-            clearMinSpacing: 220,
+            clearMinSpacing: 65 * textScaleFactor,
             maxWidthPercentage: 0.25 / textScaleFactor,
             padding: const EdgeInsetsDirectional.only(end: 12),
             child: Img(
@@ -108,8 +108,10 @@ TextSpan _text(BuildContext context, double textScaleFactor) => TextSpan(
           ),
           recognizer: TapGestureRecognizer()
             ..onTap = () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Tapped on "Love"')));
+              ScaffoldMessenger.of(context)
+                ..removeCurrentSnackBar()
+                ..showSnackBar(
+                    const SnackBar(content: Text('Tapped on "Love"')));
             },
         ),
         const TextSpan(
@@ -125,9 +127,11 @@ TextSpan _text(BuildContext context, double textScaleFactor) => TextSpan(
           ),
           recognizer: TapGestureRecognizer()
             ..onTap = () {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                  content:
-                      Text('Tapped on "stand up for the stupid and crazy"')));
+              ScaffoldMessenger.of(context)
+                ..removeCurrentSnackBar()
+                ..showSnackBar(const SnackBar(
+                    content:
+                        Text('Tapped on "stand up for the stupid and crazy"')));
             },
         ),
         const TextSpan(
@@ -189,8 +193,10 @@ TextSpan _text(BuildContext context, double textScaleFactor) => TextSpan(
           ),
           recognizer: TapGestureRecognizer()
             ..onTap = () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Tapped on "Song of Myself"')));
+              ScaffoldMessenger.of(context)
+                ..removeCurrentSnackBar()
+                ..showSnackBar(const SnackBar(
+                    content: Text('Tapped on "Song of Myself"')));
             },
         ),
       ],

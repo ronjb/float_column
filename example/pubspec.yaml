@@ -12,8 +12,7 @@ dependencies:
     path: ../
   flutter:
     sdk: flutter
-  flutter_animate: ^4.5.2
-  google_fonts: ^6.2.1
+  intrinsic_size_overflow_box: ^0.1.1
 
 dev_dependencies:
   flutter_lints_plus: ^3.2.0
