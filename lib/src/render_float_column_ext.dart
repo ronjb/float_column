@@ -5,8 +5,6 @@ extension on RenderFloatColumn {
   bool get isRTL => textDirection == TextDirection.rtl;
 
   Size _performLayout() {
-    final constraints = this.constraints;
-
     final BoxConstraints childConstraints;
     if (crossAxisAlignment == CrossAxisAlignment.stretch) {
       childConstraints = BoxConstraints.tightFor(width: constraints.maxWidth);
@@ -51,23 +49,16 @@ extension on RenderFloatColumn {
           final floatData =
               ((rc.child as RenderMetaData).metaData as FloatData);
 
-          if (floatData.wrappableTextIndex != null) {
-            assert(floatData.float != FCFloat.none);
-            rc.child.layout(childConstraints, parentUsesSize: true);
-            (rc.child.parentData! as FloatColumnParentData).offset =
-                Offset.zero;
-          } else {
-            // If not floated, resolve the margin and update `rc.y` and
-            // `prevBottomMargin`.
-            if (floatData.float == FCFloat.none) {
-              final margin = floatData.margin.resolve(textDirection);
-              final topMargin = math.max(prevBottomMargin, margin.top);
-              rc.y += topMargin;
-              prevBottomMargin = margin.bottom;
-            }
-
-            _layoutWidget(rc, childConstraints, floatData);
+          // If not floated, resolve the margin and update `rc.y` and
+          // `prevBottomMargin`.
+          if (floatData.float == FCFloat.none) {
+            final margin = floatData.margin.resolve(textDirection);
+            final topMargin = math.max(prevBottomMargin, margin.top);
+            rc.y += topMargin;
+            prevBottomMargin = margin.bottom;
           }
+
+          _layoutWidget(rc, childConstraints, floatData);
         }
 
         // Else, if it is a WrappableText...
@@ -400,10 +391,10 @@ extension on RenderFloatColumn {
       }
 
       // Are there any floated child widgets that needed to be laid out?
-      // if (rc.layoutFloatedChildren(laidOutFloaterIndices, wrappableTextIndex)) {
-      //   // If so, we need to re-run the loop...
-      //   continue;
-      // }
+      if (rc.layoutFloatedChildren(laidOutFloaterIndices, wrappableTextIndex)) {
+        // If so, we need to re-run the loop...
+        continue;
+      }
 
       final double xPos;
       if (textChunks.isNotEmpty) {
@@ -522,19 +513,21 @@ class _RenderCursor {
   /// Attempts to jump to the child at the given [index], returning `true` if
   /// successful. Fails if `childManager.childAt(index)` and
   /// `childManager.childAt(index - 1)` are `null`.
-  bool jumpToIndex(int index) {
-    final newChild = rfc.childManager.childAt(index);
+  bool jumpToIndex(int newIndex) {
+    final newChild = rfc.childManager.childAt(newIndex);
     if (newChild != null) {
       maybeChild = newChild;
       previousChild =
-          (previousChild!.parentData! as FloatColumnParentData).previousSibling;
-      this.index = index;
+          (newChild.parentData! as FloatColumnParentData).previousSibling;
+      index = newIndex;
       return true;
     } else {
-      final previousChild = rfc.childManager.childAt(index - 1);
-      if (previousChild != null) {
+      final newPreviousChild = rfc.childManager.childAt(newIndex - 1);
+      if (newPreviousChild != null) {
+        previousChild = newPreviousChild;
         maybeChild =
-            (previousChild.parentData! as FloatColumnParentData).nextSibling;
+            (newPreviousChild.parentData! as FloatColumnParentData).nextSibling;
+        index = newIndex;
         return true;
       }
     }
@@ -565,20 +558,22 @@ class _RenderCursor {
           if (fd.wrappableTextIndex == wrappableTextIndex &&
               !laidOutFloaterIndices.contains(fd.placeholderIndex)) {
             final savedIndex = index;
+            assert(savedIndex == wrappableTextIndex);
 
             // Jump to the index of the floated child widget.
             if (jumpToIndex(fd.index)) {
               final widget = rfc.childManager.textAndWidgets[index];
               assert(widget is Widget);
+              var laidOutFloatingWidget = false;
               if (widget is Widget) {
                 updateCurrentChildWidget(widget);
                 rfc._layoutWidget(this, childConstraints, fd);
                 laidOutFloaterIndices.add(fd.placeholderIndex);
-
-                // Jump back to the original index and return `true`.
-                jumpToIndex(savedIndex);
-                return true; //--------------------------------------------->
+                laidOutFloatingWidget = true;
               }
+
+              jumpToIndex(savedIndex);
+              if (laidOutFloatingWidget) return true; //-------------------->
             }
           }
         }
