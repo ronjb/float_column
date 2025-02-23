@@ -14,74 +14,100 @@ import 'shared.dart';
 import 'splittable_mixin.dart';
 
 extension FCInlineSpanExt on InlineSpan {
+  /// Returns `true` if this InlineSpan is a WidgetSpan with a Floated
+  /// child where `child.float != FCFloat.none`.
+  bool get isFloatedWidgetSpan {
+    return this is WidgetSpan &&
+        (this as WidgetSpan).child is Floatable &&
+        ((this as WidgetSpan).child as Floatable).float != FCFloat.none;
+  }
+
   /// Returns the scaled line height of the first non-empty text in the span.
-  double initialLineHeight(TextScaler textScaler,
-      {double defaultFontSize = 14.0}) {
+  double initialLineHeight(
+    TextScaler textScaler, {
+    double defaultFontSize = 14.0,
+  }) {
     final fontSize = initialFontSize(defaultFontSize);
     final lineHeightScale = initialLineHeightScale(1.12);
     return textScaler.scale(fontSize * lineHeightScale);
   }
 
   /// Returns the scaled font size of the first non-empty text in the span.
-  double initialScaledFontSize(TextScaler textScaler,
-      {double defaultFontSize = 14.0}) {
+  double initialScaledFontSize(
+    TextScaler textScaler, {
+    double defaultFontSize = 14.0,
+  }) {
     final fontSize = initialFontSize(defaultFontSize);
     return textScaler.scale(fontSize);
   }
 
   /// Returns the font size of the first non-empty text in the span, or
   /// [defaultValue] if none.
-  double initialFontSize(double defaultValue) {
-    return valueOfFirstDescendantOf(
-          this,
-          where: (s) => s is TextSpan && (s.text?.isNotEmpty ?? false),
-          defaultValue: defaultValue,
-          getValue: (s) => s is TextSpan ? s.style?.fontSize : null,
-          childrenOf: (s) => s is TextSpan ? s.children : null,
-        ) ??
-        defaultValue;
-  }
+  double initialFontSize(double defaultValue) =>
+      valueOfFirstDescendantWhere(
+        (s) => s is TextSpan && (s.text?.isNotEmpty ?? false),
+        defaultValue: defaultValue,
+        getValue: (s) => s is TextSpan ? s.style?.fontSize : null,
+      ) ??
+      defaultValue;
 
   /// Returns the line height of the first non-empty text in the span, or
   /// [defaultValue] if none.
-  double initialLineHeightScale(double defaultValue) {
-    return valueOfFirstDescendantOf(
-          this,
-          where: (s) => s is TextSpan && (s.text?.isNotEmpty ?? false),
-          defaultValue: defaultValue,
-          getValue: (s) => s is TextSpan ? s.style?.height : null,
-          childrenOf: (s) => s is TextSpan ? s.children : null,
-        ) ??
-        defaultValue;
-  }
+  double initialLineHeightScale(double defaultValue) =>
+      valueOfFirstDescendantWhere(
+        (s) => s is TextSpan && (s.text?.isNotEmpty ?? false),
+        defaultValue: defaultValue,
+        getValue: (s) => s is TextSpan ? s.style?.height : null,
+      ) ??
+      defaultValue;
 
   /// Returns the first non-empty text in the span, or the empty string if
   /// none.
   ///
   /// Note, a WidgetSpan is represented as '\uFFFC', the standard object
   /// replacement character.
-  String initialText() {
-    return valueOfFirstDescendantOf(
-          this,
-          where: (s) =>
-              s is WidgetSpan ||
-              (s is TextSpan && (s.text?.isNotEmpty ?? false)),
-          defaultValue: '',
-          getValue: (s) => s is WidgetSpan
-              ? '\uFFFC'
-              : s is TextSpan && (s.text?.isNotEmpty ?? false)
-                  ? s.text
-                  : '',
-          childrenOf: (s) => s is TextSpan ? s.children : null,
-          isValueInherited: false,
-        ) ??
-        '';
-  }
+  String initialText() =>
+      valueOfFirstDescendantWhere(
+        (s) =>
+            s is WidgetSpan || (s is TextSpan && (s.text?.isNotEmpty ?? false)),
+        defaultValue: '',
+        getValue: (s) => s is WidgetSpan
+            ? '\uFFFC'
+            : s is TextSpan && (s.text?.isNotEmpty ?? false)
+                ? s.text
+                : '',
+        isValueInherited: false,
+      ) ??
+      '';
+
+  /// Walks this span and its descendants in pre-order and returns the value
+  /// (using [getValue]) of the first span (including this span) where the
+  /// [where] function returns `true`. If no matching span is found,
+  /// `null` is returned.
+  ///
+  /// If the value of the matching span is `null`, and [isValueInherited] is
+  /// `true` (the default), the value of the matching node's parent is returned,
+  /// or its parent, if it is also `null`, and so on, all the way up the tree.
+  /// If all the values are `null`, the [defaultValue] is returned.
+  ///
+  /// If the value of the matching span is `null` and [isValueInherited] is
+  /// set to `false`, the [defaultValue] is returned.
+  V? valueOfFirstDescendantWhere<V>(
+    bool Function(InlineSpan) where, {
+    required V defaultValue,
+    required V? Function(InlineSpan) getValue,
+    bool isValueInherited = true,
+  }) =>
+      valueOfFirstDescendantOf(this,
+          where: where,
+          defaultValue: defaultValue,
+          getValue: getValue,
+          childrenOf: (s) => s is TextSpan ? s.children : null);
 
   /// Splits this span at the given character [index] and returns a list of one
   /// or two spans. If [index] is zero, or if [index] is greater than the
   /// number of characters in this span, a list containing just this span is
-  /// returned. If this span was split, a list of two TextSpan is returned.
+  /// returned. If this span was split, a list of two [TextSpan]s is returned.
   List<InlineSpan> splitAtCharacterIndex(
     int index, {
     bool ignoreFloatedWidgetSpans = false,
@@ -97,6 +123,16 @@ extension FCInlineSpanExt on InlineSpan {
                   noText: text == null,
                   noChildren: children == null));
 
+  /// Splits this span at the given character [index] and returns a list of one
+  /// or two spans. If [index] is zero, or if [index] is greater than the
+  /// number of characters in this span, a list containing just this span is
+  /// returned. If this span was split, a list of two [TextSpan]s is returned.
+  ///
+  /// This is the default implementation of [splitAtCharacterIndex] for
+  /// [InlineSpan]s. In general, `splitAtCharacterIndex` should be used instead
+  /// of this method, unless it is used in a class that extends TextSpan with
+  /// `SplittableMixin<InlineSpan>`, in which case calling
+  /// `splitAtCharacterIndex` would result in a recursive infinite loop.
   List<InlineSpan> defaultSplitSpanAtIndex(
     SplitAtIndex index, {
     required bool ignoreFloatedWidgetSpans,
@@ -217,6 +253,10 @@ extension FCListOfInlineSpanExt on List<InlineSpan> {
 }
 
 extension FCTextSpanExt on TextSpan {
+  /// Returns `true` if this TextSpan has any floated WidgetSpan children.
+  bool hasFloatedWidgetSpanChildren() =>
+      !visitChildren((span) => !span.isFloatedWidgetSpan);
+
   TextSpan copyWith({
     String? text,
     List<InlineSpan>? children,

@@ -30,8 +30,8 @@ class MarginsAndPadding extends StatelessWidget {
         textDirection: TextDirection.ltr,
         child: Builder(
           builder: (context) => SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(8),
+            child: SafeArea(
+              minimum: const EdgeInsets.all(8),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: crossAxisAlignment,

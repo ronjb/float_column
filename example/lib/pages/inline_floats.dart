@@ -9,8 +9,8 @@ class InlineFloats extends StatelessWidget {
     return DefaultTextStyle(
       style: const TextStyle(fontSize: 18, color: Colors.black, height: 1.5),
       child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(8),
+        child: SafeArea(
+          minimum: const EdgeInsets.all(8),
           child: FloatColumn(
             children: [
               WrappableText(

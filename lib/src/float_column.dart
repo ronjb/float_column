@@ -11,7 +11,6 @@ import 'float_data.dart';
 import 'floatable.dart';
 import 'inline_span_ext.dart';
 import 'render_float_column.dart';
-import 'shared.dart';
 import 'wrappable_text.dart';
 
 /// A vertical column of widgets and text with the ability to "float" child
@@ -288,6 +287,24 @@ class _FloatColumnElement extends RenderObjectElement
       assert(!_childElements.containsKey(index));
     });
   }
+
+  @override
+  void removeAllChildren() {
+    // dmPrint('_FloatColumnElement removeAllChildren');
+    owner!.buildScope(this, () {
+      _childElements
+        ..forEach((index, child) {
+          final result = updateChild(child, null, index);
+          assert(result == null);
+        })
+        ..clear();
+      // assert(_childElements.containsKey(index));
+      // final result = updateChild(_childElements[index], null, index);
+      // assert(result == null);
+      // _childElements.remove(index);
+      // assert(!_childElements.containsKey(index));
+    });
+  }
 }
 
 Iterable<Object> _expandToIncludeFloatedWidgetSpanChildren(
@@ -297,28 +314,32 @@ Iterable<Object> _expandToIncludeFloatedWidgetSpanChildren(
       MetaData(metaData: FloatData(indexRef.value++, null, 0, e), child: e)
     ];
   } else if (e is WrappableText) {
+    // Increment the index for the WrappableText.
+    indexRef.value++;
+
     // First check if the WrappableText has any floated WidgetSpan children,
     // so we don't do unnecessary work.
     if (!e.text.hasFloatedWidgetSpanChildren()) {
-      // Increment the index for the WrappableText.
-      indexRef.value++;
       return [e];
     } else {
+      final wrappableTextIndex = indexRef.value - 1;
       final floatedWidgets = <_WidgetAndPlaceholderIndex>[];
-      final newText = e.text
-          .copyCollectingExtractedFloatedWidgets(floatedWidgets, _Ref<int>(0));
-      final wrappableTextIndex = indexRef.value + floatedWidgets.length;
-      final widgets = [
-        // Place the floated widget children before the WrappableText.
+      final newText = e.text.copyCollectingExtractedFloatedWidgets(
+          wrappableTextIndex,
+          floatedWidgets,
+          _Ref<int>(indexRef.value),
+          _Ref<int>(0));
+
+      return [
+        // First, the WrappableText.
+        e.copyWith(text: newText),
+
+        // Then the floated widgets.
         ...floatedWidgets.map((c) => MetaData(
             metaData: FloatData(indexRef.value++, wrappableTextIndex,
                 c.placeholderIndex, c.widget),
             child: c.widget)),
-        e.copyWith(text: newText),
       ];
-      // Increment the index for the WrappableText.
-      indexRef.value++;
-      return widgets;
     }
   }
   return [];
@@ -332,15 +353,13 @@ class _Ref<T> {
 }
 
 extension on TextSpan {
-  /// Returns `true` if this TextSpan has any floated WidgetSpan children.
-  bool hasFloatedWidgetSpanChildren() =>
-      !visitChildren((span) => !span.isFloatedWidgetSpan);
-
   /// Returns a copy of this TextSpan with all floated widgets replaced with
   /// `SizedBox.shrink()` and the original floated widgets collected in
   /// [floatedWidgets].
   TextSpan copyCollectingExtractedFloatedWidgets(
+    int wrappableTextIndex,
     List<_WidgetAndPlaceholderIndex> floatedWidgets,
+    _Ref<int> childIndexRef,
     _Ref<int> placeholderIndexRef,
   ) {
     var changed = false;
@@ -353,13 +372,21 @@ extension on TextSpan {
             placeholderIndex: placeholderIndexRef.value
           ));
           changed = true;
-          newChild = const WidgetSpan(child: SizedBox.shrink());
+          newChild = WidgetSpan(
+              child: MetaData(
+            metaData: FloatData(childIndexRef.value++, wrappableTextIndex,
+                placeholderIndexRef.value, child.child),
+            child: const SizedBox.shrink(),
+          ));
         }
         placeholderIndexRef.value++;
         return newChild;
       } else if (child is TextSpan) {
         final newChild = child.copyCollectingExtractedFloatedWidgets(
-            floatedWidgets, placeholderIndexRef);
+            wrappableTextIndex,
+            floatedWidgets,
+            childIndexRef,
+            placeholderIndexRef);
         changed = changed || newChild != child;
         return newChild;
       } else {
@@ -369,13 +396,5 @@ extension on TextSpan {
 
     // If no changes were made, return the original TextSpan.
     return changed ? copyWith(children: newChildren) : this;
-  }
-}
-
-extension on InlineSpan {
-  bool get isFloatedWidgetSpan {
-    return this is WidgetSpan &&
-        (this as WidgetSpan).child is Floatable &&
-        ((this as WidgetSpan).child as Floatable).float != FCFloat.none;
   }
 }

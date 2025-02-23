@@ -17,4 +17,7 @@ abstract class FloatColumnChildManager {
 
   /// Removes the child element at the given index.
   void removeChild(RenderBox child);
+
+  /// Removes all children.
+  void removeAllChildren();
 }

@@ -14,7 +14,11 @@ extension on RenderFloatColumn {
       childConstraints = BoxConstraints(maxWidth: constraints.maxWidth);
     }
 
-    final rc = _RenderCursor(this, firstChild);
+    while (firstChild != null) {
+      _removeChild(firstChild!);
+    }
+
+    final rc = _RenderCursor(this, childConstraints, firstChild);
 
     // This gets updated to the previous non-floated child's bottom margin.
     var prevBottomMargin = 0.0;
@@ -24,43 +28,61 @@ extension on RenderFloatColumn {
       rc.index = i;
       final el = childManager.textAndWidgets[i];
 
-      // Update the current child's widget and associated element.
-      rc.updateCurrentChildWidget(
-          el is Widget ? el : (el as WrappableText).toWidget());
-      if (rc.maybeChild == null) {
-        assert(false);
-        continue;
-      }
+      // If this a floated child widget of a WrappableText, it has already
+      // been laid out, so skip it.
+      if (el is MetaData &&
+          el.metaData is FloatData &&
+          (el.metaData as FloatData).wrappableTextIndex != null &&
+          rc.maybeChild != null &&
+          rc.child.hasSize) {
+        // Nothing to do here...
+      } else {
+        // Update the current child's widget and associated element.
+        rc.updateCurrentChildWidget(
+            el is Widget ? el : (el as WrappableText).toWidget());
+        if (rc.maybeChild == null) {
+          assert(false);
+          continue;
+        }
 
-      // If it is a Widget...
-      if (el is Widget) {
-        // All widgets are wrapped in a MetaData widget with FloatData.
-        final floatData = ((rc.child as RenderMetaData).metaData as FloatData);
+        // If it is a Widget...
+        if (el is Widget) {
+          // All widgets are wrapped in a MetaData widget with FloatData.
+          final floatData =
+              ((rc.child as RenderMetaData).metaData as FloatData);
 
-        // If not floated, resolve the margin and update `rc.y` and
-        // `prevBottomMargin`.
-        if (floatData.float == FCFloat.none) {
-          final margin = floatData.margin.resolve(textDirection);
+          if (floatData.wrappableTextIndex != null) {
+            assert(floatData.float != FCFloat.none);
+            rc.child.layout(childConstraints, parentUsesSize: true);
+            (rc.child.parentData! as FloatColumnParentData).offset =
+                Offset.zero;
+          } else {
+            // If not floated, resolve the margin and update `rc.y` and
+            // `prevBottomMargin`.
+            if (floatData.float == FCFloat.none) {
+              final margin = floatData.margin.resolve(textDirection);
+              final topMargin = math.max(prevBottomMargin, margin.top);
+              rc.y += topMargin;
+              prevBottomMargin = margin.bottom;
+            }
+
+            _layoutWidget(rc, childConstraints, floatData);
+          }
+        }
+
+        // Else, if it is a WrappableText...
+        else if (el is WrappableText) {
+          // Resolve the margin and update `rc.y` and `prevBottomMargin`.
+          final textDirection = el.textDirection ?? this.textDirection;
+          final margin = el.margin.resolve(textDirection);
           final topMargin = math.max(prevBottomMargin, margin.top);
           rc.y += topMargin;
           prevBottomMargin = margin.bottom;
+
+          _layoutWrappableText(el, rc, childConstraints, textDirection);
+        } else {
+          assert(false);
         }
-
-        _layoutWidget(rc, childConstraints, floatData);
-      }
-
-      // Else, if it is a WrappableText...
-      else if (el is WrappableText) {
-        // Resolve the margin and update `rc.y` and `prevBottomMargin`.
-        final textDirection = el.textDirection ?? this.textDirection;
-        final margin = el.margin.resolve(textDirection);
-        final topMargin = math.max(prevBottomMargin, margin.top);
-        rc.y += topMargin;
-        prevBottomMargin = margin.bottom;
-
-        _layoutWrappableText(el, rc, childConstraints, textDirection);
-      } else {
-        assert(false);
       }
 
       rc.moveNext();
@@ -191,7 +213,6 @@ extension on RenderFloatColumn {
   ) {
     final margin = wt.margin.resolve(textDirection);
     final padding = wt.padding.resolve(textDirection);
-    final maxWidth = childConstraints.maxWidth;
 
     var yPosNext = rc.y + padding.top;
 
@@ -203,6 +224,14 @@ extension on RenderFloatColumn {
     if (clear == FCClear.right || clear == FCClear.both) {
       yPosNext = rc.floatR.maxYBelow(yPosNext);
     }
+
+    // Does this WrappableText have any floated inline widget children?
+    final wrappableTextIndex = rc.index;
+    // final hasFloatedChildren = wt.text._hasFloatedChildren(wrappableTextIndex);
+
+    // Keep track of the indices of the floated widget children that have
+    // already been laid out, because should only be laid out once.
+    final laidOutFloaterIndices = <int>{};
 
     final textChunks = <_TextChunk>[];
     WrappableText? remaining = wt.copyWith(
@@ -244,7 +273,8 @@ extension on RenderFloatColumn {
           width: lineMinWidth,
           height: estLineHeight,
           minX: margin.left,
-          maxX: math.max(margin.left + lineMinWidth, maxWidth - margin.right),
+          maxX: math.max(margin.left + lineMinWidth,
+              childConstraints.maxWidth - margin.right),
           floatL: rc.floatL,
           floatR: rc.floatR);
 
@@ -283,9 +313,7 @@ extension on RenderFloatColumn {
       // If the text extends past `yChange`, we need to split the text
       // and layout each part individually...
       if (rect.top + rc.child.size.height > yChange) {
-        final renderParagraph = rc.child is RenderParagraph
-            ? rc.child as RenderParagraph
-            : rc.child.firstDescendantOfType<RenderParagraph>();
+        final renderParagraph = rc.childRenderParagraph();
         if (renderParagraph == null) {
           assert(false);
         } else {
@@ -325,6 +353,15 @@ extension on RenderFloatColumn {
             rc.updateCurrentChildWidget(part1.toWidget());
             rc.child.layout(subConstraints, parentUsesSize: true);
 
+            // Does [part1] have any floated child widgets that needed to be
+            // laid out?
+            if (part1.text._hasFloatedChildren(wrappableTextIndex) &&
+                rc.layoutFloatedChildren(
+                    laidOutFloaterIndices, wrappableTextIndex)) {
+              // If so, we need to re-run the loop...
+              continue;
+            }
+
             // If [maxLines] was set, [remainingLines] needs to be set to
             // [maxLines] minus the number of lines in [part1].
             int? remainingLines;
@@ -346,7 +383,6 @@ extension on RenderFloatColumn {
                       rc.child.size.height),
                   part1);
 
-              if (textChunks.isEmpty) rc.moveNext();
               textChunks.add(textChunk);
 
               remaining = remaining.copyWith(
@@ -363,6 +399,12 @@ extension on RenderFloatColumn {
         }
       }
 
+      // Are there any floated child widgets that needed to be laid out?
+      // if (rc.layoutFloatedChildren(laidOutFloaterIndices, wrappableTextIndex)) {
+      //   // If so, we need to re-run the loop...
+      //   continue;
+      // }
+
       final double xPos;
       if (textChunks.isNotEmpty) {
         // Calculate `xPos` based on alignment and available space.
@@ -373,10 +415,8 @@ extension on RenderFloatColumn {
           remaining,
         ));
 
-        rc
-          ..movePrevious()
-          ..updateCurrentChildWidget(
-              textChunks.toWidget(childConstraints.maxWidth));
+        rc.updateCurrentChildWidget(
+            textChunks.toWidget(childConstraints.maxWidth));
         rc.child.layout(childConstraints, parentUsesSize: true);
 
         final top = textChunks.first.rect.top;
@@ -389,12 +429,12 @@ extension on RenderFloatColumn {
             _alignment(wt.textAlign), rect.left, rect.right);
       }
 
-      remaining = null;
-
       (rc.child.parentData! as FloatColumnParentData).offset =
           Offset(xPos, rect.top);
 
       yPosNext = rect.top + rc.child.size.height;
+      remaining = null;
+      break;
     }
 
     rc.y = yPosNext + padding.bottom;
@@ -442,9 +482,10 @@ extension on RenderFloatColumn {
 }
 
 class _RenderCursor {
-  _RenderCursor(this.rfc, this.maybeChild);
+  _RenderCursor(this.rfc, this.childConstraints, this.maybeChild);
 
   RenderFloatColumn rfc;
+  final BoxConstraints childConstraints;
 
   int index = 0;
   RenderBox? previousChild;
@@ -456,6 +497,12 @@ class _RenderCursor {
   final floatR = <Rect>[];
 
   RenderBox get child => maybeChild!;
+
+  /// The current child as a RenderParagraph, or the first descendant of the
+  /// current child that is a RenderParagraph.
+  RenderParagraph? childRenderParagraph() => child is RenderParagraph
+      ? child as RenderParagraph
+      : child.firstDescendantOfType<RenderParagraph>();
 
   /// Moves to the next child.
   void moveNext() {
@@ -472,21 +519,75 @@ class _RenderCursor {
     index--;
   }
 
-  /// Jumps to the child at the given index, if it exists.
+  /// Attempts to jump to the child at the given [index], returning `true` if
+  /// successful. Fails if `childManager.childAt(index)` and
+  /// `childManager.childAt(index - 1)` are `null`.
   bool jumpToIndex(int index) {
     final newChild = rfc.childManager.childAt(index);
-    if (newChild == null) return false;
-    maybeChild = newChild;
-    previousChild =
-        (previousChild!.parentData! as FloatColumnParentData).previousSibling;
-    this.index = index;
-    return true;
+    if (newChild != null) {
+      maybeChild = newChild;
+      previousChild =
+          (previousChild!.parentData! as FloatColumnParentData).previousSibling;
+      this.index = index;
+      return true;
+    } else {
+      final previousChild = rfc.childManager.childAt(index - 1);
+      if (previousChild != null) {
+        maybeChild =
+            (previousChild.parentData! as FloatColumnParentData).nextSibling;
+        return true;
+      }
+    }
+    return false;
   }
 
   /// Updates the current child's widget and associated element.
   void updateCurrentChildWidget(Widget widget) {
     rfc.childManager.childWidgets[index] = widget;
     maybeChild = rfc._addOrUpdateChild(index, after: previousChild);
+  }
+
+  /// Lays out the first floated child widget of the current WrappableText
+  /// that has not already been laid out, if any. Returns `true` if a floated
+  /// child widget was laid out.
+  bool layoutFloatedChildren(
+      Set<int> laidOutFloaterIndices, int wrappableTextIndex) {
+    final renderParagraph = childRenderParagraph();
+    assert(renderParagraph != null);
+    if (renderParagraph != null) {
+      var rpChild = renderParagraph.firstChild;
+      while (rpChild != null) {
+        final renderMetaData = rpChild is RenderMetaData
+            ? rpChild
+            : rpChild.firstDescendantOfType<RenderMetaData>();
+        if (renderMetaData != null && renderMetaData.metaData is FloatData) {
+          final fd = renderMetaData.metaData as FloatData;
+          if (fd.wrappableTextIndex == wrappableTextIndex &&
+              !laidOutFloaterIndices.contains(fd.placeholderIndex)) {
+            final savedIndex = index;
+
+            // Jump to the index of the floated child widget.
+            if (jumpToIndex(fd.index)) {
+              final widget = rfc.childManager.textAndWidgets[index];
+              assert(widget is Widget);
+              if (widget is Widget) {
+                updateCurrentChildWidget(widget);
+                rfc._layoutWidget(this, childConstraints, fd);
+                laidOutFloaterIndices.add(fd.placeholderIndex);
+
+                // Jump back to the original index and return `true`.
+                jumpToIndex(savedIndex);
+                return true; //--------------------------------------------->
+              }
+            }
+          }
+        }
+
+        rpChild = renderParagraph.childAfter(rpChild);
+      }
+    }
+
+    return false;
   }
 }
 
@@ -566,4 +667,14 @@ extension on TextSpan {
 
     return [this];
   }
+}
+
+extension on TextSpan {
+  /// Returns `true` if this TextSpan has any floated WidgetSpan children.
+  bool _hasFloatedChildren(int index) =>
+      !visitChildren((span) => !(span is WidgetSpan &&
+          span.child is MetaData &&
+          (span.child as MetaData).metaData is FloatData &&
+          ((span.child as MetaData).metaData as FloatData).wrappableTextIndex ==
+              index));
 }

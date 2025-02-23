@@ -16,8 +16,8 @@ class BasicLtr extends StatelessWidget {
     return DefaultTextStyle(
       style: const TextStyle(fontSize: 18, color: Colors.black, height: 1.5),
       child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
+        child: SafeArea(
+          minimum: const EdgeInsets.all(16),
           child: FloatColumn(
             children: [
               Text.rich(_text(context, scale),

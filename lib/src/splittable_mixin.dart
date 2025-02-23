@@ -10,7 +10,8 @@ mixin SplittableMixin<T> {
   /// this object was split, a list of two objects is returned, containing the
   /// two new split objects.
   ///
-  /// Classes the adopt this mixin should not implement this method.
+  /// Classes that adopt this mixin should NOT implement this method, but they
+  /// must implement `splitAtIndex`.
   List<T> splitAt(
     int index, {
     bool ignoreFloatedWidgetSpans = false,

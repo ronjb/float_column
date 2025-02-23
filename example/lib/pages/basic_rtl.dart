@@ -20,8 +20,8 @@ class BasicRtl extends StatelessWidget {
         textDirection: TextDirection.rtl,
         child: Builder(
           builder: (context) => SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(8),
+            child: SafeArea(
+              minimum: const EdgeInsets.all(8),
               child: FloatColumn(
                 crossAxisAlignment: crossAxisAlignment,
                 children: [
