@@ -197,6 +197,13 @@ class RenderFloatColumn extends RenderBox
     });
   }
 
+  void _removeAllChildren() {
+    invokeLayoutCallback<BoxConstraints>((constraints) {
+      assert(constraints == this.constraints);
+      childManager.removeAllChildren();
+    });
+  }
+
   @override
   void performLayout() {
     // final layoutSize = _performLayout();

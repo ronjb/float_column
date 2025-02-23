@@ -14,8 +14,8 @@ extension on RenderFloatColumn {
       childConstraints = BoxConstraints(maxWidth: constraints.maxWidth);
     }
 
-    while (firstChild != null) {
-      _removeChild(firstChild!);
+    if (firstChild != null) {
+      _removeAllChildren();
     }
 
     final rc = _RenderCursor(this, childConstraints, firstChild);
