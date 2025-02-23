@@ -348,7 +348,7 @@ extension on RenderFloatColumn {
             // laid out?
             if (part1.text._hasFloatedChildren(wrappableTextIndex) &&
                 rc.layoutFloatedChildren(
-                    laidOutFloaterIndices, wrappableTextIndex)) {
+                    laidOutFloaterIndices, wrappableTextIndex, rect.top)) {
               // If so, we need to re-run the loop...
               continue;
             }
@@ -391,7 +391,8 @@ extension on RenderFloatColumn {
       }
 
       // Are there any floated child widgets that needed to be laid out?
-      if (rc.layoutFloatedChildren(laidOutFloaterIndices, wrappableTextIndex)) {
+      if (rc.layoutFloatedChildren(
+          laidOutFloaterIndices, wrappableTextIndex, rect.top)) {
         // If so, we need to re-run the loop...
         continue;
       }
@@ -544,7 +545,10 @@ class _RenderCursor {
   /// that has not already been laid out, if any. Returns `true` if a floated
   /// child widget was laid out.
   bool layoutFloatedChildren(
-      Set<int> laidOutFloaterIndices, int wrappableTextIndex) {
+    Set<int> laidOutFloaterIndices,
+    int wrappableTextIndex,
+    double top,
+  ) {
     final renderParagraph = childRenderParagraph();
     assert(renderParagraph != null);
     if (renderParagraph != null) {
@@ -567,7 +571,14 @@ class _RenderCursor {
               var laidOutFloatingWidget = false;
               if (widget is Widget) {
                 updateCurrentChildWidget(widget);
+                final savedY = y;
+                final offset = (rpChild.parentData! as TextParentData).offset!;
+                // dmPrint('wrappableTextIndex ${fd.wrappableTextIndex}, '
+                //     'index: $index, placeholderIndex: '
+                //     '${fd.placeholderIndex} offset: $offset');
+                y = top + offset.dy - 5;
                 rfc._layoutWidget(this, childConstraints, fd);
+                y = savedY;
                 laidOutFloaterIndices.add(fd.placeholderIndex);
                 laidOutFloatingWidget = true;
               }

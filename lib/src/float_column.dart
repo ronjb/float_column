@@ -373,11 +373,15 @@ extension on TextSpan {
           ));
           changed = true;
           newChild = WidgetSpan(
+              alignment: PlaceholderAlignment.top,
               child: MetaData(
-            metaData: FloatData(childIndexRef.value++, wrappableTextIndex,
-                placeholderIndexRef.value, child.child),
-            child: const SizedBox.shrink(),
-          ));
+                metaData: FloatData(childIndexRef.value++, wrappableTextIndex,
+                    placeholderIndexRef.value, child.child),
+                child: const SizedBox.shrink(),
+                // child: const ColoredBox(
+                //     color: Color(0xffff0000),
+                //     child: SizedBox(width: 2, height: 2)),
+              ));
         }
         placeholderIndexRef.value++;
         return newChild;
