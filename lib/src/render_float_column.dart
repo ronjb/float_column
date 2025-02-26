@@ -181,27 +181,13 @@ class RenderFloatColumn extends RenderBox
     return childParentData.index!;
   }
 
-  RenderBox? _addOrUpdateChild(int index, {RenderBox? after}) {
+  RenderBox? _updateWidgetAt(int index, Widget widget) {
     RenderBox? child;
     invokeLayoutCallback<BoxConstraints>((constraints) {
       assert(constraints == this.constraints);
-      child = childManager.addOrUpdateChild(index, after: after);
+      child = childManager.updateWidgetAt(index, widget);
     });
     return child;
-  }
-
-  void _removeChild(RenderBox child) {
-    invokeLayoutCallback<BoxConstraints>((constraints) {
-      assert(constraints == this.constraints);
-      childManager.removeChild(child);
-    });
-  }
-
-  void _removeAllChildren() {
-    invokeLayoutCallback<BoxConstraints>((constraints) {
-      assert(constraints == this.constraints);
-      childManager.removeAllChildren();
-    });
   }
 
   @override

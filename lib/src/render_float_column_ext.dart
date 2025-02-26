@@ -12,10 +12,6 @@ extension on RenderFloatColumn {
       childConstraints = BoxConstraints(maxWidth: constraints.maxWidth);
     }
 
-    if (firstChild != null) {
-      _removeAllChildren();
-    }
-
     final rc = _RenderCursor(this, childConstraints, firstChild);
 
     // This gets updated to the previous non-floated child's bottom margin.
@@ -35,14 +31,6 @@ extension on RenderFloatColumn {
           rc.child.hasSize) {
         // Nothing to do here...
       } else {
-        // Update the current child's widget and associated element.
-        rc.updateCurrentChildWidget(
-            el is Widget ? el : (el as WrappableText).toWidget());
-        if (rc.maybeChild == null) {
-          assert(false);
-          continue;
-        }
-
         // If it is a Widget...
         if (el is Widget) {
           // All widgets are wrapped in a MetaData widget with FloatData.
@@ -70,6 +58,13 @@ extension on RenderFloatColumn {
           rc.y += topMargin;
           prevBottomMargin = margin.bottom;
 
+          // Always need to start with the original WrappableText widget.
+          rc.updateCurrentChildWidget(el.toWidget());
+          if (rc.maybeChild == null) {
+            assert(false);
+            continue;
+          }
+
           _layoutWrappableText(el, rc, childConstraints, textDirection);
         } else {
           assert(false);
@@ -77,14 +72,6 @@ extension on RenderFloatColumn {
       }
 
       rc.moveNext();
-    }
-
-    // Remove any extra children.
-    while (rc.maybeChild != null) {
-      final childParentData = rc.child.parentData! as FloatColumnParentData;
-      final nextChild = childParentData.nextSibling;
-      _removeChild(rc.child);
-      rc.maybeChild = nextChild;
     }
 
     rc.y += prevBottomMargin;
@@ -537,8 +524,7 @@ class _RenderCursor {
 
   /// Updates the current child's widget and associated element.
   void updateCurrentChildWidget(Widget widget) {
-    rfc.childManager.addOrUpdateWidgetAt(index, widget);
-    maybeChild = rfc._addOrUpdateChild(index, after: previousChild);
+    maybeChild = rfc._updateWidgetAt(index, widget);
   }
 
   /// Lays out the first floated child widget of the current WrappableText
@@ -570,7 +556,6 @@ class _RenderCursor {
               assert(widget is Widget);
               var laidOutFloatingWidget = false;
               if (widget is Widget) {
-                updateCurrentChildWidget(widget);
                 final savedY = y;
                 final offset = (rpChild.parentData! as TextParentData).offset!;
                 // dmPrint('wrappableTextIndex ${fd.wrappableTextIndex}, '

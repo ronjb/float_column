@@ -149,95 +149,93 @@ class _FloatColumnElement extends RenderObjectElement
   @override
   RenderFloatColumn get renderObject => super.renderObject as RenderFloatColumn;
 
-  // We call `updateChild` at two different times:
-  //  1. When we ourselves are told to rebuild (see performRebuild).
-  //  2. When our render object needs a new child (see createChild).
-  // In both cases, we cache the results of calling into our delegate to get
-  // the child widget, so that if we do case 2 later, we don't call the builder
-  // again. Any time we do case 1, though, we reset the cache.
+  /// The current list of children of this element.
+  ///
+  /// This list is filtered to hide elements that have been forgotten (using
+  /// [forgetChild]).
+  Iterable<Element> get children =>
+      _children.where((child) => !_forgottenChildren.contains(child));
 
-  /// A cache of widgets so that we don't have to rebuild every time.
-  final HashMap<int, Widget?> _childWidgets = HashMap<int, Widget?>();
+  late List<Element> _children;
+  // We keep a set of forgotten children to avoid O(n^2) work walking _children
+  // repeatedly to remove children.
+  final Set<Element> _forgottenChildren = HashSet<Element>();
 
-  /// The map containing all active child elements. SplayTreeMap is used so that
-  /// we have all elements ordered and iterable by their keys.
-  final SplayTreeMap<int, Element> _childElements =
-      SplayTreeMap<int, Element>();
+  @override
+  void mount(Element? parent, Object? newSlot) {
+    super.mount(parent, newSlot);
+    final floatColumnWidget = widget as FloatColumn;
+    final children = List<Element>.filled(
+        floatColumnWidget._textAndWidgets.length, _NullElement.instance);
+    Element? previousChild;
+    for (var i = 0; i < children.length; i += 1) {
+      final textOrWidget = floatColumnWidget._textAndWidgets[i];
+      final widget = textOrWidget is Widget
+          ? textOrWidget
+          : (textOrWidget as WrappableText).toWidget();
+      final newChild =
+          inflateWidget(widget, IndexedSlot<Element?>(i, previousChild));
+      children[i] = newChild;
+      previousChild = newChild;
+    }
+    _children = children;
+  }
 
   @override
   void update(FloatColumn newWidget) {
-    // dmPrint('_FloatColumnElement update');
-    final oldWidget = widget as FloatColumn;
     super.update(newWidget);
-    if (newWidget._textAndWidgets != oldWidget._textAndWidgets) {
-      performRebuild();
-      renderObject.markNeedsLayout();
-    }
+    final floatColumnWidget = widget as FloatColumn;
+    _children = updateChildren(
+        _children, floatColumnWidget._textAndWidgets.toWidgets(),
+        forgottenChildren: _forgottenChildren);
+    _forgottenChildren.clear();
   }
 
   @override
-  void performRebuild() {
-    // dmPrint('_FloatColumnElement performRebuild');
-    _childWidgets.clear();
-    super.performRebuild();
-  }
-
-  @override
-  Element? updateChild(Element? child, Widget? newWidget, Object? newSlot) {
-    // dmPrint('_FloatColumnElement updateChild');
-    final oldParentData =
-        child?.renderObject?.parentData as FloatColumnParentData?;
-    final newChild = super.updateChild(child, newWidget, newSlot);
-    final newParentData =
-        newChild?.renderObject?.parentData as FloatColumnParentData?;
-    if (newParentData != null) {
-      newParentData.index = newSlot! as int;
-      if (oldParentData != null) {
-        newParentData.offset = oldParentData.offset;
-      }
-    }
-
-    return newChild;
-  }
-
-  @override
-  void insertRenderObjectChild(RenderObject child, int slot) {
-    // dmPrint('_FloatColumnElement insertRenderObjectChild');
-    final renderObject = this.renderObject;
+  void insertRenderObjectChild(RenderObject child, IndexedSlot<Element?> slot) {
+    final ContainerRenderObjectMixin<RenderObject,
+            ContainerParentDataMixin<RenderObject>> renderObject =
+        this.renderObject;
     assert(renderObject.debugValidateChild(child));
-    renderObject.insert(child as RenderBox,
-        after: _childElements[slot - 1]?.renderObject as RenderBox?);
+    renderObject.insert(child, after: slot.value?.renderObject);
     assert(renderObject == this.renderObject);
   }
 
   @override
-  void moveRenderObjectChild(RenderObject child, int oldSlot, int newSlot) {
-    // dmPrint('_FloatColumnElement moveRenderObjectChild');
-    const moveChildRenderObjectErrorMessage =
-        'Currently we maintain the list in contiguous increasing order, so '
-        'moving children around is not allowed.';
-    assert(false, moveChildRenderObjectErrorMessage);
+  void moveRenderObjectChild(RenderObject child, IndexedSlot<Element?> oldSlot,
+      IndexedSlot<Element?> newSlot) {
+    final ContainerRenderObjectMixin<RenderObject,
+            ContainerParentDataMixin<RenderObject>> renderObject =
+        this.renderObject;
+    assert(child.parent == renderObject);
+    renderObject.move(child, after: newSlot.value?.renderObject);
+    assert(renderObject == this.renderObject);
   }
 
   @override
-  void removeRenderObjectChild(RenderObject child, int slot) {
-    // dmPrint('_FloatColumnElement removeRenderObjectChild');
+  void removeRenderObjectChild(RenderObject child, Object? slot) {
+    final ContainerRenderObjectMixin<RenderObject,
+            ContainerParentDataMixin<RenderObject>> renderObject =
+        this.renderObject;
     assert(child.parent == renderObject);
-    renderObject.remove(child as RenderBox);
+    renderObject.remove(child);
+    assert(renderObject == this.renderObject);
   }
 
   @override
   void visitChildren(ElementVisitor visitor) {
-    // dmPrint('_FloatColumnElement visitChildren');
-    _childElements.forEach((key, child) {
-      visitor(child);
-    });
+    for (final child in _children) {
+      if (!_forgottenChildren.contains(child)) {
+        visitor(child);
+      }
+    }
   }
 
   @override
   void forgetChild(Element child) {
-    // dmPrint('_FloatColumnElement forgetChild');
-    _childElements.remove(child.slot);
+    assert(_children.contains(child));
+    assert(!_forgottenChildren.contains(child));
+    _forgottenChildren.add(child);
     super.forgetChild(child);
   }
 
@@ -249,68 +247,36 @@ class _FloatColumnElement extends RenderObjectElement
   List<Object> get textAndWidgets => (widget as FloatColumn)._textAndWidgets;
 
   @override
-  void addOrUpdateWidgetAt(int index, Widget widget) {
-    // dmPrint('_FloatColumnElement addOrUpdateWidgetAt');
-    _childWidgets[index] = widget;
-  }
-
-  @override
   RenderBox? childAt(int index) {
-    // dmPrint('_FloatColumnElement childAt');
-    return _childElements[index]?.renderObject as RenderBox?;
+    return _children.maybeElementAt(index)?.renderObject as RenderBox?;
   }
 
   @override
-  RenderBox? addOrUpdateChild(int index, {required RenderBox? after}) {
-    // dmPrint('_FloatColumnElement createChild');
+  RenderBox? updateWidgetAt(int index, Widget widget) {
+    // dmPrint('_FloatColumnElement updateWidgetAt');
     RenderBox? child;
     owner!.buildScope(this, () {
-      final insertFirst = after == null;
-      assert(insertFirst || _childElements[index - 1] != null);
-      final newChild =
-          updateChild(_childElements[index], _childWidgets[index], index);
+      assert(index >= 0 && index < _children.length);
+      final newChild = updateChild(_children[index], widget,
+          IndexedSlot<Element?>(index, _children.maybeElementAt(index - 1)));
       if (newChild != null) {
         child = newChild.renderObject == null
             ? null
             : newChild.renderObject! as RenderBox;
-        _childElements[index] = newChild;
+        _children[index] = newChild;
       } else {
-        _childElements.remove(index);
+        if (!_forgottenChildren.contains(newChild)) {
+          forgetChild(newChild!);
+        }
       }
     });
     return child;
   }
+}
 
-  @override
-  void removeChild(RenderBox child) {
-    // dmPrint('_FloatColumnElement removeChild');
-    final index = renderObject.indexOf(child);
-    owner!.buildScope(this, () {
-      assert(_childElements.containsKey(index));
-      final result = updateChild(_childElements[index], null, index);
-      assert(result == null);
-      _childElements.remove(index);
-      assert(!_childElements.containsKey(index));
-    });
-  }
-
-  @override
-  void removeAllChildren() {
-    // dmPrint('_FloatColumnElement removeAllChildren');
-    owner!.buildScope(this, () {
-      _childElements
-        ..forEach((index, child) {
-          final result = updateChild(child, null, index);
-          assert(result == null);
-        })
-        ..clear();
-      // assert(_childElements.containsKey(index));
-      // final result = updateChild(_childElements[index], null, index);
-      // assert(result == null);
-      // _childElements.remove(index);
-      // assert(!_childElements.containsKey(index));
-    });
-  }
+extension _ExtOnList<T> on List<T> {
+  /// Returns `i >= 0 && i < length ? this[i] : null`.
+  T? maybeElementAt(int i) => i >= 0 && i < length ? this[i] : null;
 }
 
 Iterable<Object> _expandToIncludeFloatedWidgetSpanChildren(
@@ -437,4 +403,27 @@ Key? _firstNonUniqueKey(Iterable<Object> children) {
     if (!keySet.add(key)) return key;
   }
   return null;
+}
+
+extension on List<Object> {
+  List<Widget> toWidgets() =>
+      map((e) => e is Widget ? e : (e as WrappableText).toWidget()).toList();
+}
+
+/// Used as a placeholder in [List<Element>] objects when the actual
+/// elements are not yet determined.
+class _NullElement extends Element {
+  _NullElement() : super(const _NullWidget());
+
+  static _NullElement instance = _NullElement();
+
+  @override
+  bool get debugDoingBuild => throw UnimplementedError();
+}
+
+class _NullWidget extends Widget {
+  const _NullWidget();
+
+  @override
+  Element createElement() => throw UnimplementedError();
 }
