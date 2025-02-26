@@ -410,7 +410,7 @@ extension on List<Object> {
       map((e) => e is Widget ? e : (e as WrappableText).toWidget()).toList();
 }
 
-/// Used as a placeholder in [List<Element>] objects when the actual
+/// Used as a placeholder in `List<Element>` objects when the actual
 /// elements are not yet determined.
 class _NullElement extends Element {
   _NullElement() : super(const _NullWidget());
