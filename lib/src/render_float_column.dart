@@ -192,9 +192,9 @@ class RenderFloatColumn extends RenderBox
 
   @override
   void performLayout() {
-    // final layoutSize = _performLayout();
-    final layoutSize =
-        dmTime(_performLayout, title: 'RenderFloatColumn.performLayout()');
+    final layoutSize = _performLayout();
+    // final layoutSize =
+    //     dmTime(_performLayout, title: 'RenderFloatColumn.performLayout()');
 
     final accumulatedSize =
         _AxisSize.fromSize(size: layoutSize, direction: Axis.vertical);

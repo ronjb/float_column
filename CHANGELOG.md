@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [4.0.1] - February 26, 2025
+
+* Cleaned up debug logging.
+
 ## [4.0.0] - February 26, 2025
 
 Refactored the code to utilize RichText widgets for rendering floated text instead of internally rendering it using TextPainters. This change offers several advantages, including reduced dependency on Flutter’s internal implementation of RenderParagraph and related selection features. Specifically, it enhances support for Flutter’s text selection capabilities, ensures compatibility with a wider range of Flutter versions, and significantly reduces code size by approximately one-third.
