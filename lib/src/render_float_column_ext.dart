@@ -537,7 +537,7 @@ class _RenderCursor {
 
   /// Updates the current child's widget and associated element.
   void updateCurrentChildWidget(Widget widget) {
-    rfc.childManager.childWidgets[index] = widget;
+    rfc.childManager.addOrUpdateWidgetAt(index, widget);
     maybeChild = rfc._addOrUpdateChild(index, after: previousChild);
   }
 

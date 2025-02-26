@@ -157,8 +157,7 @@ class _FloatColumnElement extends RenderObjectElement
   // again. Any time we do case 1, though, we reset the cache.
 
   /// A cache of widgets so that we don't have to rebuild every time.
-  @override
-  final HashMap<int, Widget?> childWidgets = HashMap<int, Widget?>();
+  final HashMap<int, Widget?> _childWidgets = HashMap<int, Widget?>();
 
   /// The map containing all active child elements. SplayTreeMap is used so that
   /// we have all elements ordered and iterable by their keys.
@@ -179,7 +178,7 @@ class _FloatColumnElement extends RenderObjectElement
   @override
   void performRebuild() {
     // dmPrint('_FloatColumnElement performRebuild');
-    childWidgets.clear();
+    _childWidgets.clear();
     super.performRebuild();
   }
 
@@ -250,6 +249,12 @@ class _FloatColumnElement extends RenderObjectElement
   List<Object> get textAndWidgets => (widget as FloatColumn)._textAndWidgets;
 
   @override
+  void addOrUpdateWidgetAt(int index, Widget widget) {
+    // dmPrint('_FloatColumnElement addOrUpdateWidgetAt');
+    _childWidgets[index] = widget;
+  }
+
+  @override
   RenderBox? childAt(int index) {
     // dmPrint('_FloatColumnElement childAt');
     return _childElements[index]?.renderObject as RenderBox?;
@@ -263,7 +268,7 @@ class _FloatColumnElement extends RenderObjectElement
       final insertFirst = after == null;
       assert(insertFirst || _childElements[index - 1] != null);
       final newChild =
-          updateChild(_childElements[index], childWidgets[index], index);
+          updateChild(_childElements[index], _childWidgets[index], index);
       if (newChild != null) {
         child = newChild.renderObject == null
             ? null

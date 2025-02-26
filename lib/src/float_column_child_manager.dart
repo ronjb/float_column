@@ -1,13 +1,11 @@
-import 'dart:collection';
-
 import 'package:flutter/widgets.dart';
 
 abstract class FloatColumnChildManager {
   /// The list of WrappableText and Widget children.
   List<Object> get textAndWidgets;
 
-  /// The resulting child widgets, built from `textAndWidgets`.
-  HashMap<int, Widget?> get childWidgets;
+  /// Adds or updates the child widget at the given index.
+  void addOrUpdateWidgetAt(int index, Widget widget);
 
   /// Returns the child RenderBox at the given index.
   RenderBox? childAt(int index);
