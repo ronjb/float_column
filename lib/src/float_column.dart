@@ -51,6 +51,7 @@ class FloatColumn extends RenderObjectWidget {
         .expand((e) => _expandToIncludeFloatedWidgetSpanChildren(e, indexRef))
         .toList();
     assert(_textAndWidgets.length == indexRef.value);
+    assert(!_debugChildrenHaveDuplicateKeys(this, _textAndWidgets));
   }
 
   /// The list of WrappableText and Widget children.
@@ -401,4 +402,34 @@ extension on TextSpan {
     // If no changes were made, return the original TextSpan.
     return changed ? copyWith(children: newChildren) : this;
   }
+}
+
+bool _debugChildrenHaveDuplicateKeys(Widget parent, Iterable<Object> children) {
+  assert(() {
+    final nonUniqueKey = _firstNonUniqueKey(children);
+    if (nonUniqueKey != null) {
+      throw FlutterError(
+        "${'Duplicate keys found.\n'
+            'If multiple keyed widgets exist as children of another widget, '
+            'they must have unique keys.'}"
+        '\n$parent has multiple children with key $nonUniqueKey.',
+      );
+    }
+    return true;
+  }());
+  return false;
+}
+
+Key? _firstNonUniqueKey(Iterable<Object> children) {
+  final Set<Key> keySet = HashSet<Key>();
+  for (final child in children) {
+    final key = child is Widget
+        ? child.key
+        : child is WrappableText
+            ? child.key
+            : null;
+    if (key == null) continue;
+    if (!keySet.add(key)) return key;
+  }
+  return null;
 }
