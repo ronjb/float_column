@@ -58,11 +58,10 @@ extension on RenderFloatColumn {
           rc.y += topMargin;
           prevBottomMargin = margin.bottom;
 
-          // Always need to start with the original WrappableText widget.
-          rc.updateCurrentChildWidget(el.toWidget());
-          if (rc.maybeChild == null) {
-            assert(false);
-            continue;
+          // If the child is a RenderStack, set it back to the original
+          // WrappableText widget.
+          if (rc.child is RenderStack) {
+            rc.updateCurrentChildWidget(el.toWidget());
           }
 
           _layoutWrappableText(el, rc, childConstraints, textDirection);
