@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [4.0.2] - March 10, 2025
+
+* Fixed off-by-one error in the InlineSpan extension method `defaultSplitSpanAtIndex`.
+
 ## [4.0.1] - February 26, 2025
 
 * Cleaned up debug logging.

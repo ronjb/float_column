@@ -191,7 +191,7 @@ extension FCInlineSpanExt on InlineSpan {
       if (!ignoreFloatedWidgetSpans &&
           span.child is Floatable &&
           (span.child as Floatable).float != FCFloat.none) {
-        index.value += 1;
+        // Leave the index unchanged.
       } else {
         index.value -= 1;
       }
