@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [4.0.3] - March 24, 2025
+
+* Updated so that in addition to `style`, the rest of the current context's DefaultTextStyle properties are provided to child text widgets (`textAlign`, `overflow`, `maxLines`, `textWidthBasis`, and `textHeightBehavior`).
+
 ## [4.0.2] - March 10, 2025
 
 * Fixed off-by-one error in the InlineSpan extension method `defaultSplitSpanAtIndex`.

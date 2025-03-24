@@ -245,17 +245,19 @@ class WrappableText {
       margin,
       padding);
 
-  Widget toWidget() => Text.rich(
+  Widget toWidget(DefaultTextStyle defaultTextStyle) => Text.rich(
         text,
         key: key,
-        textAlign: textAlign ?? TextAlign.start,
+        textAlign: textAlign ?? defaultTextStyle.textAlign ?? TextAlign.start,
         textDirection: textDirection,
-        overflow: overflow ?? TextOverflow.clip,
+        overflow: overflow ?? defaultTextStyle.overflow,
         textScaler: textScaler,
-        maxLines: maxLines,
+        maxLines: maxLines ?? defaultTextStyle.maxLines,
         locale: locale,
         strutStyle: strutStyle,
-        textHeightBehavior: textHeightBehavior,
+        textWidthBasis: defaultTextStyle.textWidthBasis,
+        textHeightBehavior:
+            textHeightBehavior ?? defaultTextStyle.textHeightBehavior,
       );
 }
 

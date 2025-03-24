@@ -172,7 +172,8 @@ class _FloatColumnElement extends RenderObjectElement
       final textOrWidget = floatColumnWidget._textAndWidgets[i];
       final widget = textOrWidget is Widget
           ? textOrWidget
-          : (textOrWidget as WrappableText).toWidget();
+          : (textOrWidget as WrappableText)
+              .toWidget(renderObject.defaultTextStyle);
       final newChild =
           inflateWidget(widget, IndexedSlot<Element?>(i, previousChild));
       children[i] = newChild;
@@ -186,7 +187,9 @@ class _FloatColumnElement extends RenderObjectElement
     super.update(newWidget);
     final floatColumnWidget = widget as FloatColumn;
     _children = updateChildren(
-        _children, floatColumnWidget._textAndWidgets.toWidgets(),
+        _children,
+        floatColumnWidget._textAndWidgets
+            .toWidgets(renderObject.defaultTextStyle),
         forgottenChildren: _forgottenChildren);
     _forgottenChildren.clear();
   }
@@ -406,8 +409,9 @@ Key? _firstNonUniqueKey(Iterable<Object> children) {
 }
 
 extension on List<Object> {
-  List<Widget> toWidgets() =>
-      map((e) => e is Widget ? e : (e as WrappableText).toWidget()).toList();
+  List<Widget> toWidgets(DefaultTextStyle defaultTextStyle) => map((e) =>
+          e is Widget ? e : (e as WrappableText).toWidget(defaultTextStyle))
+      .toList();
 }
 
 /// Used as a placeholder in `List<Element>` objects when the actual

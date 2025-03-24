@@ -65,7 +65,7 @@ extension on RenderFloatColumn {
           // If the child is a RenderStack, set it back to the original
           // WrappableText widget.
           if (rc.child is RenderStack) {
-            rc.updateCurrentChildWidget(el.toWidget());
+            rc.updateCurrentChildWidget(el.toWidget(defaultTextStyle));
           }
 
           _layoutWrappableText(el, rc, childConstraints, textDirection);
@@ -235,7 +235,7 @@ extension on RenderFloatColumn {
         } while (remaining.text.initialText().startsWith('\n'));
 
         // Update the widget, and re-run the loop...
-        rc.updateCurrentChildWidget(remaining.toWidget());
+        rc.updateCurrentChildWidget(remaining.toWidget(defaultTextStyle));
         continue; //-------------------------------------------->
       }
 
@@ -331,7 +331,7 @@ extension on RenderFloatColumn {
                 text: parts.first, clearKey: textChunks.isNotEmpty);
 
             // Update the current child's widget and re-layout it.
-            rc.updateCurrentChildWidget(part1.toWidget());
+            rc.updateCurrentChildWidget(part1.toWidget(defaultTextStyle));
             rc.child.layout(subConstraints, parentUsesSize: true);
 
             // Does [part1] have any floated child widgets that needed to be
@@ -371,7 +371,7 @@ extension on RenderFloatColumn {
                   maxLines: remainingLines,
                   clearKey: textChunks.isNotEmpty);
 
-              rc.updateCurrentChildWidget(remaining.toWidget());
+              rc.updateCurrentChildWidget(remaining.toWidget(defaultTextStyle));
 
               // Re-run the loop...
               continue; //------------------------------------>
@@ -398,7 +398,7 @@ extension on RenderFloatColumn {
         ));
 
         rc.updateCurrentChildWidget(
-            textChunks.toWidget(childConstraints.maxWidth));
+            textChunks.toWidget(childConstraints.maxWidth, defaultTextStyle));
         rc.child.layout(childConstraints, parentUsesSize: true);
 
         final top = textChunks.first.rect.top;
@@ -593,7 +593,7 @@ class _TextChunk {
 }
 
 extension on List<_TextChunk> {
-  Widget toWidget(double width) {
+  Widget toWidget(double width, DefaultTextStyle defaultTextStyle) {
     // dmPrint('widgets:');
     // for (final t in this) {
     //   dmPrint('object: ${t.x}, ${t.width}, ${t.text.toWidget()}');
@@ -611,7 +611,7 @@ extension on List<_TextChunk> {
             top: t.rect.top - top,
             child: SizedBox(
               width: t.rect.width,
-              child: t.text.toWidget(),
+              child: t.text.toWidget(defaultTextStyle),
             ),
           ),
       ],
