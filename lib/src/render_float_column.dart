@@ -157,6 +157,48 @@ class RenderFloatColumn extends RenderBox
     return defaultComputeDistanceToFirstActualBaseline(baseline);
   }
 
+  bool _debugThrowIfNotCheckingIntrinsics() {
+    assert(() {
+      if (!RenderObject.debugCheckingIntrinsics) {
+        throw FlutterError.fromParts(<DiagnosticsNode>[
+          ErrorSummary(
+              '$runtimeType does not support returning intrinsic dimensions.'),
+          ErrorDescription(
+            'Calculating the intrinsic dimensions would require laying out '
+            'the text and floated children, which is exceptionally expensive '
+            'and has side effects.',
+          ),
+        ]);
+      }
+      return true;
+    }());
+    return true;
+  }
+
+  @override
+  double computeMinIntrinsicWidth(double height) {
+    assert(_debugThrowIfNotCheckingIntrinsics());
+    return 0.0;
+  }
+
+  @override
+  double computeMaxIntrinsicWidth(double height) {
+    assert(_debugThrowIfNotCheckingIntrinsics());
+    return 0.0;
+  }
+
+  @override
+  double computeMinIntrinsicHeight(double width) {
+    assert(_debugThrowIfNotCheckingIntrinsics());
+    return 0.0;
+  }
+
+  @override
+  double computeMaxIntrinsicHeight(double width) {
+    assert(_debugThrowIfNotCheckingIntrinsics());
+    return 0.0;
+  }
+
   @override
   double? computeDryBaseline(
       BoxConstraints constraints, TextBaseline baseline) {

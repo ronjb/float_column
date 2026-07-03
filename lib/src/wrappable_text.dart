@@ -127,7 +127,7 @@ class WrappableText {
         textAlign: textAlign ?? this.textAlign,
         textDirection: textDirection ?? this.textDirection,
         overflow: overflow ?? this.overflow,
-        textScaleFactor: textScaleFactor ?? 1.0,
+        textScaleFactor: textScaleFactor,
         textScaler: textScaler ?? this.textScaler,
         maxLines: maxLines ?? this.maxLines,
         locale: locale ?? this.locale,

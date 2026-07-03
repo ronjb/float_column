@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## [4.1.0] - July 3, 2026
+
+* Fixed a bug where text that wrapped around floated widgets ignored the ambient `MediaQuery` text scaler, breaking accessibility font scaling for the wrapped portion of the paragraph.
+* Fixed a crash when a `WrappableText` with a non-null `maxLines` started with one or more line feeds. Leading line feeds now render like they do in a `Text` widget.
+* Fixed a crash when a floated inline widget was beyond the point where its paragraph was truncated by `maxLines`. Truncated floated widgets are now hidden, consistent with the rest of the truncated content.
+* Fixed a bug where floated inline widgets were positioned 5 pixels above the top of their anchor line, which could cause a float on the first line to paint above the top edge of the `FloatColumn`.
+* Floated children now honor their full margin box, like CSS: `margin.top` and `margin.bottom` offset the float vertically, and sibling content wraps around the margin box instead of directly against the padding box. Previously, vertical margins on floated children were silently ignored. If you set margins on floated children, their layout will change accordingly.
+* Fixed duplicate key detection, which previously did not detect duplicate keys on widget children.
+* Keyed widget children now preserve their state when reordered.
+* When a text span is split (to wrap around floated widgets), its `semanticsLabel` is now kept on the first part only, so assistive technologies announce it once instead of once per part. Also fixed a debug-mode crash when splitting a span with a `semanticsLabel` at the boundary between its text and its children.
+* In debug mode, querying a `FloatColumn`'s intrinsic dimensions (e.g. wrapping it in `IntrinsicHeight` or `IntrinsicWidth`) now throws a descriptive error instead of silently collapsing the column to zero size. Intrinsic dimensions cannot be computed efficiently because they would require laying out the text and floated children.
+* Improved layout performance for paragraphs that do not contain floated inline widgets.
+
 ## [4.0.3] - March 24, 2025
 
 * Updated so that in addition to `style`, the rest of the current context's DefaultTextStyle properties are provided to child text widgets (`textAlign`, `overflow`, `maxLines`, `textWidthBasis`, and `textHeightBehavior`).

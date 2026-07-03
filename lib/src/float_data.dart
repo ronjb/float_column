@@ -43,9 +43,12 @@ class FloatData {
   /// below a floated sibling.
   final double clearMinSpacing;
 
-  /// Empty space to surround the child. Similar to CSS, the top overlaps
-  /// the previous sibling's bottom margin, the bottom overlaps the next
-  /// sibling's top margin, and the left and right overlap floated siblings.
+  /// Empty space to surround the child. For non-floated children, similar
+  /// to CSS, the top overlaps the previous sibling's bottom margin, the
+  /// bottom overlaps the next sibling's top margin, and the left and right
+  /// overlap floated siblings. For floated children, also like CSS, the
+  /// margin box (the child plus its margin) is what sibling content wraps
+  /// around.
   final EdgeInsetsGeometry margin;
 
   /// Empty space to surround the child that does not overlap siblings.

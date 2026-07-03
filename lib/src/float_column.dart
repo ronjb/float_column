@@ -51,7 +51,7 @@ class FloatColumn extends RenderObjectWidget {
         .expand((e) => _expandToIncludeFloatedWidgetSpanChildren(e, indexRef))
         .toList();
     assert(_textAndWidgets.length == indexRef.value);
-    assert(!_debugChildrenHaveDuplicateKeys(this, _textAndWidgets));
+    assert(!_debugChildrenHaveDuplicateKeys(this, children));
   }
 
   /// The list of WrappableText and Widget children.
@@ -260,18 +260,11 @@ class _FloatColumnElement extends RenderObjectElement
     RenderBox? child;
     owner!.buildScope(this, () {
       assert(index >= 0 && index < _children.length);
+      // `updateChild` never returns null when the given widget is not null.
       final newChild = updateChild(_children[index], widget,
-          IndexedSlot<Element?>(index, _children.maybeElementAt(index - 1)));
-      if (newChild != null) {
-        child = newChild.renderObject == null
-            ? null
-            : newChild.renderObject! as RenderBox;
-        _children[index] = newChild;
-      } else {
-        if (!_forgottenChildren.contains(newChild)) {
-          forgetChild(newChild!);
-        }
-      }
+          IndexedSlot<Element?>(index, _children.maybeElementAt(index - 1)))!;
+      child = newChild.renderObject as RenderBox?;
+      _children[index] = newChild;
     });
     return child;
   }
@@ -286,7 +279,15 @@ Iterable<Object> _expandToIncludeFloatedWidgetSpanChildren(
     Object e, _Ref<int> indexRef) {
   if (e is Widget) {
     return [
-      MetaData(metaData: FloatData(indexRef.value++, null, 0, e), child: e)
+      // The child's key, wrapped in a ValueKey, is used as the wrapper's key
+      // so that `Element.updateChildren` can match reordered children by key.
+      // Wrapping it keeps the two keys distinct, which matters for GlobalKeys
+      // (which must be unique across the whole tree) and for finding widgets
+      // by key in tests.
+      MetaData(
+          key: e.key == null ? null : ValueKey<Key>(e.key!),
+          metaData: FloatData(indexRef.value++, null, 0, e),
+          child: e)
     ];
   } else if (e is WrappableText) {
     // Increment the index for the WrappableText.
@@ -311,6 +312,7 @@ Iterable<Object> _expandToIncludeFloatedWidgetSpanChildren(
 
         // Then the floated widgets.
         ...floatedWidgets.map((c) => MetaData(
+            key: c.widget.key == null ? null : ValueKey<Key>(c.widget.key!),
             metaData: FloatData(indexRef.value++, wrappableTextIndex,
                 c.placeholderIndex, c.widget),
             child: c.widget)),

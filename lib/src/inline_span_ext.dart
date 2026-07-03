@@ -151,7 +151,8 @@ extension FCInlineSpanExt on InlineSpan {
         } else {
           final result = [
             copyWithTextSpan(span, text.substring(0, index.value), null),
-            copyWithTextSpan(span, text.substring(index.value), span.children),
+            copyWithTextSpan(_withoutSemanticsLabel(span),
+                text.substring(index.value), span.children),
           ];
           index.value = 0;
           return result;
@@ -165,7 +166,7 @@ extension FCInlineSpanExt on InlineSpan {
         if (index.value == 0) {
           return [
             copyWithTextSpan(span, text, null),
-            copyWithTextSpan(span, null, span.children),
+            copyWithTextSpan(_withoutSemanticsLabel(span), null, span.children),
           ];
         }
 
@@ -176,7 +177,7 @@ extension FCInlineSpanExt on InlineSpan {
           if (result.length == 2) {
             return [
               copyWithTextSpan(span, text, result.first),
-              copyWithTextSpan(span, null, result.last),
+              copyWithTextSpan(_withoutSemanticsLabel(span), null, result.last),
             ];
           } else if (result.length == 1) {
             // Only true if the number of characters in all the children was
@@ -270,6 +271,7 @@ extension FCTextSpanExt on TextSpan {
     bool? spellOut,
     bool noText = false,
     bool noChildren = false,
+    bool noSemanticsLabel = false,
   }) =>
       TextSpan(
         text: text ?? (noText ? null : this.text),
@@ -279,7 +281,8 @@ extension FCTextSpanExt on TextSpan {
         mouseCursor: mouseCursor ?? this.mouseCursor,
         onEnter: onEnter ?? this.onEnter,
         onExit: onExit ?? this.onExit,
-        semanticsLabel: semanticsLabel ?? this.semanticsLabel,
+        semanticsLabel:
+            semanticsLabel ?? (noSemanticsLabel ? null : this.semanticsLabel),
         locale: locale ?? this.locale,
         spellOut: spellOut ?? this.spellOut,
       );
@@ -299,6 +302,14 @@ extension FCTextSpanExt on TextSpan {
     return const TextSpan(text: '');
   }
 }
+
+/// Returns [span], or a copy of it without its `semanticsLabel` if it has
+/// one. When a span is split, only the first half keeps the label so that
+/// assistive technologies don't announce it twice. The label is removed from
+/// the source span (rather than from the resulting copy) because a TextSpan
+/// with a `semanticsLabel` and no text is invalid.
+TextSpan _withoutSemanticsLabel(TextSpan span) =>
+    span.semanticsLabel == null ? span : span.copyWith(noSemanticsLabel: true);
 
 /// Walks the given [node] and its descendants in pre-order and returns the
 /// value (using [getValue]) of the first node (including the initial node)

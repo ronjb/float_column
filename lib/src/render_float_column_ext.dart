@@ -93,6 +93,13 @@ extension on RenderFloatColumn {
     final padding = floatData.padding.resolve(textDirection);
     final maxWidth = childConstraints.maxWidth;
 
+    // For floated children the margin box is what sibling content wraps
+    // around, like CSS, so the margins act as additional padding. For
+    // non-floated children the vertical margins are handled by the caller,
+    // and the horizontal margins are handled below via `minX` and `maxX`.
+    final isFloated = floatData.float != FCFloat.none;
+    final inset = isFloated ? margin + padding : padding;
+
     final maxWidthMinusPadding = math.max(0.0,
         maxWidth - margin.left - margin.right - padding.left - padding.right);
     final childMaxWidth =
@@ -136,28 +143,29 @@ extension on RenderFloatColumn {
       yPosNext = rc.floatR.nextY(yPosNext, spacing);
     }
 
-    final totalMinWidth = rc.child.size.width + padding.left + padding.right;
-    final minX = margin.left;
-    final maxX = math.max(minX + totalMinWidth, maxWidth - margin.right);
+    final totalMinWidth = rc.child.size.width + inset.left + inset.right;
+    final minX = isFloated ? 0.0 : margin.left;
+    final maxX = math.max(
+        minX + totalMinWidth, maxWidth - (isFloated ? 0.0 : margin.right));
 
     // Find space for this widget...
     var rect = findSpaceFor(
       startY: yPosNext,
       width: math.min(maxWidth, totalMinWidth),
-      height: rc.child.size.height + padding.top + padding.bottom,
+      height: rc.child.size.height + inset.top + inset.bottom,
       minX: minX,
       maxX: maxX,
       floatL: rc.floatL,
       floatR: rc.floatR,
     );
 
-    // Adjust rect for padding.
-    if (padding != EdgeInsets.zero) {
+    // Adjust rect for the inset.
+    if (inset != EdgeInsets.zero) {
       rect = Rect.fromLTRB(
-        rect.left + padding.left,
-        rect.top + padding.top,
-        rect.right - padding.right,
-        rect.bottom - padding.bottom,
+        rect.left + inset.left,
+        rect.top + inset.top,
+        rect.right - inset.right,
+        rect.bottom - inset.bottom,
       );
     }
 
@@ -168,17 +176,17 @@ extension on RenderFloatColumn {
         Offset(xPos, rect.top);
 
     if (addToFloatRects != null) {
-      // Include padding for the floated rect.
+      // Include the inset (padding and margins) for the floated rect.
       addToFloatRects.add(Rect.fromLTRB(
-        xPos - padding.left,
-        rect.top - padding.top,
-        xPos + rc.child.size.width + padding.right,
-        rect.top + rc.child.size.height + padding.bottom,
+        xPos - inset.left,
+        rect.top - inset.top,
+        xPos + rc.child.size.width + inset.right,
+        rect.top + rc.child.size.height + inset.bottom,
       ));
       // This widget was floated, so set `yPosNext` back to `rc.y`.
       yPosNext = rc.y;
     } else {
-      yPosNext = rect.top + rc.child.size.height + padding.bottom;
+      yPosNext = rect.top + rc.child.size.height + inset.bottom;
     }
 
     rc.y = yPosNext;
@@ -208,7 +216,11 @@ extension on RenderFloatColumn {
 
     // Does this WrappableText have any floated inline widget children?
     final wrappableTextIndex = rc.index;
-    // final hasFloatedChildren = wt.text._hasFloatedChildren(wrappableTextIndex);
+
+    // Does this WrappableText have any floated inline widget children? This
+    // is checked once here so the render tree walk in `layoutFloatedChildren`
+    // can be skipped entirely for paragraphs without them (the common case).
+    final hasFloatedChildren = wt.text._hasFloatedChildren(wrappableTextIndex);
 
     // Keep track of the indices of the floated widget children that have
     // already been laid out, because should only be laid out once.
@@ -223,16 +235,21 @@ extension on RenderFloatColumn {
       final estLineHeight =
           remaining.text.initialLineHeight(wt.textScaler ?? defaultTextScaler);
 
-      // While the text starts with a line feed, remove the line feed, add the
-      // line height to `yPosNext`, then re-run the loop.
-      if (remaining.text.initialText().startsWith('\n')) {
+      // While the text starts with a line feed and more than one line
+      // remains, remove the line feed, add the line height to `yPosNext`,
+      // then re-run the loop. If `maxLines` is down to one line, the leading
+      // line feed is left in the text so it renders as a single empty line,
+      // the same as it would in a Text widget.
+      if ((remaining.maxLines == null || remaining.maxLines! > 1) &&
+          remaining.text.initialText().startsWith('\n')) {
         do {
           remaining = remaining!.copyWith(
               text: remaining.text.skipChars(1),
               maxLines:
                   remaining.maxLines == null ? null : remaining.maxLines! - 1);
           yPosNext += estLineHeight;
-        } while (remaining.text.initialText().startsWith('\n'));
+        } while ((remaining.maxLines == null || remaining.maxLines! > 1) &&
+            remaining.text.initialText().startsWith('\n'));
 
         // Update the widget, and re-run the loop...
         rc.updateCurrentChildWidget(remaining.toWidget(defaultTextStyle));
@@ -293,7 +310,7 @@ extension on RenderFloatColumn {
 
       // If the text extends past `yChange`, we need to split the text
       // and layout each part individually...
-      if (rect.top + rc.child.size.height > yChange) {
+      if (rect.top + rc.child.size.height > yChange + precisionErrorTolerance) {
         final renderParagraph = rc.childRenderParagraph();
         if (renderParagraph == null) {
           assert(false);
@@ -381,8 +398,9 @@ extension on RenderFloatColumn {
       }
 
       // Are there any floated child widgets that needed to be laid out?
-      if (rc.layoutFloatedChildren(
-          laidOutFloaterIndices, wrappableTextIndex, rect.top)) {
+      if (hasFloatedChildren &&
+          rc.layoutFloatedChildren(
+              laidOutFloaterIndices, wrappableTextIndex, rect.top)) {
         // If so, we need to re-run the loop...
         continue;
       }
@@ -402,7 +420,7 @@ extension on RenderFloatColumn {
         rc.child.layout(childConstraints, parentUsesSize: true);
 
         final top = textChunks.first.rect.top;
-        rect = Rect.fromLTWH(
+        rect = Rect.fromLTRB(
             0, top, childConstraints.maxWidth, top + rc.child.size.height);
         xPos = 0.0;
       } else {
@@ -493,14 +511,6 @@ class _RenderCursor {
     index++;
   }
 
-  /// Moves to the previous child.
-  void movePrevious() {
-    maybeChild = previousChild;
-    previousChild =
-        (previousChild!.parentData! as FloatColumnParentData).previousSibling;
-    index--;
-  }
-
   /// Attempts to jump to the child at the given [index], returning `true` if
   /// successful. Fails if `childManager.childAt(index)` and
   /// `childManager.childAt(index - 1)` are `null`.
@@ -559,16 +569,27 @@ class _RenderCursor {
               assert(widget is Widget);
               var laidOutFloatingWidget = false;
               if (widget is Widget) {
-                final savedY = y;
-                final offset = (rpChild.parentData! as TextParentData).offset!;
-                // dmPrint('wrappableTextIndex ${fd.wrappableTextIndex}, '
-                //     'index: $index, placeholderIndex: '
-                //     '${fd.placeholderIndex} offset: $offset');
-                y = top + offset.dy - 5;
-                rfc._layoutWidget(this, childConstraints, fd);
-                y = savedY;
-                laidOutFloaterIndices.add(fd.placeholderIndex);
-                laidOutFloatingWidget = true;
+                final offset = (rpChild.parentData! as TextParentData).offset;
+                if (offset == null) {
+                  // The placeholder was not laid out — e.g. it is beyond the
+                  // point where the text was truncated by `maxLines` — so
+                  // hide the floated child by laying it out with zero size.
+                  child.layout(BoxConstraints.tight(Size.zero),
+                      parentUsesSize: true);
+                  (child.parentData! as FloatColumnParentData).offset =
+                      Offset.zero;
+                  laidOutFloaterIndices.add(fd.placeholderIndex);
+                } else {
+                  final savedY = y;
+                  // dmPrint('wrappableTextIndex ${fd.wrappableTextIndex}, '
+                  //     'index: $index, placeholderIndex: '
+                  //     '${fd.placeholderIndex} offset: $offset');
+                  y = top + offset.dy;
+                  rfc._layoutWidget(this, childConstraints, fd);
+                  y = savedY;
+                  laidOutFloaterIndices.add(fd.placeholderIndex);
+                  laidOutFloatingWidget = true;
+                }
               }
 
               jumpToIndex(savedIndex);

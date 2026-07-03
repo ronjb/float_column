@@ -136,6 +136,46 @@ void main() {
     ]);
     expect(h.splitAtCharacterIndex(2), [h]);
   });
+
+  test('splitting keeps semanticsLabel on the first half only', () {
+    // Split within the span's text.
+    const a = TextSpan(text: 'Hello world', semanticsLabel: 'greeting');
+    final aParts = a.splitAtCharacterIndex(5);
+    expect(aParts.length, 2);
+    expect((aParts.first as TextSpan).semanticsLabel, 'greeting');
+    expect((aParts.last as TextSpan).semanticsLabel, isNull);
+
+    // Split between the span's text and its children.
+    const b = TextSpan(
+        text: '12',
+        semanticsLabel: 'one two three',
+        children: [TextSpan(text: '3')]);
+    final bParts = b.splitAtCharacterIndex(2);
+    expect(bParts.length, 2);
+    expect((bParts.first as TextSpan).semanticsLabel, 'one two three');
+    expect((bParts.last as TextSpan).semanticsLabel, isNull);
+
+    // Split within a child; the parent's label stays with the first half,
+    // and the split child's label stays with the child's first half.
+    const c = TextSpan(
+        text: '12',
+        semanticsLabel: 'outer',
+        children: [TextSpan(text: '34', semanticsLabel: 'inner')]);
+    final cParts = c.splitAtCharacterIndex(3);
+    expect(cParts.length, 2);
+    final cFirst = cParts.first as TextSpan;
+    final cLast = cParts.last as TextSpan;
+    expect(cFirst.semanticsLabel, 'outer');
+    expect(cLast.semanticsLabel, isNull);
+    expect((cFirst.children!.first as TextSpan).semanticsLabel, 'inner');
+    expect((cLast.children!.first as TextSpan).semanticsLabel, isNull);
+
+    // A span that isn't split keeps its label.
+    expect((a.splitAtCharacterIndex(0).first as TextSpan).semanticsLabel,
+        'greeting');
+    expect((a.splitAtCharacterIndex(11).first as TextSpan).semanticsLabel,
+        'greeting');
+  });
 }
 
 TextStyle style(double fontSize) => TextStyle(fontSize: fontSize);

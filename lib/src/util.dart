@@ -109,7 +109,7 @@ ui.Rect findSpaceFor({
   const minStep = 1.0;
   var top = startY - minStep;
   var left = minX;
-  var right = startY;
+  var right = maxX;
 
   do {
     if (nextY.isInfinite) {
