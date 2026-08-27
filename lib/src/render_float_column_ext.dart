@@ -203,6 +203,13 @@ extension on RenderFloatColumn {
     final margin = wt.margin.resolve(textDirection);
     final padding = wt.padding.resolve(textDirection);
 
+    // Is the paragraph justified? If so, when it is split into chunks, the
+    // chunks need special handling so that the lines at chunk boundaries are
+    // justified. See [_TextChunk.justifySpan].
+    final justified =
+        (wt.textAlign ?? defaultTextStyle.textAlign ?? TextAlign.start) ==
+            TextAlign.justify;
+
     var yPosNext = rc.y + padding.top;
 
     // Check for `clear` and adjust `yPosNext` accordingly.
@@ -339,7 +346,7 @@ extension on RenderFloatColumn {
 
           final x = textDirection == TextDirection.ltr ? rect.width : 0.0;
           final y = math.min(yChange, nextFloatTop - estLineHeight) - rect.top;
-          final parts = remaining.text.splitAt(
+          final (parts, splitAtHardBreak) = remaining.text.splitAt(
               renderParagraph.getPositionForOffset(Offset(x, y)).offset);
 
           // If it was split into two spans...
@@ -376,10 +383,18 @@ extension on RenderFloatColumn {
               final xPos = _xPosForChildWithWidth(rc.child.size.width,
                   _alignment(wt.textAlign), rect.left, rect.right);
               yPosNext = rect.top + rc.child.size.height;
+
+              // Justified chunks use the full available width so that a
+              // chunk whose natural width is less than the available width
+              // (e.g. a single-line chunk) justifies across all of it.
+              final chunkWidth = justified ? rect.width : rc.child.size.width;
               final textChunk = _TextChunk(
-                  Rect.fromLTWH(xPos, rect.top, rc.child.size.width,
-                      rc.child.size.height),
-                  part1);
+                  Rect.fromLTWH(
+                      xPos, rect.top, chunkWidth, rc.child.size.height),
+                  part1,
+                  justifySpan: justified && !splitAtHardBreak
+                      ? _leadingWordSpan(parts.last)
+                      : null);
 
               textChunks.add(textChunk);
 
@@ -410,8 +425,9 @@ extension on RenderFloatColumn {
         // Calculate `xPos` based on alignment and available space.
         final x = _xPosForChildWithWidth(rc.child.size.width,
             _alignment(wt.textAlign), rect.left, rect.right);
+        final chunkWidth = justified ? rect.width : rc.child.size.width;
         textChunks.add(_TextChunk(
-          Rect.fromLTWH(x, rect.top, rc.child.size.width, rc.child.size.height),
+          Rect.fromLTWH(x, rect.top, chunkWidth, rc.child.size.height),
           remaining,
         ));
 
@@ -608,18 +624,24 @@ class _RenderCursor {
 
 @immutable
 class _TextChunk {
-  const _TextChunk(this.rect, this.text);
+  const _TextChunk(this.rect, this.text, {this.justifySpan});
   final Rect rect;
   final WrappableText text;
+
+  /// The text engine never justifies the last line of a paragraph, so when a
+  /// justified paragraph is split into chunks, the last line of each chunk
+  /// would incorrectly render ragged. To fix that, for every chunk except
+  /// the last (and except chunks that end at a hard line break), this is set
+  /// to a copy of the leading word of the next chunk's text. It is appended
+  /// to this chunk's text so its last line ends with a soft line break, which
+  /// causes the text engine to justify it. The appended word wraps to an
+  /// extra line that is hidden by giving the chunk a tight height and
+  /// [TextOverflow.clip]. See `toWidget` below.
+  final TextSpan? justifySpan;
 }
 
 extension on List<_TextChunk> {
   Widget toWidget(double width, DefaultTextStyle defaultTextStyle) {
-    // dmPrint('widgets:');
-    // for (final t in this) {
-    //   dmPrint('object: ${t.x}, ${t.width}, ${t.text.toWidget()}');
-    // }
-    // dmPrint('------------------------------------');
     final top = isEmpty ? 0.0 : first.rect.top;
     final height = isEmpty ? 0.0 : last.rect.bottom - top;
     return Stack(
@@ -630,10 +652,22 @@ extension on List<_TextChunk> {
           Positioned(
             left: t.rect.left,
             top: t.rect.top - top,
-            child: SizedBox(
-              width: t.rect.width,
-              child: t.text.toWidget(defaultTextStyle),
-            ),
+            child: t.justifySpan == null
+                ? SizedBox(
+                    width: t.rect.width,
+                    child: t.text.toWidget(defaultTextStyle),
+                  )
+                : SizedBox(
+                    width: t.rect.width,
+                    height: t.rect.height,
+                    child: t.text
+                        .copyWith(
+                          text:
+                              TextSpan(children: [t.text.text, t.justifySpan!]),
+                          overflow: TextOverflow.clip,
+                        )
+                        .toWidget(defaultTextStyle),
+                  ),
           ),
       ],
     );
@@ -641,7 +675,12 @@ extension on List<_TextChunk> {
 }
 
 extension on TextSpan {
-  List<TextSpan> splitAt(int index) {
+  /// Splits this TextSpan at the given character [index], adjusted to skip
+  /// past any spaces at the split point. Returns the resulting list of one
+  /// or two spans, and a bool indicating whether the split point was at a
+  /// hard line break (i.e. the second span originally started with a line
+  /// feed, which is removed).
+  (List<TextSpan>, bool) splitAt(int index) {
     var i = index;
 
     if (i > 0) {
@@ -665,7 +704,9 @@ extension on TextSpan {
           //
           // If the second span starts with a '\n' (line feed), remove
           // the '\n'.
+          var splitAtHardBreak = false;
           if (text.codeUnitAt(i) == 0x0a) {
+            splitAtHardBreak = true;
             final s2 = split.last
                 .splitAtCharacterIndex(1, ignoreFloatedWidgetSpans: true);
             if (s2.length == 2) {
@@ -675,12 +716,15 @@ extension on TextSpan {
             }
           }
 
-          return [split.first as TextSpan, split.last as TextSpan];
+          return (
+            [split.first as TextSpan, split.last as TextSpan],
+            splitAtHardBreak
+          );
         }
       }
     }
 
-    return [this];
+    return ([this], false);
   }
 }
 
@@ -693,3 +737,49 @@ extension on TextSpan {
           ((span.child as MetaData).metaData as FloatData).wrappableTextIndex ==
               index));
 }
+
+/// Returns a span containing the leading word of the given [span] (i.e. its
+/// text up to, but not including, the first whitespace character or inline
+/// widget), sanitized via [_sanitizedJustifySpan]. Returns `null` if the
+/// span does not start with at least one word character.
+///
+/// The result is used as a [_TextChunk.justifySpan]. Using the actual
+/// leading word of the next chunk guarantees the appended word wraps to a
+/// new (hidden) line at exactly the original split point, because it
+/// reconstructs the original text the split point came from.
+TextSpan? _leadingWordSpan(TextSpan span) {
+  final text = span.toPlainText(includeSemanticsLabels: false);
+  var end = 0;
+  while (end < text.length && !_endsLeadingWord(text.codeUnitAt(end))) {
+    end++;
+  }
+  if (end == 0) return null;
+  final split = span.splitAtCharacterIndex(end, ignoreFloatedWidgetSpans: true);
+  return _sanitizedJustifySpan(split.first as TextSpan);
+}
+
+/// Returns `true` if the given code unit ends the leading word of a span,
+/// i.e. it is whitespace or the object replacement character (which
+/// represents an inline widget).
+bool _endsLeadingWord(int codeUnit) =>
+    codeUnit == 0x0020 /* space */ ||
+    codeUnit == 0x0009 /* tab */ ||
+    codeUnit == 0x000a /* line feed */ ||
+    codeUnit == 0x000d /* carriage return */ ||
+    codeUnit == 0xfffc /* object replacement character */;
+
+/// Returns a copy of the given [span] with gesture recognizers and pointer
+/// handlers removed, and with empty semantics labels, so it is inert and
+/// ignored by assistive technologies. It is only ever hidden text, appended
+/// after a chunk's visible text to force justification of the chunk's last
+/// line. See [_TextChunk.justifySpan].
+TextSpan _sanitizedJustifySpan(TextSpan span) => TextSpan(
+      text: span.text,
+      children: span.children
+          ?.map((c) => c is TextSpan ? _sanitizedJustifySpan(c) : c)
+          .toList(),
+      style: span.style,
+      semanticsLabel: span.text == null ? null : '',
+      locale: span.locale,
+      spellOut: false,
+    );

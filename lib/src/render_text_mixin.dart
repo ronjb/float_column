@@ -235,7 +235,6 @@ class RenderParagraphAdapter with RenderTextMixin {
 
   @override
   // For backward compatibility with deprecated [textScaleFactor].
-  // ignore: deprecated_member_use
   double get textScaleFactor => rp.textScaleFactor;
 
   @override

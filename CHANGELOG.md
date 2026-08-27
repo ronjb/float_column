@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [4.1.1] - August 27, 2026
+
+* Fixed a bug where, in a paragraph with `TextAlign.justify`, lines at the boundaries where the paragraph wraps around floated widgets (and the first line of a paragraph with a non-zero `indent`) were not justified. This happened because such a paragraph is rendered as multiple text widgets, and Flutter's text engine never justifies the last line of a paragraph. Now, a hidden copy of the leading word of the next part is appended after each part (except the last, and except parts that end at a hard line break), so the text engine justifies the line before it. The hidden text is excluded from semantics, but note that it can appear in text selections that span a boundary.
+
 ## [4.1.0] - July 3, 2026
 
 * Fixed a bug where text that wrapped around floated widgets ignored the ambient `MediaQuery` text scaler, breaking accessibility font scaling for the wrapped portion of the paragraph.

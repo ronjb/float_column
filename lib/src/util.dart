@@ -13,7 +13,7 @@ import 'shared.dart';
 /// to the console.
 void dmPrint(Object object) {
   // Using `print` only in debug mode.
-  if (kDebugMode) print(object); // ignore: avoid_print
+  if (kDebugMode) print(object);
 }
 
 /// Calls the given function [f] and returns its value, and in debug mode
