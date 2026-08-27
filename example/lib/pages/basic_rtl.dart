@@ -31,8 +31,10 @@ class BasicRtl extends StatelessWidget {
                       clear: FCClear.both,
                       clearMinSpacing: 20,
                       maxWidthPercentage: 0.333,
-                      child:
-                          Container(height: boxHeight, color: Colors.orange)),
+                      child: Container(
+                          height: boxHeight,
+                          color: Colors.orange,
+                          margin: const EdgeInsetsDirectional.only(start: 8))),
                   Floatable(
                       float: FCFloat.start,
                       clear: FCClear.both,
@@ -47,8 +49,11 @@ class BasicRtl extends StatelessWidget {
                       clear: FCClear.end,
                       clearMinSpacing: 100,
                       maxWidthPercentage: 0.333,
-                      child: Container(height: boxHeight, color: Colors.green)),
-                  WrappableText(text: _text),
+                      child: Container(
+                          height: boxHeight,
+                          color: Colors.green,
+                          margin: const EdgeInsetsDirectional.only(start: 8))),
+                  WrappableText(text: _text, textAlign: TextAlign.justify),
                 ],
               ),
             ),

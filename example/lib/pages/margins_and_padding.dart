@@ -8,13 +8,13 @@ class MarginsAndPadding extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const TextAlign? textAlign = null;
+    // const TextAlign? textAlign = null;
     // const textAlign = TextAlign.start;
     // const textAlign = TextAlign.end;
     // const textAlign = TextAlign.left;
     // const textAlign = TextAlign.right;
     // const textAlign = TextAlign.center;
-    // const textAlign = TextAlign.justify;
+    const textAlign = TextAlign.justify;
 
     // const crossAxisAlignment = CrossAxisAlignment.center;
     const crossAxisAlignment = CrossAxisAlignment.start;
