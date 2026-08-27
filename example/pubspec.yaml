@@ -15,7 +15,7 @@ dependencies:
   intrinsic_size_overflow_box: ^0.1.1
 
 dev_dependencies:
-  flutter_lints_plus: ^3.2.0
+  flutter_lints_plus: ^3.4.0
   flutter_test:
     sdk: flutter
 

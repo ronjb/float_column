@@ -13,6 +13,7 @@ class AnimatedRect extends StatefulWidget {
   final Size? altSize;
 
   @override
+  //
   // ignore: library_private_types_in_public_api
   _AnimatedRectState createState() => _AnimatedRectState();
 }
