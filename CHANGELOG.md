@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [4.1.2] - August 27, 2026
+
+* Fixed the known issue from 4.1.1 where the hidden word appended to justify text at wrapping boundaries could appear in selected text (e.g. via select all, or a selection that spans a boundary). The hidden word is now separated from the visible text by a zero-height inline widget, which puts it in its own selectable fragment, and a custom `SelectionContainer` delegate excludes that fragment from selected content.
+
 ## [4.1.1] - August 27, 2026
 
 * Fixed a bug where, in a paragraph with `TextAlign.justify`, lines at the boundaries where the paragraph wraps around floated widgets (and the first line of a paragraph with a non-zero `indent`) were not justified. This happened because such a paragraph is rendered as multiple text widgets, and Flutter's text engine never justifies the last line of a paragraph. Now, a hidden copy of the leading word of the next part is appended after each part (except the last, and except parts that end at a hard line break), so the text engine justifies the line before it. The hidden text is excluded from semantics, but note that it can appear in text selections that span a boundary.

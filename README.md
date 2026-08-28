@@ -22,6 +22,8 @@ the text wraps around floated widgets — similar to the CSS `float` and
   paragraphs.
 * Constrain a float's width to a percentage of the column's width.
 * Full right-to-left text direction support.
+* Justified text (`TextAlign.justify`) works correctly, including where
+  text wraps around floats and at a first-line indent.
 * Works with Flutter text selection.
 * `FloatColumn` widgets can themselves be floated and nested.
 
@@ -31,7 +33,7 @@ Add the dependency to your app's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  float_column: ^4.1.0
+  float_column: ^4.1.2
 ```
 
 And import it:
