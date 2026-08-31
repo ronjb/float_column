@@ -4,7 +4,7 @@
 
 import 'dart:ui' as ui show TextHeightBehavior;
 
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 import 'shared.dart';
 

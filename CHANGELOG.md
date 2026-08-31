@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [4.1.3] - August 31, 2026
+
+* Narrowed the `package:flutter/material.dart` imports in `render_float_column.dart` and `wrappable_text.dart` to `package:flutter/widgets.dart`. No Material symbols were used, so this change is behavior-neutral. It keeps this package free of Flutter's Material library ahead of Material and Cupertino moving out of the Flutter SDK into the standalone `package:material_ui` and `package:cupertino_ui`, so dependents that migrate to those packages don't inherit the in-framework Material library through `float_column`.
+
 ## [4.1.2] - August 27, 2026
 
 * Fixed the known issue from 4.1.1 where the hidden word appended to justify text at wrapping boundaries could appear in selected text (e.g. via select all, or a selection that spans a boundary). The hidden word is now separated from the visible text by a zero-height inline widget, which puts it in its own selectable fragment, and a custom `SelectionContainer` delegate excludes that fragment from selected content.
