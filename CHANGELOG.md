@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [4.1.4] - September 28, 2026
+
+* Fixed text hidden from assistive technologies with an empty or whitespace `semanticsLabel` becoming audible when it wraps around a float. When a span is split, only the first half keeps its label so it isn't announced twice, but such a label hides the text, so both halves now keep it.
+* Text with nothing for assistive technologies to announce or act on — only whitespace, or empty or whitespace semantics labels, and no gesture recognizer — is now excluded from the semantics tree, rather than leaving an empty node there. Empty nodes aren't read, but they are still ordered among their siblings, so they could break up a run of nodes ordered by `sortKey`.
+
 ## [4.1.3] - August 31, 2026
 
 * Narrowed the `package:flutter/material.dart` imports in `render_float_column.dart` and `wrappable_text.dart` to `package:flutter/widgets.dart`. No Material symbols were used, so this change is behavior-neutral. It keeps this package free of Flutter's Material library ahead of Material and Cupertino moving out of the Flutter SDK into the standalone `package:material_ui` and `package:cupertino_ui`, so dependents that migrate to those packages don't inherit the in-framework Material library through `float_column`.

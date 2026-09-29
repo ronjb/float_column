@@ -151,8 +151,14 @@ extension FCInlineSpanExt on InlineSpan {
         } else {
           final result = [
             copyWithTextSpan(span, text.substring(0, index.value), null),
-            copyWithTextSpan(_withoutSemanticsLabel(span),
-                text.substring(index.value), span.children),
+            // An empty, or whitespace, label hides the text from assistive
+            // technologies, so the second half keeps it too.
+            copyWithTextSpan(
+                span.semanticsLabel?.trim().isEmpty ?? false
+                    ? span
+                    : _withoutSemanticsLabel(span),
+                text.substring(index.value),
+                span.children),
           ];
           index.value = 0;
           return result;

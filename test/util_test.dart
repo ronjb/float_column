@@ -3,6 +3,7 @@
 // LICENSE file.
 
 import 'package:float_column/src/util.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -132,5 +133,42 @@ void main() {
         const Rect.fromLTWH(10, 20, 90, 10),
       );
     }
+  });
+
+  test('hasSemanticsContent', () {
+    final recognizer = TapGestureRecognizer();
+    addTearDown(recognizer.dispose);
+
+    expect(const TextSpan(text: 'a').hasSemanticsContent, isTrue);
+    expect(const TextSpan(text: ' \n').hasSemanticsContent, isFalse);
+    expect(const TextSpan(text: 'a', semanticsLabel: '').hasSemanticsContent,
+        isFalse);
+    expect(const TextSpan(text: 'a', semanticsLabel: ' ').hasSemanticsContent,
+        isFalse);
+    expect(const TextSpan(text: ' ', semanticsLabel: 'a').hasSemanticsContent,
+        isTrue);
+    expect(
+        const TextSpan(children: [TextSpan(text: ' '), TextSpan(text: 'a')])
+            .hasSemanticsContent,
+        isTrue);
+    expect(
+        const TextSpan(children: [WidgetSpan(child: SizedBox())])
+            .hasSemanticsContent,
+        isTrue);
+
+    // Hidden text that can be tapped is kept, so the tap stays available.
+    expect(
+        TextSpan(text: 'a', semanticsLabel: '', recognizer: recognizer)
+            .hasSemanticsContent,
+        isTrue);
+
+    // But not with a recognizer on a parent that has no text of its own,
+    // which, like Flutter, doesn't give its children a tap.
+    expect(
+        TextSpan(
+          recognizer: recognizer,
+          children: const [TextSpan(text: 'a', semanticsLabel: '')],
+        ).hasSemanticsContent,
+        isFalse);
   });
 }

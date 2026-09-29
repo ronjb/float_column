@@ -657,30 +657,35 @@ extension on List<_TextChunk> {
                     width: t.rect.width,
                     child: t.text.toWidget(defaultTextStyle),
                   )
-                : _JustifiedTextChunk(
-                    width: t.rect.width,
-                    height: t.rect.height,
-                    text: t.text.copyWith(
-                      text: TextSpan(children: [
-                        t.text.text,
-                        // This zero-height inline widget makes the render
-                        // paragraph put the hidden word in its own selectable
-                        // fragment, so _JustifiedTextChunk can exclude it
-                        // from text selections. It must be as wide as the
-                        // chunk so it always wraps to its own hidden line —
-                        // if it fit on the chunk's last visible line, its
-                        // presence after that line's trailing space would
-                        // break the line's justification with some fonts.
-                        WidgetSpan(
-                            style: TextStyle(
-                                fontSize: t.justifySpan!.initialFontSize(
-                                    defaultTextStyle.style.fontSize ?? 14.0)),
-                            child: SizedBox(width: t.rect.width, height: 0)),
-                        t.justifySpan!,
-                      ]),
-                      overflow: TextOverflow.clip,
+                // `excluding` rather than a conditional wrapper, so the
+                // stateful chunk isn't recreated if the text changes.
+                : ExcludeSemantics(
+                    excluding: !t.text.text.hasSemanticsContent,
+                    child: _JustifiedTextChunk(
+                      width: t.rect.width,
+                      height: t.rect.height,
+                      text: t.text.copyWith(
+                        text: TextSpan(children: [
+                          t.text.text,
+                          // This zero-height inline widget makes the render
+                          // paragraph put the hidden word in its own selectable
+                          // fragment, so _JustifiedTextChunk can exclude it
+                          // from text selections. It must be as wide as the
+                          // chunk so it always wraps to its own hidden line —
+                          // if it fit on the chunk's last visible line, its
+                          // presence after that line's trailing space would
+                          // break the line's justification with some fonts.
+                          WidgetSpan(
+                              style: TextStyle(
+                                  fontSize: t.justifySpan!.initialFontSize(
+                                      defaultTextStyle.style.fontSize ?? 14.0)),
+                              child: SizedBox(width: t.rect.width, height: 0)),
+                          t.justifySpan!,
+                        ]),
+                        overflow: TextOverflow.clip,
+                      ),
+                      defaultTextStyle: defaultTextStyle,
                     ),
-                    defaultTextStyle: defaultTextStyle,
                   ),
           ),
       ],

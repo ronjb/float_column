@@ -176,6 +176,20 @@ void main() {
     expect((a.splitAtCharacterIndex(11).first as TextSpan).semanticsLabel,
         'greeting');
   });
+
+  test('splitting keeps an empty, or whitespace, semanticsLabel on both halves',
+      () {
+    // An empty, or whitespace, label hides the text from assistive
+    // technologies, so neither half should become audible.
+    for (final label in ['', ' ']) {
+      final a = TextSpan(text: 'Hello world', semanticsLabel: label);
+      final aParts = a.splitAtCharacterIndex(5);
+      expect(aParts.length, 2);
+      expect((aParts.first as TextSpan).semanticsLabel, label);
+      expect((aParts.last as TextSpan).semanticsLabel, label);
+      expect((aParts.last as TextSpan).text, ' world');
+    }
+  });
 }
 
 TextStyle style(double fontSize) => TextStyle(fontSize: fontSize);

@@ -7,6 +7,7 @@ import 'dart:ui' as ui show TextHeightBehavior;
 import 'package:flutter/widgets.dart';
 
 import 'shared.dart';
+import 'util.dart';
 
 // Ignoring deprecated members from the same package.
 // ignore_for_file: deprecated_member_use_from_same_package
@@ -245,20 +246,26 @@ class WrappableText {
       margin,
       padding);
 
-  Widget toWidget(DefaultTextStyle defaultTextStyle) => Text.rich(
-        text,
-        key: key,
-        textAlign: textAlign ?? defaultTextStyle.textAlign ?? TextAlign.start,
-        textDirection: textDirection,
-        overflow: overflow ?? defaultTextStyle.overflow,
-        textScaler: textScaler,
-        maxLines: maxLines ?? defaultTextStyle.maxLines,
-        locale: locale,
-        strutStyle: strutStyle,
-        textWidthBasis: defaultTextStyle.textWidthBasis,
-        textHeightBehavior:
-            textHeightBehavior ?? defaultTextStyle.textHeightBehavior,
-      );
+  Widget toWidget(DefaultTextStyle defaultTextStyle) {
+    final widget = Text.rich(
+      text,
+      key: key,
+      textAlign: textAlign ?? defaultTextStyle.textAlign ?? TextAlign.start,
+      textDirection: textDirection,
+      overflow: overflow ?? defaultTextStyle.overflow,
+      textScaler: textScaler,
+      maxLines: maxLines ?? defaultTextStyle.maxLines,
+      locale: locale,
+      strutStyle: strutStyle,
+      textWidthBasis: defaultTextStyle.textWidthBasis,
+      textHeightBehavior:
+          textHeightBehavior ?? defaultTextStyle.textHeightBehavior,
+    );
+    // A conditional wrapper rather than `excluding`, so nearly all text avoids
+    // an extra render object. `Text` is stateless, so recreating it when the
+    // wrapper comes or goes is cheap.
+    return text.hasSemanticsContent ? widget : ExcludeSemantics(child: widget);
+  }
 }
 
 TextSpan _textSpanFrom(InlineSpan? span, String? data, TextStyle? style) {

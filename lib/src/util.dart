@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import 'dart:ui' as ui show Rect, TextDirection;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/painting.dart';
 
 import 'shared.dart';
 
@@ -52,6 +53,21 @@ FCClear resolveClear(FCClear clear, {required ui.TextDirection withDir}) {
 }
 
 bool _isLTR(ui.TextDirection direction) => direction == ui.TextDirection.ltr;
+
+/// `InlineSpan` extensions
+extension FloatColumnExtOnInlineSpan on InlineSpan {
+  /// Returns `true` if this span has something for assistive technologies to
+  /// announce or act on: text, or a semantics label, that isn't just
+  /// whitespace, a gesture recognizer, or an inline widget.
+  ///
+  /// Text without any is excluded from the semantics tree, because otherwise
+  /// it leaves an empty node there — e.g. text hidden from assistive
+  /// technologies with empty semantics labels.
+  bool get hasSemanticsContent => !visitChildren((span) =>
+      span is TextSpan &&
+      span.recognizer == null &&
+      (span.semanticsLabel ?? span.text ?? '').trim().isEmpty);
+}
 
 /// `List<Rect>` extensions
 extension FloatColumnExtOnListOfRect on List<ui.Rect> {
