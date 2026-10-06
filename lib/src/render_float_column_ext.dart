@@ -729,14 +729,20 @@ class _JustifiedTextChunkState extends State<_JustifiedTextChunk> {
   }
 
   @override
-  Widget build(BuildContext context) => SelectionContainer(
-        delegate: _delegate,
-        child: SizedBox(
-          width: widget.width,
-          height: widget.height,
-          child: Builder(builder: _buildRichText),
-        ),
-      );
+  Widget build(BuildContext context) {
+    final chunk = SelectionContainer(
+      delegate: _delegate,
+      child: SizedBox(
+        width: widget.width,
+        height: widget.height,
+        child: Builder(builder: _buildRichText),
+      ),
+    );
+    final headingLevel = widget.text.headingLevel;
+    return headingLevel == null
+        ? chunk
+        : Semantics(headingLevel: headingLevel, child: chunk);
+  }
 
   /// Builds a [RichText] directly (rather than via a [Text] widget, like
   /// [WrappableText.toWidget] does) because a [Text] widget wraps its

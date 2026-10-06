@@ -25,6 +25,8 @@ the text wraps around floated widgets — similar to the CSS `float` and
 * Justified text (`TextAlign.justify`) works correctly, including where
   text wraps around floats and at a first-line indent.
 * Works with Flutter text selection.
+* Accessible: paragraphs are read in order by screen readers, and can be
+  marked as headings with `WrappableText.headingLevel`.
 * `FloatColumn` widgets can themselves be floated and nested.
 
 ## Getting started
@@ -33,7 +35,7 @@ Add the dependency to your app's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  float_column: ^4.1.4
+  float_column: ^4.2.0
 ```
 
 And import it:
@@ -233,6 +235,7 @@ WrappableText(
 | `clear` | Place this paragraph below floated siblings. |
 | `indent` | First-line indent; negative for a hanging indent. |
 | `margin`, `padding` | Space around the paragraph. |
+| `headingLevel` | The paragraph's heading level for assistive technologies, from 1 to 6, like an HTML `<h1>` to `<h6>`, or `null` (the default) if it isn't a heading. |
 | `textAlign`, `textDirection`, `overflow`, `textScaler`, `maxLines`, `locale`, `strutStyle`, `textHeightBehavior` | Standard text layout properties, like those on `Text`. |
 
 ## Additional information

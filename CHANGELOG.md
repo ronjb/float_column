@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [4.2.0] - October 6, 2026
+
+* Added `WrappableText.headingLevel`, the paragraph's heading level for assistive technologies, from 1 to 6, like an HTML `<h1>` to `<h6>`. A screen reader announces a heading as one, and can move from one to the next. Each part of a heading that wraps around a float is a heading, and a heading with nothing for assistive technologies to announce is still excluded from the semantics tree.
+
 ## [4.1.4] - September 28, 2026
 
 * Fixed text hidden from assistive technologies with an empty or whitespace `semanticsLabel` becoming audible when it wraps around a float. When a span is split, only the first half keeps its label so it isn't announced twice, but such a label hides the text, so both halves now keep it.

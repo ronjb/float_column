@@ -46,13 +46,16 @@ class WrappableText {
     this.indent = 0.0,
     this.margin = EdgeInsets.zero,
     this.padding = EdgeInsets.zero,
+    this.headingLevel,
   })  : assert(
             textScaleFactor == null ||
                 textScaleFactor == 1.0 ||
                 textScaler == null,
             'Use textScaler instead.'),
         textScaler = _effectiveTextScalerFrom(textScaler, textScaleFactor),
-        assert(maxLines == null || maxLines > 0);
+        assert(maxLines == null || maxLines > 0),
+        assert(
+            headingLevel == null || (headingLevel >= 1 && headingLevel <= 6));
 
   WrappableText.fromText(Text text)
       : key = text.key,
@@ -71,7 +74,8 @@ class WrappableText {
         textHeightBehavior = text.textHeightBehavior,
         indent = 0.0,
         margin = EdgeInsets.zero,
-        padding = EdgeInsets.zero;
+        padding = EdgeInsets.zero,
+        headingLevel = null;
 
   WrappableText.fromRichText(RichText text)
       : key = text.key,
@@ -90,7 +94,8 @@ class WrappableText {
         textHeightBehavior = text.textHeightBehavior,
         indent = 0.0,
         margin = EdgeInsets.zero,
-        padding = EdgeInsets.zero;
+        padding = EdgeInsets.zero,
+        headingLevel = null;
 
   static TextScaler? _effectiveTextScalerFrom(
       TextScaler? textScaler, double? textScaleFactor) {
@@ -119,6 +124,7 @@ class WrappableText {
     double? indent,
     EdgeInsetsGeometry? margin,
     EdgeInsetsGeometry? padding,
+    int? headingLevel,
     bool clearKey = false,
   }) =>
       WrappableText(
@@ -137,6 +143,7 @@ class WrappableText {
         indent: indent ?? this.indent,
         margin: margin ?? this.margin,
         padding: padding ?? this.padding,
+        headingLevel: headingLevel ?? this.headingLevel,
       );
 
   /// Unique key for this object.
@@ -208,6 +215,11 @@ class WrappableText {
   /// Empty space to surround the paragraph that does not overlap siblings.
   final EdgeInsetsGeometry padding;
 
+  /// The paragraph's heading level for assistive technologies, from 1 to 6,
+  /// like an HTML `<h1>` to `<h6>`, or null if it isn't a heading. A screen
+  /// reader announces a heading as one, and can move from one to the next.
+  final int? headingLevel;
+
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
@@ -226,7 +238,8 @@ class WrappableText {
         other.textHeightBehavior == textHeightBehavior &&
         other.indent == indent &&
         other.margin == margin &&
-        other.padding == padding;
+        other.padding == padding &&
+        other.headingLevel == headingLevel;
   }
 
   @override
@@ -244,7 +257,8 @@ class WrappableText {
       textHeightBehavior,
       indent,
       margin,
-      padding);
+      padding,
+      headingLevel);
 
   Widget toWidget(DefaultTextStyle defaultTextStyle) {
     final widget = Text.rich(
@@ -264,7 +278,11 @@ class WrappableText {
     // A conditional wrapper rather than `excluding`, so nearly all text avoids
     // an extra render object. `Text` is stateless, so recreating it when the
     // wrapper comes or goes is cheap.
-    return text.hasSemanticsContent ? widget : ExcludeSemantics(child: widget);
+    return !text.hasSemanticsContent
+        ? ExcludeSemantics(child: widget)
+        : headingLevel == null
+            ? widget
+            : Semantics(headingLevel: headingLevel, child: widget);
   }
 }
 
