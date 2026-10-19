@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [4.2.1] - October 19, 2026
+
+* Fixed a native crash (`SIGTRAP` in Skia's `TextLine::measureTextInsideOneRun`, called from `getRectsForPlaceholders`) when laying out a justified paragraph that wraps around a float, seen on some Android devices on every layout of the affected text. Since 4.1.2, each part of such a paragraph except the last was given a zero-height inline widget to separate the hidden word appended to it (to justify its last line) from its visible text, and a paragraph with an inline widget has Skia measure every run of every line to place it. The inline widget is gone: the hidden word now directly follows the visible text, as in 4.1.1, and is still kept out of selected text — a selection that reaches it has the part of it that it includes trimmed.
+
 ## [4.2.0] - October 6, 2026
 
 * Added `WrappableText.headingLevel`, the paragraph's heading level for assistive technologies, from 1 to 6, like an HTML `<h1>` to `<h6>`. A screen reader announces a heading as one, and can move from one to the next. Each part of a heading that wraps around a float is a heading, and a heading with nothing for assistive technologies to announce is still excluded from the semantics tree.

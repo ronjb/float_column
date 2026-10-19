@@ -35,7 +35,7 @@ Add the dependency to your app's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  float_column: ^4.2.0
+  float_column: ^4.2.1
 ```
 
 And import it:

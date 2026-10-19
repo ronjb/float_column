@@ -254,6 +254,32 @@ void main() {
 
       handle.dispose();
     });
+
+    // A paragraph with an inline placeholder is asked for its placeholder
+    // boxes on every layout, and Skia measures every run of every line to
+    // answer, which has been seen to trap (SIGTRAP in
+    // `TextLine::measureTextInsideOneRun`) on some devices' fonts. No
+    // placeholder means no such query.
+    testWidgets('does not add inline placeholders to a justified chunk',
+        (tester) async {
+      await tester.pumpWidget(wrap(FloatColumn(
+        children: [
+          const Floatable(
+            float: FCFloat.left,
+            child: SizedBox(width: 100, height: 25),
+          ),
+          WrappableText(
+            text: TextSpan(style: style, text: words),
+            textAlign: TextAlign.justify,
+          ),
+        ],
+      )));
+      expect(tester.takeException(), isNull);
+
+      final chunk1 = _paragraphWithWidth(tester, 200);
+      expect(chunk1.childCount, 0);
+      expect(chunk1.text.toPlainText().contains('￼'), isFalse);
+    });
   });
 }
 
