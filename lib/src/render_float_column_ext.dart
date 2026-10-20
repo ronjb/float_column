@@ -786,7 +786,9 @@ class _JustifiedTextChunkState extends State<_JustifiedTextChunk> {
       maxLines: wt.maxLines ?? dts.maxLines,
       strutStyle: wt.strutStyle,
       textWidthBasis: dts.textWidthBasis,
-      textHeightBehavior: wt.textHeightBehavior ?? dts.textHeightBehavior,
+      textHeightBehavior: wt.textHeightBehavior ??
+          dts.textHeightBehavior ??
+          DefaultTextHeightBehavior.maybeOf(context),
       selectionRegistrar: registrar,
       selectionColor: registrar == null
           ? null
@@ -863,9 +865,9 @@ class _JustifiedChunkSelectionDelegate
     for (final selectable in selectables) {
       final content = selectable.getSelectedContent();
       if (content == null) continue;
-      final (startHidden, endHidden) = _selectionPointsHidden(selectable);
-      if (startHidden && endHidden) continue;
-      buffer.write(startHidden || endHidden
+      final (anyHidden, allHidden) = _selectionRectsHidden(selectable);
+      if (allHidden) continue;
+      buffer.write(anyHidden
           ? _withoutHiddenText(content.plainText)
           : content.plainText);
     }
@@ -873,26 +875,20 @@ class _JustifiedChunkSelectionDelegate
     return SelectedContent(plainText: buffer.toString());
   }
 
-  /// Returns whether the start and the end of the given [selectable]'s
-  /// selection are on the hidden line, i.e. at or below [visibleHeight].
-  (bool, bool) _selectionPointsHidden(Selectable selectable) {
-    final geometry = selectable.value;
-    if (!geometry.hasSelection) return (false, false);
+  /// Returns whether any and whether all of the given [selectable]'s
+  /// selection rects are on the hidden line, i.e. centered below
+  /// [visibleHeight].
+  (bool, bool) _selectionRectsHidden(Selectable selectable) {
+    final rects = selectable.value.selectionRects;
+    if (rects.isEmpty) return (false, false);
     final transform = getTransformFrom(selectable);
-    // A selection point is at the bottom of its line, and the bottom of the
-    // last visible line is [visibleHeight], so a point more than a pixel
-    // below it is on the hidden line. (Its `lineHeight` is the paragraph's
-    // preferred line height, not that of the line it is on, so it can't be
-    // used to find the middle of the line.)
-    bool isHidden(SelectionPoint? point) =>
-        point != null &&
-        MatrixUtils.transformPoint(transform, point.localPosition).dy >
-            visibleHeight + 1;
-
-    return (
-      isHidden(geometry.startSelectionPoint),
-      isHidden(geometry.endSelectionPoint)
-    );
+    // A rect's center is inside its own line however the line's height is
+    // computed, so unlike a selection point (at the bottom of its line), it
+    // isn't thrown off by the last visible line being taller when rendered
+    // above the hidden word than when measured without it.
+    bool isHidden(Rect r) =>
+        MatrixUtils.transformRect(transform, r).center.dy > visibleHeight;
+    return (rects.any(isHidden), rects.every(isHidden));
   }
 
   /// Returns [text] — the selected text of a fragment whose selection reaches

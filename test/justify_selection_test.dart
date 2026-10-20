@@ -284,6 +284,64 @@ void main() {
       expect(selectedContent?.plainText, words);
     });
 
+    testWidgets(
+        'drag selection on the last visible line of a chunk works when the '
+        "last line's descent is not scaled by height", (tester) async {
+      // With `height: 2.0`, every line is 20 high, but with
+      // `applyHeightToLastDescent: false` the last line of a paragraph is 2
+      // shorter. The first chunk's visible height (three lines beside the 45
+      // high float) is measured without its hidden appended word, so its last
+      // visible line is the paragraph's last line and the chunk is 58 high.
+      // When rendered, the hidden word follows that line, so the line's
+      // bottom is at 60, below the visible height.
+      const tallStyle = TextStyle(fontSize: 10, height: 2.0);
+      final sixtyWords =
+          List.generate(60, (i) => 'w${i.toString().padLeft(2, '0')}')
+              .join(' ');
+      SelectedContent? selectedContent;
+      await tester.pumpWidget(MaterialApp(
+        home: SelectionArea(
+          onSelectionChanged: (content) => selectedContent = content,
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: 300,
+              child: FloatColumn(
+                children: [
+                  const Floatable(
+                    float: FCFloat.left,
+                    child: SizedBox(width: 100, height: 45),
+                  ),
+                  WrappableText(
+                    text: TextSpan(style: tallStyle, text: sixtyWords),
+                    textAlign: TextAlign.justify,
+                    textHeightBehavior: const TextHeightBehavior(
+                        applyHeightToLastDescent: false),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ));
+
+      // Drag across the first word of the first chunk's last visible line
+      // ('w10' to 'w14', from y 40).
+      final topLeft = tester.getTopLeft(find.byType(FloatColumn));
+      final gesture = await tester.startGesture(
+        topLeft + const Offset(101, 50),
+        kind: PointerDeviceKind.mouse,
+      );
+      await tester.pump();
+      await gesture.moveTo(topLeft + const Offset(141, 50));
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
+      await gesture.removePointer();
+
+      expect(selectedContent?.plainText, 'w10 ');
+    });
+
     testWidgets('renders without a SelectionArea', (tester) async {
       await tester.pumpWidget(Directionality(
         textDirection: TextDirection.ltr,

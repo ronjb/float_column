@@ -3,6 +3,7 @@
 ## [4.2.1] - October 19, 2026
 
 * Fixed a native crash (`SIGTRAP` in Skia's `TextLine::measureTextInsideOneRun`, called from `getRectsForPlaceholders`) when laying out a justified paragraph that wraps around a float, seen on some Android devices on every layout of the affected text. Since 4.1.2, each part of such a paragraph except the last was given a zero-height inline widget to separate the hidden word appended to it (to justify its last line) from its visible text, and a paragraph with an inline widget has Skia measure every run of every line to place it. The inline widget is gone: the hidden word now directly follows the visible text, as in 4.1.1, and is still kept out of selected text — a selection that reaches it has the part of it that it includes trimmed.
+* A justified paragraph that wraps around a float now uses the `TextHeightBehavior` of a `DefaultTextHeightBehavior` ancestor when neither it nor its `DefaultTextStyle` sets one, as `Text` does. Since 4.1.2, the parts of such a paragraph were measured with it but drawn without it.
 
 ## [4.2.0] - October 6, 2026
 
