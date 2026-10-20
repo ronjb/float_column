@@ -664,26 +664,23 @@ extension on List<_TextChunk> {
                     child: _JustifiedTextChunk(
                       width: t.rect.width,
                       height: t.rect.height,
+                      // No inline widget separates the hidden word from the
+                      // visible text: a paragraph with a placeholder is asked
+                      // for its placeholder boxes on every layout, and Skia
+                      // has been seen to trap answering that on some
+                      // devices' fonts. _JustifiedChunkSelectionDelegate
+                      // keeps the hidden word out of selections instead.
                       text: t.text.copyWith(
                         text: TextSpan(children: [
                           t.text.text,
-                          // This zero-height inline widget makes the render
-                          // paragraph put the hidden word in its own selectable
-                          // fragment, so _JustifiedTextChunk can exclude it
-                          // from text selections. It must be as wide as the
-                          // chunk so it always wraps to its own hidden line —
-                          // if it fit on the chunk's last visible line, its
-                          // presence after that line's trailing space would
-                          // break the line's justification with some fonts.
-                          WidgetSpan(
-                              style: TextStyle(
-                                  fontSize: t.justifySpan!.initialFontSize(
-                                      defaultTextStyle.style.fontSize ?? 14.0)),
-                              child: SizedBox(width: t.rect.width, height: 0)),
                           t.justifySpan!,
                         ]),
                         overflow: TextOverflow.clip,
                       ),
+                      visibleText: t.text.text
+                          .toPlainText(includeSemanticsLabels: false),
+                      hiddenText: t.justifySpan!
+                          .toPlainText(includeSemanticsLabels: false),
                       defaultTextStyle: defaultTextStyle,
                     ),
                   ),
@@ -701,12 +698,21 @@ class _JustifiedTextChunk extends StatefulWidget {
     required this.width,
     required this.height,
     required this.text,
+    required this.visibleText,
+    required this.hiddenText,
     required this.defaultTextStyle,
   });
 
   final double width;
   final double height;
   final WrappableText text;
+
+  /// The plain text of [text] without the hidden word appended to it.
+  final String visibleText;
+
+  /// The plain text of the hidden word appended to [text].
+  final String hiddenText;
+
   final DefaultTextStyle defaultTextStyle;
 
   @override
@@ -714,12 +720,16 @@ class _JustifiedTextChunk extends StatefulWidget {
 }
 
 class _JustifiedTextChunkState extends State<_JustifiedTextChunk> {
-  late final _delegate = _JustifiedChunkSelectionDelegate(widget.height);
+  late final _delegate = _JustifiedChunkSelectionDelegate(
+      widget.height, widget.visibleText, widget.hiddenText);
 
   @override
   void didUpdateWidget(_JustifiedTextChunk oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _delegate.visibleHeight = widget.height;
+    _delegate
+      ..visibleHeight = widget.height
+      ..visibleText = widget.visibleText
+      ..hiddenText = widget.hiddenText;
   }
 
   @override
@@ -746,10 +756,11 @@ class _JustifiedTextChunkState extends State<_JustifiedTextChunk> {
 
   /// Builds a [RichText] directly (rather than via a [Text] widget, like
   /// [WrappableText.toWidget] does) because a [Text] widget wraps its
-  /// [RichText] in its own [SelectionContainer], which would merge the
-  /// selectable fragments of the visible text and the hidden word into one
-  /// [Selectable], making the hidden word's fragment unidentifiable. A bare
-  /// [RichText] registers its fragments directly with [_delegate].
+  /// [RichText] in its own [SelectionContainer], which would merge its
+  /// selectable fragments into one [Selectable] whose geometry is that of
+  /// the whole paragraph. A bare [RichText] registers its fragments directly
+  /// with [_delegate], so the fragment that ends in the hidden word is the
+  /// one whose selection points [_delegate] measures.
   ///
   /// This mirrors how [Text.build] resolves the properties [Text.rich] is
   /// given by [WrappableText.toWidget].
@@ -775,7 +786,9 @@ class _JustifiedTextChunkState extends State<_JustifiedTextChunk> {
       maxLines: wt.maxLines ?? dts.maxLines,
       strutStyle: wt.strutStyle,
       textWidthBasis: dts.textWidthBasis,
-      textHeightBehavior: wt.textHeightBehavior ?? dts.textHeightBehavior,
+      textHeightBehavior: wt.textHeightBehavior ??
+          dts.textHeightBehavior ??
+          DefaultTextHeightBehavior.maybeOf(context),
       selectionRegistrar: registrar,
       selectionColor: registrar == null
           ? null
@@ -785,22 +798,31 @@ class _JustifiedTextChunkState extends State<_JustifiedTextChunk> {
   }
 }
 
-/// A selection container delegate for a justified text chunk that excludes
-/// the chunk's hidden appended word (see [_TextChunk.justifySpan]) from
-/// selected content.
+/// A selection container delegate for a justified text chunk that keeps the
+/// chunk's hidden appended word (see [_TextChunk.justifySpan]) out of
+/// selections.
 ///
 /// The hidden word is rendered on an extra (clipped) line below the chunk's
-/// visible height, and, because it is separated from the visible text by an
-/// inline widget, the render paragraph puts it in its own selectable
-/// fragment. That fragment is identified by its position — at or below the
-/// visible height — and skipped when collecting selected content.
+/// visible height, in the same paragraph as the visible text with nothing
+/// between them, so it shares a selectable fragment with the end of the
+/// visible text. When collecting selected content, a fragment whose
+/// selection lies entirely on the hidden line (i.e. below the visible
+/// height) is skipped, and one whose selection reaches it has the part of
+/// the hidden word it includes trimmed.
 class _JustifiedChunkSelectionDelegate
     extends MultiSelectableSelectionContainerDelegate {
-  _JustifiedChunkSelectionDelegate(this.visibleHeight);
+  _JustifiedChunkSelectionDelegate(
+      this.visibleHeight, this.visibleText, this.hiddenText);
 
   /// The height of the visible part of the chunk. Content at or below this
   /// is clipped, i.e. hidden.
   double visibleHeight;
+
+  /// The plain text of the chunk without the hidden word.
+  String visibleText;
+
+  /// The plain text of the hidden word.
+  String hiddenText;
 
   // The global positions of the last selection edge updates, so selectables
   // added while a selection is in progress can be synchronized via
@@ -841,24 +863,48 @@ class _JustifiedChunkSelectionDelegate
   SelectedContent? getSelectedContent() {
     final buffer = StringBuffer();
     for (final selectable in selectables) {
-      if (!_isHidden(selectable)) {
-        final content = selectable.getSelectedContent();
-        if (content != null) buffer.write(content.plainText);
-      }
+      final content = selectable.getSelectedContent();
+      if (content == null) continue;
+      final (anyHidden, allHidden) = _selectionRectsHidden(selectable);
+      if (allHidden) continue;
+      buffer.write(anyHidden
+          ? _withoutHiddenText(content.plainText)
+          : content.plainText);
     }
     if (buffer.isEmpty) return null;
     return SelectedContent(plainText: buffer.toString());
   }
 
-  /// Returns `true` if the given [selectable] is entirely at or below
-  /// [visibleHeight], i.e. it is the chunk's hidden appended word.
-  bool _isHidden(Selectable selectable) {
-    final boxes = selectable.boundingBoxes;
-    if (boxes.isEmpty) return false;
+  /// Returns whether any and whether all of the given [selectable]'s
+  /// selection rects are on the hidden line, i.e. centered below
+  /// [visibleHeight].
+  (bool, bool) _selectionRectsHidden(Selectable selectable) {
+    final rects = selectable.value.selectionRects;
+    if (rects.isEmpty) return (false, false);
     final transform = getTransformFrom(selectable);
-    return boxes.every((r) =>
-        MatrixUtils.transformRect(transform, r).top >=
-        visibleHeight - precisionErrorTolerance);
+    // A rect's center is inside its own line however the line's height is
+    // computed, so unlike a selection point (at the bottom of its line), it
+    // isn't thrown off by the last visible line being taller when rendered
+    // above the hidden word than when measured without it.
+    bool isHidden(Rect r) =>
+        MatrixUtils.transformRect(transform, r).center.dy > visibleHeight;
+    return (rects.any(isHidden), rects.every(isHidden));
+  }
+
+  /// Returns [text] — the selected text of a fragment whose selection reaches
+  /// the hidden line — without the part of the hidden word it ends with.
+  ///
+  /// The selection is contiguous and starts on a visible line, so [text] is
+  /// the end of [visibleText] followed by a prefix of [hiddenText]. The
+  /// prefix is the longest one [text] ends with whose remainder
+  /// [visibleText] ends with.
+  String _withoutHiddenText(String text) {
+    for (var k = math.min(hiddenText.length, text.length); k > 0; k--) {
+      if (!text.endsWith(hiddenText.substring(0, k))) continue;
+      final rest = text.substring(0, text.length - k);
+      if (visibleText.endsWith(rest)) return rest;
+    }
+    return text;
   }
 }
 
